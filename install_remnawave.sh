@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="1.1.0"
+SCRIPT_VERSION="1.2.0"
 DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
@@ -2398,18 +2398,17 @@ install_script() {
 # ═══════════════════════════════════════════════
 main_menu() {
     while true; do
-        # Проверка наличия обновлений
-        if [ -f /tmp/remna_update_available ]; then
-            clear
-            local new_version
-            new_version=$(cat /tmp/remna_update_available)
-            show_update_notification "$new_version"
-            read -t 3 -n 1 -s || true
-        fi
-        
         local is_installed=false
         if [ -f "/opt/remnawave/docker-compose.yml" ]; then
             is_installed=true
+        fi
+        
+        # Получаем информацию о доступной версии (если есть)
+        local update_notice=""
+        if [ -f /tmp/remna_update_available ]; then
+            local new_version
+            new_version=$(cat /tmp/remna_update_available)
+            update_notice=" ${YELLOW}(Доступна версия v$new_version)${NC}"
         fi
 
         if [ "$is_installed" = true ]; then
@@ -2425,7 +2424,7 @@ main_menu() {
                 "🔐  Сбросить суперадмина" \
                 "🎨  Случайный шаблон selfsteal" \
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" \
-                "🔄  Обновить скрипт" \
+                "🔄  Обновить скрипт$update_notice" \
                 "🗑️   Удалить скрипт" \
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" \
                 "❌  Выход"
@@ -2480,7 +2479,7 @@ main_menu() {
             show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
                 "📦  Установить компоненты" \
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" \
-                "🔄  Обновить скрипт" \
+                "🔄  Обновить скрипт$update_notice" \
                 "🗑️   Удалить скрипт" \
                 "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" \
                 "❌  Выход"
