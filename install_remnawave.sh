@@ -1917,6 +1917,111 @@ EOL
 # ═══════════════════════════════════════════════
 # УПРАВЛЕНИЕ
 # ═══════════════════════════════════════════════
+change_credentials() {
+    clear
+    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${GREEN}   🔐 ИЗМЕНЕНИЕ УЧЕТНЫХ ДАННЫХ${NC}"
+    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo
+
+    reading "Текущий логин:" OLD_USERNAME
+    if [ -z "$OLD_USERNAME" ]; then
+        print_error "Логин не может быть пустым"
+        sleep 2
+        return
+    fi
+
+    reading "Текущий пароль:" OLD_PASSWORD
+    if [ -z "$OLD_PASSWORD" ]; then
+        print_error "Пароль не может быть пустым"
+        sleep 2
+        return
+    fi
+
+    reading "Новый логин:" NEW_USERNAME
+    if [ -z "$NEW_USERNAME" ]; then
+        print_error "Логин не может быть пустым"
+        sleep 2
+        return
+    fi
+
+    reading "Новый пароль:" NEW_PASSWORD
+    if [ -z "$NEW_PASSWORD" ]; then
+        print_error "Пароль не может быть пустым"
+        sleep 2
+        return
+    fi
+
+    echo
+    print_action "Изменение учетных данных через API..."
+
+    local domain_url="127.0.0.1:3000"
+
+    # Авторизация со старыми данными
+    local login_data='{"username":"'"$OLD_USERNAME"'","password":"'"$OLD_PASSWORD"'"}'
+    local response
+    response=$(curl -s -X POST "http://$domain_url/api/auth/login" \
+        -H "Content-Type: application/json" \
+        -H "X-Forwarded-For: 127.0.0.1" \
+        -H "X-Forwarded-Proto: https" \
+        -d "$login_data")
+
+    local token
+    token=$(echo "$response" | jq -r '.response.accessToken // empty' 2>/dev/null)
+
+    if [ -z "$token" ]; then
+        print_error "Не удалось авторизоваться. Проверьте текущие учетные данные"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        return
+    fi
+
+    # Получаем UUID пользователя
+    local user_response
+    user_response=$(curl -s -X GET "http://$domain_url/api/users/me" \
+        -H "Authorization: Bearer $token" \
+        -H "Content-Type: application/json" \
+        -H "X-Forwarded-For: 127.0.0.1" \
+        -H "X-Forwarded-Proto: https")
+
+    local user_uuid
+    user_uuid=$(echo "$user_response" | jq -r '.response.uuid // empty' 2>/dev/null)
+
+    if [ -z "$user_uuid" ]; then
+        print_error "Не удалось получить данные пользователя"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        return
+    fi
+
+    # Обновляем учетные данные
+    local update_data='{"username":"'"$NEW_USERNAME"'","password":"'"$NEW_PASSWORD"'"}'
+    local update_response
+    update_response=$(curl -s -X PATCH "http://$domain_url/api/users/$user_uuid" \
+        -H "Authorization: Bearer $token" \
+        -H "Content-Type: application/json" \
+        -H "X-Forwarded-For: 127.0.0.1" \
+        -H "X-Forwarded-Proto: https" \
+        -d "$update_data")
+
+    if echo "$update_response" | jq -e '.response' >/dev/null 2>&1; then
+        print_success "Учетные данные успешно изменены!"
+        echo
+        echo -e "${WHITE}Новый логин:${NC}  $NEW_USERNAME"
+        echo -e "${WHITE}Новый пароль:${NC} $NEW_PASSWORD"
+        echo
+        echo -e "${YELLOW}💡 Сохраните новые учетные данные в безопасном месте${NC}"
+    else
+        print_error "Не удалось изменить учетные данные"
+        local error_msg
+        error_msg=$(echo "$update_response" | jq -r '.message // "Неизвестная ошибка"' 2>/dev/null)
+        echo -e "${RED}Ошибка: $error_msg${NC}"
+    fi
+
+    echo
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+}
+
 manage_start() {
     (
         cd /opt/remnawave
@@ -2149,6 +2254,7 @@ main_menu() {
                 "▶️   Запустить сервисы" \
                 "⏹️   Остановить сервисы" \
                 "📋  Просмотр логов" \
+                "🔐  Изменить логин и пароль" \
                 "🎨  Случайный шаблон selfsteal" \
                 "🔄  Переустановить" \
                 "🔄  Обновить скрипт" \
@@ -2190,11 +2296,12 @@ main_menu() {
                 2) manage_start ;;
                 3) manage_stop ;;
                 4) manage_logs ;;
-                5) manage_random_template ;;
-                6) manage_reinstall ;;
-                7) update_script ;;
-                8) remove_script ;;
-                9) clear; exit 0 ;;
+                5) change_credentials ;;
+                6) manage_random_template ;;
+                7) manage_reinstall ;;
+                8) update_script ;;
+                9) remove_script ;;
+                10) clear; exit 0 ;;
             esac
         else
             show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
