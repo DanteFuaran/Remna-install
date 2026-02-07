@@ -6,7 +6,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/DanteFuaran/Remna-install/releases"><img src="https://img.shields.io/github/v/release/DanteFuaran/Remna-install?style=flat-square&color=blue" alt="Release"></a>
   <a href="https://github.com/DanteFuaran/Remna-install/blob/main/LICENSE"><img src="https://img.shields.io/github/license/DanteFuaran/Remna-install?style=flat-square&color=green" alt="License"></a>
   <a href="https://github.com/DanteFuaran/Remna-install/stargazers"><img src="https://img.shields.io/github/stars/DanteFuaran/Remna-install?style=flat-square&color=yellow" alt="Stars"></a>
 </p>
