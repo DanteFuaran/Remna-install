@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.1.0"
+SCRIPT_VERSION="2.2.0"
 DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
@@ -802,761 +802,61 @@ create_api_token() {
 # ШАБЛОНЫ SELFSTEAL
 # ═══════════════════════════════════════════════
 
-# Базовый CSS для всех шаблонов
-create_base_css() {
-    cat > /var/www/html/css/style.css <<'CSSEOF'
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.6; color: #333; }
-.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-header { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; padding: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
-nav { display: flex; justify-content: space-between; align-items: center; }
-nav .logo { font-size: 1.8em; font-weight: bold; }
-nav ul { list-style: none; display: flex; gap: 30px; }
-nav a { color: #fff; text-decoration: none; transition: opacity 0.3s; }
-nav a:hover { opacity: 0.8; }
-.hero { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; padding: 100px 0; text-align: center; }
-.hero h1 { font-size: 3em; margin-bottom: 20px; animation: fadeInUp 1s; }
-.hero p { font-size: 1.3em; margin-bottom: 30px; opacity: 0.9; animation: fadeInUp 1.2s; }
-.btn { display: inline-block; padding: 15px 40px; background: #fff; color: var(--primary); text-decoration: none; border-radius: 50px; font-weight: bold; transition: transform 0.3s, box-shadow 0.3s; }
-.btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-.section { padding: 80px 0; }
-.section-title { text-align: center; font-size: 2.5em; margin-bottom: 50px; color: var(--primary); }
-.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
-.feature { text-align: center; padding: 30px; border-radius: 10px; background: #f8f9fa; transition: transform 0.3s; }
-.feature:hover { transform: translateY(-10px); }
-.feature-icon { font-size: 3em; margin-bottom: 20px; }
-.feature h3 { margin-bottom: 15px; color: var(--primary); }
-.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-.gallery-item { border-radius: 10px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-.gallery-item img { width: 100%; height: 250px; object-fit: cover; transition: transform 0.3s; }
-.gallery-item:hover img { transform: scale(1.1); }
-footer { background: #2c3e50; color: #fff; padding: 40px 0; text-align: center; }
-.footer-links { display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; }
-.footer-links a { color: #fff; text-decoration: none; }
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-@media (max-width: 768px) { nav ul { gap: 15px; font-size: 0.9em; } .hero h1 { font-size: 2em; } .features { grid-template-columns: 1fr; } }
-CSSEOF
-}
-
-# Функция создания шаблона
-create_template() {
-    local template_id=$1
-    local template_name=$2
-    local primary_color=$3
-    local secondary_color=$4
-    
-    mkdir -p /var/www/html/{css,js,images}
-    rm -rf /var/www/html/*
-    mkdir -p /var/www/html/{css,js,images}
-    
-    # Создаём базовый CSS с цветами
-    cat > /var/www/html/css/style.css <<CSSEOF
-:root { --primary: ${primary_color}; --secondary: ${secondary_color}; }
-$(create_base_css | tail -n +2)
-CSSEOF
-    
-    # Создаём главную страницу в зависимости от типа
-    case $template_id in
-        1) create_corporate_site "$template_name" ;;
-        2) create_tech_site "$template_name" ;;
-        3) create_cloud_site "$template_name" ;;
-        4) create_fintech_site "$template_name" ;;
-        5) create_education_site "$template_name" ;;
-        6) create_media_site "$template_name" ;;
-        7) create_ecommerce_site "$template_name" ;;
-        8) create_gaming_site "$template_name" ;;
-        9) create_social_site "$template_name" ;;
-        10) create_analytics_site "$template_name" ;;
-        11) create_crypto_site "$template_name" ;;
-        12) create_travel_site "$template_name" ;;
-        13) create_fitness_site "$template_name" ;;
-        14) create_news_site "$template_name" ;;
-        15) create_music_site "$template_name" ;;
-        16) create_realestate_site "$template_name" ;;
-        17) create_food_site "$template_name" ;;
-        18) create_auto_site "$template_name" ;;
-        19) create_design_site "$template_name" ;;
-        20) create_consulting_site "$template_name" ;;
-    esac
-}
-
-# Шаблон 1: Корпоративный портал
-create_corporate_site() {
-    cat > /var/www/html/index.html <<'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corporate Solutions - Enterprise Business Platform</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">🏢 CorpSolutions</div>
-                <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="about.html">About</a></li>
-                    <li><a href="services.html">Services</a></li>
-                    <li><a href="contact.html">Contact</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-    
-    <section class="hero">
-        <div class="container">
-            <h1>Enterprise Solutions for Modern Business</h1>
-            <p>Transform your organization with cutting-edge technology and expert consulting</p>
-            <a href="services.html" class="btn">Explore Services</a>
-        </div>
-    </section>
-    
-    <section class="section">
-        <div class="container">
-            <h2 class="section-title">Our Core Services</h2>
-            <div class="features">
-                <div class="feature">
-                    <div class="feature-icon">💼</div>
-                    <h3>Business Consulting</h3>
-                    <p>Strategic guidance to drive growth and efficiency</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🔒</div>
-                    <h3>Security Solutions</h3>
-                    <p>Protect your assets with enterprise-grade security</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">📊</div>
-                    <h3>Analytics & Insights</h3>
-                    <p>Data-driven decisions for better outcomes</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <section class="section" style="background: #f8f9fa;">
-        <div class="container">
-            <h2 class="section-title">Trusted by Industry Leaders</h2>
-            <div class="gallery">
-                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=1" alt="Client 1"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=2" alt="Client 2"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=3" alt="Client 3"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=4" alt="Client 4"></div>
-            </div>
-        </div>
-    </section>
-    
-    <footer>
-        <div class="footer-links">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Support</a>
-        </div>
-        <p>&copy; 2024 Corporate Solutions. All rights reserved.</p>
-    </footer>
-</body>
-</html>
-EOF
-
-    cat > /var/www/html/about.html <<'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Us - Corporate Solutions</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">🏢 CorpSolutions</div>
-                <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="about.html">About</a></li>
-                    <li><a href="services.html">Services</a></li>
-                    <li><a href="contact.html">Contact</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-    
-    <section class="hero">
-        <div class="container">
-            <h1>About Corporate Solutions</h1>
-            <p>Leading the way in enterprise innovation since 2010</p>
-        </div>
-    </section>
-    
-    <section class="section">
-        <div class="container">
-            <h2 class="section-title">Our Story</h2>
-            <p style="text-align: center; max-width: 800px; margin: 0 auto; font-size: 1.2em;">
-                We are a global leader in enterprise solutions, helping organizations transform their operations
-                through innovative technology and strategic consulting. With over a decade of experience, we've
-                served thousands of clients worldwide.
-            </p>
-        </div>
-    </section>
-    
-    <section class="section" style="background: #f8f9fa;">
-        <div class="container">
-            <h2 class="section-title">Our Team</h2>
-            <div class="gallery">
-                <div class="gallery-item"><img src="https://picsum.photos/300/350?random=11" alt="Team Member"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/300/350?random=12" alt="Team Member"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/300/350?random=13" alt="Team Member"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/300/350?random=14" alt="Team Member"></div>
-            </div>
-        </div>
-    </section>
-    
-    <footer>
-        <div class="footer-links">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Support</a>
-        </div>
-        <p>&copy; 2024 Corporate Solutions. All rights reserved.</p>
-    </footer>
-</body>
-</html>
-EOF
-
-    cat > /var/www/html/services.html <<'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Services - Corporate Solutions</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">🏢 CorpSolutions</div>
-                <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="about.html">About</a></li>
-                    <li><a href="services.html">Services</a></li>
-                    <li><a href="contact.html">Contact</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-    
-    <section class="hero">
-        <div class="container">
-            <h1>Enterprise Services</h1>
-            <p>Comprehensive solutions for every business need</p>
-        </div>
-    </section>
-    
-    <section class="section">
-        <div class="container">
-            <div class="features">
-                <div class="feature">
-                    <div class="feature-icon">💼</div>
-                    <h3>Business Consulting</h3>
-                    <p>Strategic planning and implementation</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🔒</div>
-                    <h3>Cybersecurity</h3>
-                    <p>Advanced threat protection</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">☁️</div>
-                    <h3>Cloud Migration</h3>
-                    <p>Seamless transition to the cloud</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">📊</div>
-                    <h3>Data Analytics</h3>
-                    <p>Business intelligence solutions</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🤖</div>
-                    <h3>AI Integration</h3>
-                    <p>Machine learning applications</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">⚙️</div>
-                    <h3>Process Automation</h3>
-                    <p>Streamline your operations</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <footer>
-        <div class="footer-links">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Support</a>
-        </div>
-        <p>&copy; 2024 Corporate Solutions. All rights reserved.</p>
-    </footer>
-</body>
-</html>
-EOF
-
-    cat > /var/www/html/contact.html <<'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Us - Corporate Solutions</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">🏢 CorpSolutions</div>
-                <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="about.html">About</a></li>
-                    <li><a href="services.html">Services</a></li>
-                    <li><a href="contact.html">Contact</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-    
-    <section class="hero">
-        <div class="container">
-            <h1>Get in Touch</h1>
-            <p>We'd love to hear from you</p>
-        </div>
-    </section>
-    
-    <section class="section">
-        <div class="container">
-            <div class="features">
-                <div class="feature">
-                    <div class="feature-icon">📧</div>
-                    <h3>Email</h3>
-                    <p>contact@corpsolutions.com</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">📞</div>
-                    <h3>Phone</h3>
-                    <p>+1 (555) 123-4567</p>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">📍</div>
-                    <h3>Office</h3>
-                    <p>123 Business Ave, Suite 100<br>New York, NY 10001</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <footer>
-        <div class="footer-links">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Support</a>
-        </div>
-        <p>&copy; 2024 Corporate Solutions. All rights reserved.</p>
-    </footer>
-</body>
-</html>
-EOF
-}
-
-# Для экономии места, создам упрощенные версии остальных шаблонов
-# Они будут использовать разные уникальные стили
-
-# Шаблон 2: Tech Hub - Dark theme with neon accents
-create_tech_site() {
-    cat > /var/www/html/css/style.css <<'EOF'
-:root { --primary: #00ff88; --secondary: #0099ff; --dark: #0a0e27; --darker: #050816; }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Courier New', monospace; background: var(--darker); color: #fff; line-height: 1.6; }
-.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-header { background: var(--dark); border-bottom: 2px solid var(--primary); padding: 15px 0; position: sticky; top: 0; z-index: 1000; }
-nav { display: flex; justify-content: space-between; align-items: center; }
-nav .logo { font-size: 1.5em; color: var(--primary); text-shadow: 0 0 10px var(--primary); }
-nav ul { list-style: none; display: flex; gap: 20px; }
-nav a { color: #fff; text-decoration: none; transition: color 0.3s; }
-nav a:hover { color: var(--primary); }
-.hero { padding: 120px 0; text-align: center; background: linear-gradient(135deg, var(--dark), var(--darker)); }
-.hero h1 { font-size: 3.5em; margin-bottom: 20px; color: var(--primary); animation: glow 2s ease-in-out infinite alternate; }
-@keyframes glow { from { text-shadow: 0 0 20px var(--primary); } to { text-shadow: 0 0 30px var(--primary), 0 0 40px var(--secondary); } }
-.hero p { font-size: 1.3em; margin-bottom: 30px; color: #aaa; }
-.btn { display: inline-block; padding: 15px 40px; background: var(--primary); color: var(--dark); text-decoration: none; border-radius: 5px; font-weight: bold; transition: all 0.3s; border: 2px solid var(--primary); }
-.btn:hover { background: transparent; color: var(--primary); }
-.section { padding: 80px 0; }
-.section-title { text-align: center; font-size: 2.5em; margin-bottom: 50px; color: var(--secondary); }
-.tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
-.tech-card { background: var(--dark); padding: 30px; border-radius: 10px; border: 1px solid #333; transition: all 0.3s; }
-.tech-card:hover { border-color: var(--primary); transform: translateY(-5px); box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3); }
-.tech-card-icon { font-size: 3em; margin-bottom: 15px; }
-footer { background: var(--dark); color: #fff; padding: 40px 0; text-align: center; border-top: 2px solid var(--primary); }
-.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-.gallery-item { position: relative; overflow: hidden; border-radius: 10px; border: 2px solid var(--primary); }
-.gallery-item img { width: 100%; height: 250px; object-fit: cover; filter: grayscale(50%); transition: all 0.3s; }
-.gallery-item:hover img { filter: grayscale(0%); transform: scale(1.05); }
-EOF
-
-    cat > /var/www/html/index.html <<'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TechHub - Innovation Platform</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">&lt;TechHub/&gt;</div>
-                <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="about.html">About</a></li>
-                    <li><a href="services.html">Products</a></li>
-                    <li><a href="contact.html">Contact</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-    <section class="hero">
-        <div class="container">
-            <h1>$ Building The Future</h1>
-            <p>Next-generation technology for modern developers</p>
-            <a href="services.html" class="btn">Explore Tech Stack</a>
-        </div>
-    </section>
-    <section class="section">
-        <div class="container">
-            <h2 class="section-title">Core Technologies</h2>
-            <div class="tech-grid">
-                <div class="tech-card"><div class="tech-card-icon">⚡</div><h3>Lightning Fast</h3><p>Optimized performance at scale</p></div>
-                <div class="tech-card"><div class="tech-card-icon">🔐</div><h3>Secure by Design</h3><p>Enterprise-grade encryption</p></div>
-                <div class="tech-card"><div class="tech-card-icon">🚀</div><h3>Scalable</h3><p>From startup to enterprise</p></div>
-                <div class="tech-card"><div class="tech-card-icon">🤖</div><h3>AI Powered</h3><p>Machine learning integration</p></div>
-            </div>
-        </div>
-    </section>
-    <section class="section">
-        <div class="container">
-            <h2 class="section-title">Featured Projects</h2>
-            <div class="gallery">
-                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=31" alt="Project"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=32" alt="Project"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=33" alt="Project"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=34" alt="Project"></div>
-            </div>
-        </div>
-    </section>
-    <footer>
-        <p>&copy; 2024 TechHub. Built with passion.</p>
-    </footer>
-</body>
-</html>
-EOF
-
-    for page in about services contact; do
-        cat > /var/www/html/${page}.html <<EOF
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${page^} - TechHub</title><link rel="stylesheet" href="css/style.css"></head>
-<body>
-<header><div class="container"><nav><div class="logo">&lt;TechHub/&gt;</div><ul>
-<li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li>
-<li><a href="services.html">Products</a></li><li><a href="contact.html">Contact</a></li>
-</ul></nav></div></header>
-<section class="hero"><div class="container"><h1>${page^}</h1><p>Discover our technology solutions</p></div></section>
-<section class="section"><div class="container"><h2 class="section-title">Information</h2>
-<div class="tech-grid">
-<div class="tech-card"><div class="tech-card-icon">💡</div><h3>Innovation</h3><p>Cutting-edge solutions</p></div>
-<div class="tech-card"><div class="tech-card-icon">📊</div><h3>Analytics</h3><p>Data-driven insights</p></div>
-<div class="tech-card"><div class="tech-card-icon">🔧</div><h3>Tools</h3><p>Developer-friendly APIs</p></div>
-</div></div></section>
-<footer><p>&copy; 2024 TechHub. Built with passion.</p></footer>
-</body></html>
-EOF
-    done
-}
-
-# Шаблон 3: Cloud Services - Minimalist light design
-create_cloud_site() {
-    cat > /var/www/html/css/style.css <<'EOF'
-:root { --primary: #4facfe; --secondary: #00f2fe; --light: #f0f8ff; }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fff; color: #333; line-height: 1.8; }
-.container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-header { background: #fff; padding: 20px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
-nav { display: flex; justify-content: space-between; align-items: center; }
-nav .logo { font-size: 2em; font-weight: 300; color: var(--primary); }
-nav ul { list-style: none; display: flex; gap: 35px; }
-nav a { color: #555; text-decoration: none; font-weight: 500; transition: color 0.3s; }
-nav a:hover { color: var(--primary); }
-.hero { background: var(--light); padding: 100px 0; text-align: center; }
-.hero h1 { font-size: 3.8em; font-weight: 300; margin-bottom: 20px; color: #222; }
-.hero p { font-size: 1.4em; color: #666; margin-bottom: 30px; }
-.btn { display: inline-block; padding: 18px 45px; background: var(--primary); color: #fff; text-decoration: none; border-radius: 50px; font-weight: 500; transition: all 0.3s; box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3); }
-.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79, 172, 254, 0.4); }
-.section { padding: 90px 0; }
-.section-title { text-align: center; font-size: 2.8em; font-weight: 300; margin-bottom: 60px; color: #222; }
-.cloud-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
-.cloud-feature { background: #fff; padding: 40px; border-radius: 15px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); transition: all 0.3s; text-align: center; }
-.cloud-feature:hover { box-shadow: 0 10px 30px rgba(79, 172, 254, 0.2); transform: translateY(-5px); }
-.cloud-feature-icon { font-size: 3.5em; margin-bottom: 20px; }
-.cloud-feature h3 { font-size: 1.5em; font-weight: 500; margin-bottom: 15px; color: #333; }
-footer { background: var(--light); padding: 50px 0; text-align: center; color: #666; }
-.gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
-.gallery-item { border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-.gallery-item img { width: 100%; height: 300px; object-fit: cover; }
-EOF
-
-    cat > /var/www/html/index.html <<'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudServ - Infrastructure Solutions</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <header>
-        <div class="container">
-            <nav>
-                <div class="logo">☁️ CloudServ</div>
-                <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="about.html">About</a></li>
-                    <li><a href="services.html">Solutions</a></li>
-                    <li><a href="contact.html">Contact</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-    <section class="hero">
-        <div class="container">
-            <h1>The Cloud. Simplified.</h1>
-            <p>Deploy, scale, and manage your infrastructure with ease</p>
-            <a href="services.html" class="btn">Get Started Free</a>
-        </div>
-    </section>
-    <section class="section" style="background: #fafafa;">
-        <div class="container">
-            <h2 class="section-title">Why CloudServ</h2>
-            <div class="cloud-features">
-                <div class="cloud-feature"><div class="cloud-feature-icon">⚡</div><h3>Ultra Fast</h3><p>99.99% uptime guarantee with global CDN</p></div>
-                <div class="cloud-feature"><div class="cloud-feature-icon">🔒</div><h3>Secure</h3><p>Bank-level security and encryption</p></div>
-                <div class="cloud-feature"><div class="cloud-feature-icon">💰</div><h3>Cost Effective</h3><p>Pay only for what you use</p></div>
-            </div>
-        </div>
-    </section>
-    <section class="section">
-        <div class="container">
-            <h2 class="section-title">Trusted by Thousands</h2>
-            <div class="gallery">
-                <div class="gallery-item"><img src="https://picsum.photos/500/350?random=41" alt="Client"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/500/350?random=42" alt="Client"></div>
-            </div>
-        </div>
-    </section>
-    <footer>
-        <p>&copy; 2024 CloudServ. Simple, Secure, Scalable.</p>
-    </footer>
-</body>
-</html>
-EOF
-
-    for page in about services contact; do
-        cat > /var/www/html/${page}.html <<EOF
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${page^} - CloudServ</title><link rel="stylesheet" href="css/style.css"></head>
-<body>
-<header><div class="container"><nav><div class="logo">☁️ CloudServ</div><ul>
-<li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li>
-<li><a href="services.html">Solutions</a></li><li><a href="contact.html">Contact</a></li>
-</ul></nav></div></header>
-<section class="hero"><div class="container"><h1>${page^}</h1><p>Cloud infrastructure at your fingertips</p></div></section>
-<section class="section"><div class="container"><h2 class="section-title">Our Services</h2>
-<div class="cloud-features">
-<div class="cloud-feature"><div class="cloud-feature-icon">📦</div><h3>Storage</h3><p>Unlimited cloud storage</p></div>
-<div class="cloud-feature"><div class="cloud-feature-icon">🖥️</div><h3>Compute</h3><p>Powerful virtual machines</p></div>
-<div class="cloud-feature"><div class="cloud-feature-icon">🌐</div><h3>Network</h3><p>Global infrastructure</p></div>
-</div></div></section>
-<footer><p>&copy; 2024 CloudServ. Simple, Secure, Scalable.</p></footer>
-</body></html>
-EOF
-    done
-}
-
-# Остальные шаблоны с уникальными дизайнами (короткая версия для экономии места)
-create_fintech_site() { create_varied_site "FinTech" "💳" "Secure Payments" "Financial technology you can trust" "#43e97b" "#38f9d7" "modern" "Open Account" "Security" "Features"; }
-create_education_site() { create_varied_site "EduHub" "📚" "Learn Anything" "Education for the modern world" "#fa709a" "#fee140" "creative" "Start Learning" "Courses" "Instructors"; }
-create_media_site() { create_varied_site "MediaStream" "🎬" "Entertainment Hub" "Your favorite shows and movies" "#30cfd0" "#330867" "dark" "Watch Now" "Shows" "Schedule"; }
-create_ecommerce_site() { create_varied_site "ShopNow" "🛒" "Shop Smart" "Best deals online" "#a8edea" "#fed6e3" "modern" "Browse Products" "Categories" "Deals"; }
-create_gaming_site() { create_varied_site "GameVerse" "🎮" "Level Up" "Join millions of gamers" "#ff9a9e" "#fecfef" "dark" "Play Now" "Games" "Tournaments"; }
-create_social_site() { create_varied_site "SocialHub" "👥" "Connect & Share" "Where friends meet" "#ffecd2" "#fcb69f" "modern" "Join Now" "Features" "Community"; }
-create_analytics_site() { create_varied_site "DataPro" "📊" "Insights Driven" "Transform data to decisions" "#ff6e7f" "#bfe9ff" "creative" "Get Started" "Platform" "Analytics"; }
-create_crypto_site() { create_varied_site "CryptoTrade" "₿" "Trade Smart" "Secure crypto trading" "#e0c3fc" "#8ec5fc" "dark" "Start Trading" "Markets" "Security"; }
-create_travel_site() { create_varied_site "TravelWorld" "✈️" "Explore More" "Discover your next adventure" "#f77062" "#fe5196" "creative" "Book Trip" "Destinations" "Packages"; }
-create_fitness_site() { create_varied_site "FitPro" "💪" "Get Fit" "Your wellness journey starts here" "#c471f5" "#fa71cd" "modern" "Start Free" "Programs" "Trainers"; }
-create_news_site() { create_varied_site "NewsDaily" "📰" "Stay Informed" "Breaking news worldwide" "#667eea" "#764ba2" "modern" "Read More" "Top Stories" "Categories"; }
-create_music_site() { create_varied_site "MusicBox" "🎵" "Stream Music" "Millions of songs, one app" "#fccb90" "#d57eeb" "dark" "Listen Free" "Library" "Playlists"; }
-create_realestate_site() { create_varied_site "HomeFind" "🏠" "Find Your Home" "Dream homes await" "#e0c3fc" "#8ec5fc" "modern" "Search Homes" "Listings" "Agents"; }
-create_food_site() { create_varied_site "FoodFast" "🍕" "Order Food" "Delivered in 30 minutes" "#f093fb" "#f5576c" "creative" "Order Now" "Restaurants" "Menu"; }
-create_auto_site() { create_varied_site "AutoHub" "🚗" "Buy Vehicles" "Quality cars, best prices" "#4facfe" "#00f2fe" "modern" "Browse Cars" "Inventory" "Dealers"; }
-create_design_site() { create_varied_site "DesignCo" "🎨" "Creative Studio" "We bring ideas to life" "#fa709a" "#fee140" "creative" "View Work" "Portfolio" "Services"; }
-create_consulting_site() { create_varied_site "ConsultPro" "💼" "Expert Advice" "Business growth strategies" "#30cfd0" "#330867" "modern" "Get Consultation" "Services" "Experts"; }
-
-create_varied_site() {
-    local name=$1 icon=$2 title=$3 subtitle=$4 c1=$5 c2=$6 theme=$7 cta=$8 link1=$9 link2=${10}
-    
-    if [ "$theme" = "dark" ]; then
-        local bg="#1a1a2e" txt="#fff" card="#16213e"
-    elif [ "$theme" = "creative" ]; then
-        local bg="#fff" txt="#333" card="#f5f5f5"
-    else
-        local bg="#ffffff" txt="#222" card="#fafafa"
-    fi
-    
-    cat > /var/www/html/css/style.css <<EOF
-:root { --primary: ${c1}; --secondary: ${c2}; }
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto; background: ${bg}; color: ${txt}; line-height: 1.6; }
-.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-header { background: linear-gradient(90deg, var(--primary), var(--secondary)); padding: 18px 0; position: sticky; top: 0; z-index: 1000; }
-nav { display: flex; justify-content: space-between; align-items: center; }
-nav .logo { font-size: 1.8em; color: #fff; font-weight: bold; }
-nav ul { list-style: none; display: flex; gap: 25px; }
-nav a { color: #fff; text-decoration: none; transition: opacity 0.3s; }
-nav a:hover { opacity: 0.8; }
-.hero { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; padding: 100px 0; text-align: center; }
-.hero h1 { font-size: 3.2em; margin-bottom: 20px; }
-.hero p { font-size: 1.3em; margin-bottom: 30px; opacity: 0.95; }
-.btn { display: inline-block; padding: 16px 45px; background: #fff; color: var(--primary); text-decoration: none; border-radius: 50px; font-weight: 600; transition: transform 0.3s; }
-.btn:hover { transform: scale(1.05); }
-.section { padding: 70px 0; }
-.section-title { text-align: center; font-size: 2.3em; margin-bottom: 40px; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; }
-.card { background: ${card}; padding: 35px; border-radius: 12px; text-align: center; transition: transform 0.3s; }
-.card:hover { transform: translateY(-8px); }
-.card-icon { font-size: 3em; margin-bottom: 15px; }
-footer { background: linear-gradient(90deg, var(--primary), var(--secondary)); color: #fff; padding: 35px 0; text-align: center; }
-.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-.gallery-item { border-radius: 10px; overflow: hidden; }
-.gallery-item img { width: 100%; height: 250px; object-fit: cover; }
-EOF
-
-    cat > /var/www/html/index.html <<EOF
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${title} - ${name}</title><link rel="stylesheet" href="css/style.css"></head>
-<body>
-<header><div class="container"><nav><div class="logo">${icon} ${name}</div><ul>
-<li><a href="index.html">Home</a></li><li><a href="about.html">${link2}</a></li>
-<li><a href="services.html">${link1}</a></li><li><a href="contact.html">Contact</a></li>
-</ul></nav></div></header>
-<section class="hero"><div class="container"><h1>${title}</h1><p>${subtitle}</p>
-<a href="services.html" class="btn">${cta}</a></div></section>
-<section class="section"><div class="container"><h2 class="section-title">Why Choose Us</h2>
-<div class="grid">
-<div class="card"><div class="card-icon">🚀</div><h3>Fast</h3><p>Lightning speed performance</p></div>
-<div class="card"><div class="card-icon">🔐</div><h3>Secure</h3><p>Top-level security</p></div>
-<div class="card"><div class="card-icon">💡</div><h3>Smart</h3><p>Intelligent solutions</p></div>
-</div></div></section>
-<section class="section"><div class="container"><h2 class="section-title">Gallery</h2>
-<div class="gallery">
-<div class="gallery-item"><img src="https://picsum.photos/400/300?random=51" alt="Item"></div>
-<div class="gallery-item"><img src="https://picsum.photos/400/300?random=52" alt="Item"></div>
-<div class="gallery-item"><img src="https://picsum.photos/400/300?random=53" alt="Item"></div>
-<div class="gallery-item"><img src="https://picsum.photos/400/300?random=54" alt="Item"></div>
-</div></div></section>
-<footer><p>&copy; 2024 ${name}. All rights reserved.</p></footer>
-</body></html>
-EOF
-
-    for page in about services contact; do
-        cat > /var/www/html/${page}.html <<EOF
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${page^} - ${name}</title><link rel="stylesheet" href="css/style.css"></head>
-<body>
-<header><div class="container"><nav><div class="logo">${icon} ${name}</div><ul>
-<li><a href="index.html">Home</a></li><li><a href="about.html">${link2}</a></li>
-<li><a href="services.html">${link1}</a></li><li><a href="contact.html">Contact</a></li>
-</ul></nav></div></header>
-<section class="hero"><div class="container"><h1>${page^}</h1><p>Learn more about our services</p></div></section>
-<section class="section"><div class="container"><h2 class="section-title">Details</h2>
-<div class="grid">
-<div class="card"><div class="card-icon">📋</div><h3>Info</h3><p>Complete information</p></div>
-<div class="card"><div class="card-icon">💼</div><h3>Services</h3><p>Professional solutions</p></div>
-<div class="card"><div class="card-icon">🎯</div><h3>Results</h3><p>Proven success</p></div>
-</div></div></section>
-<footer><p>&copy; 2024 ${name}. All rights reserved.</p></footer>
-</body></html>
-EOF
-    done
-}
-
-# Список шаблонов
+# Список шаблонов: ID|Название
 get_templates_list() {
-    echo "1|Корпоративный портал|#667eea|#764ba2"
-    echo "2|Технологический хаб|#f093fb|#f5576c"
-    echo "3|Облачные сервисы|#4facfe|#00f2fe"
-    echo "4|Финтех платформа|#43e97b|#38f9d7"
-    echo "5|Образовательная платформа|#fa709a|#fee140"
-    echo "6|Медиа портал|#30cfd0|#330867"
-    echo "7|E-commerce хаб|#a8edea|#fed6e3"
-    echo "8|Игровой портал|#ff9a9e|#fecfef"
-    echo "9|Социальная сеть|#ffecd2|#fcb69f"
-    echo "10|Аналитический центр|#ff6e7f|#bfe9ff"
-    echo "11|Криптовалютная биржа|#e0c3fc|#8ec5fc"
-    echo "12|Туристическое агентство|#f77062|#fe5196"
-    echo "13|Фитнес платформа|#c471f5|#fa71cd"
-    echo "14|Новостной портал|#667eea|#764ba2"
-    echo "15|Музыкальный сервис|#fccb90|#d57eeb"
-    echo "16|Недвижимость онлайн|#e0c3fc|#8ec5fc"
-    echo "17|Доставка еды|#f093fb|#f5576c"
-    echo "18|Автомобильный портал|#4facfe|#00f2fe"
-    echo "19|Дизайн студия|#fa709a|#fee140"
-    echo "20|Консалтинг центр|#30cfd0|#330867"
+    echo "1|NexCore — Корпоративный портал"
+    echo "2|DevForge — Технологический хаб"
+    echo "3|Nimbus — Облачные сервисы"
+    echo "4|PayVault — Финтех платформа"
+    echo "5|LearnHub — Образовательная платформа"
+    echo "6|StreamBox — Медиа портал"
+    echo "7|ShopWave — E-commerce"
+    echo "8|NeonArena — Игровой портал"
+    echo "9|ConnectMe — Социальная сеть"
+    echo "10|DataPulse — Аналитический центр"
+    echo "11|CryptoNex — Крипто биржа"
+    echo "12|WanderWorld — Туристическое агентство"
+    echo "13|IronPulse — Фитнес платформа"
+    echo "14|ВестникПРО — Новостной портал"
+    echo "15|SoundWave — Музыкальный сервис"
+    echo "16|HomeNest — Недвижимость"
+    echo "17|FastBite — Доставка еды"
+    echo "18|AutoElite — Автомобильный портал"
+    echo "19|Prisma Studio — Дизайн студия"
+    echo "20|Vertex Advisory — Консалтинг центр"
 }
 
-# Применить конкретный шаблон
+# Применить конкретный шаблон (скачивание с GitHub)
 apply_template() {
     local template_id=$1
     
     local template_data=$(get_templates_list | grep "^${template_id}|")
     if [ -z "$template_data" ]; then
-        echo "Шаблон не найден"
+        echo -e "${RED}✖${NC} Шаблон #${template_id} не найден"
         return 1
     fi
     
-    IFS='|' read -r id name primary secondary <<< "$template_data"
+    IFS='|' read -r id name <<< "$template_data"
     
     echo -e "${BLUE}➜${NC}  Применение шаблона: ${GREEN}${name}${NC}"
     
-    create_template "$id" "$name" "$primary" "$secondary"
+    # Очищаем директорию (кроме метаданных)
+    find /var/www/html/ -mindepth 1 -not -name '.current_template' -not -name '.template_changed' -delete 2>/dev/null
     
-    echo "$name" > /var/www/.current_template
-    echo "$(date '+%Y-%m-%d %H:%M:%S')" > /var/www/.template_changed
+    # Скачиваем шаблон с GitHub
+    local base_url="https://raw.githubusercontent.com/DanteFuaran/Remna-install/main/templates/${template_id}"
+    local cache_bust="?t=$(date +%s)"
     
-    echo -e "${GREEN}✅${NC} Установлен шаблон: ${WHITE}${name}${NC}"
+    if curl -fsSL "${base_url}/index.html${cache_bust}" -o /var/www/html/index.html; then
+        echo "$name" > /var/www/.current_template
+        echo "$(date '+%Y-%m-%d %H:%M:%S')" > /var/www/.template_changed
+        echo -e "${GREEN}✅${NC} Установлен шаблон: ${WHITE}${name}${NC}"
+    else
+        echo -e "${RED}✖${NC} Ошибка загрузки шаблона. Проверьте интернет-соединение."
+        # Создаём заглушку на случай ошибки
+        echo "<html><body><h1>Site under maintenance</h1></body></html>" > /var/www/html/index.html
+        return 1
+    fi
 }
 
 # Случайный шаблон
@@ -3028,26 +2328,26 @@ manage_random_template() {
         1)
             # Выбор из списка
             show_arrow_menu "🎨 ВЫБЕРИТЕ ШАБЛОН" \
-                "🏢  Корпоративный портал" \
-                "💻  Технологический хаб" \
-                "☁️   Облачные сервисы" \
-                "💳  Финтех платформа" \
-                "📚  Образовательная платформа" \
-                "🎬  Медиа портал" \
-                "🛒  E-commerce хаб" \
-                "🎮  Игровой портал" \
-                "👥  Социальная сеть" \
-                "📊  Аналитический центр" \
-                "₿  Криптовалютная биржа" \
-                "✈️   Туристическое агентство" \
-                "💪  Фитнес платформа" \
-                "📰  Новостной портал" \
-                "🎵  Музыкальный сервис" \
-                "🏠  Недвижимость онлайн" \
-                "🍕  Доставка еды" \
-                "🚗  Автомобильный портал" \
-                "🎨  Дизайн студия" \
-                "💼  Консалтинг центр" \
+                "🏢  NexCore — Корпоративный портал" \
+                "💻  DevForge — Технологический хаб" \
+                "☁️   Nimbus — Облачные сервисы" \
+                "💳  PayVault — Финтех платформа" \
+                "📚  LearnHub — Образовательная платформа" \
+                "🎬  StreamBox — Медиа портал" \
+                "🛒  ShopWave — E-commerce" \
+                "🎮  NeonArena — Игровой портал" \
+                "👥  ConnectMe — Социальная сеть" \
+                "📊  DataPulse — Аналитический центр" \
+                "₿  CryptoNex — Крипто биржа" \
+                "✈️   WanderWorld — Туристическое агентство" \
+                "💪  IronPulse — Фитнес платформа" \
+                "📰  ВестникПРО — Новостной портал" \
+                "🎵  SoundWave — Музыкальный сервис" \
+                "🏠  HomeNest — Недвижимость" \
+                "🍕  FastBite — Доставка еды" \
+                "🚗  AutoElite — Автомобильный портал" \
+                "🎨  Prisma Studio — Дизайн студия" \
+                "💼  Vertex Advisory — Консалтинг центр" \
                 "❌  Назад"
             local template_choice=$?
             
