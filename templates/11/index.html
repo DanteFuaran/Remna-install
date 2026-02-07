@@ -87,7 +87,7 @@
                 </ul>
                 <div class="d-flex gap-2">
                     <a href="#" class="nav-link" style="color:var(--orange)!important">Войти</a>
-                    <button class="btn-trade" data-bs-toggle="modal" data-bs-target="#consultModal">Начать торговлю</button>
+                    <button class="btn-trade" onclick="alert('Регистрация временно недоступна')">Начать торговлю</button>
                 </div>
             </div>
         </div>
@@ -104,8 +104,8 @@
                     <h1>Торгуйте <span>криптовалютой</span> без ограничений</h1>
                     <p class="mt-3 mb-4" style="font-size:1.05rem;max-width:480px;line-height:1.6">Покупайте, продавайте и обменивайте более 200 криптовалют. Мгновенные транзакции, минимальные комиссии.</p>
                     <div class="d-flex gap-3 flex-wrap">
-                        <button data-bs-toggle="modal" data-bs-target="#consultModal" class="btn-trade px-5 py-3" style="font-size:1rem">Создать аккаунт <i class="bi bi-arrow-right ms-1"></i></button>
-                        <button class="btn btn-outline-secondary rounded-pill px-4" style="border-color:var(--border);color:#fff" data-bs-toggle="modal" data-bs-target="#consultModal">Демо-аккаунт</button>
+                        <button class="btn-trade px-5 py-3" onclick="alert('Регистрация временно недоступна')" style="font-size:1rem">Создать аккаунт <i class="bi bi-arrow-right ms-1"></i></button>
+                        <button class="btn btn-outline-secondary rounded-pill px-4" style="border-color:var(--border);color:#fff" onclick="alert('Демо-режим скоро будет доступен')">Демо-аккаунт</button>
                     </div>
                 </div>
                 <div class="col-lg-6">
@@ -144,11 +144,11 @@
                     <table>
                         <thead><tr><th>#</th><th>Актив</th><th>Цена</th><th>24ч</th><th>Капитализация</th><th></th></tr></thead>
                         <tbody>
-                            <tr><td>1</td><td><span class="coin-icon" style="background:#f7931a">₿</span><span class="coin-name">Bitcoin</span> <span class="coin-sym">BTC</span></td><td class="coin-price">$96,432</td><td class="up">+2.14%</td><td>$1.89T</td><td><button data-bs-toggle="modal" data-bs-target="#consultModal" class="btn-trade" style="padding:5px 14px;font-size:.75rem">Купить</button></td></tr>
-                            <tr><td>2</td><td><span class="coin-icon" style="background:#627eea">Ξ</span><span class="coin-name">Ethereum</span> <span class="coin-sym">ETH</span></td><td class="coin-price">$3,284</td><td class="up">+1.87%</td><td>$395B</td><td><button data-bs-toggle="modal" data-bs-target="#consultModal" class="btn-trade" style="padding:5px 14px;font-size:.75rem">Купить</button></td></tr>
-                            <tr><td>3</td><td><span class="coin-icon" style="background:linear-gradient(135deg,#9945ff,#14f195)">S</span><span class="coin-name">Solana</span> <span class="coin-sym">SOL</span></td><td class="coin-price">$178.50</td><td class="down">-0.92%</td><td>$82B</td><td><button data-bs-toggle="modal" data-bs-target="#consultModal" class="btn-trade" style="padding:5px 14px;font-size:.75rem">Купить</button></td></tr>
-                            <tr><td>4</td><td><span class="coin-icon" style="background:#f3ba2f">B</span><span class="coin-name">BNB</span> <span class="coin-sym">BNB</span></td><td class="coin-price">$612</td><td class="up">+3.41%</td><td>$91B</td><td><button data-bs-toggle="modal" data-bs-target="#consultModal" class="btn-trade" style="padding:5px 14px;font-size:.75rem">Купить</button></td></tr>
-                            <tr><td>5</td><td><span class="coin-icon" style="background:#0085c0">X</span><span class="coin-name">XRP</span> <span class="coin-sym">XRP</span></td><td class="coin-price">$2.18</td><td class="up">+5.23%</td><td>$124B</td><td><button data-bs-toggle="modal" data-bs-target="#consultModal" class="btn-trade" style="padding:5px 14px;font-size:.75rem">Купить</button></td></tr>
+                            <tr><td>1</td><td><span class="coin-icon" style="background:#f7931a">₿</span><span class="coin-name">Bitcoin</span> <span class="coin-sym">BTC</span></td><td class="coin-price">$96,432</td><td class="up">+2.14%</td><td>$1.89T</td><td><button class="btn-trade" style="padding:5px 14px;font-size:.75rem" onclick="alert('Покупка временно недоступна')">Купить</button></td></tr>
+                            <tr><td>2</td><td><span class="coin-icon" style="background:#627eea">Ξ</span><span class="coin-name">Ethereum</span> <span class="coin-sym">ETH</span></td><td class="coin-price">$3,284</td><td class="up">+1.87%</td><td>$395B</td><td><button class="btn-trade" style="padding:5px 14px;font-size:.75rem" onclick="alert('Покупка временно недоступна')">Купить</button></td></tr>
+                            <tr><td>3</td><td><span class="coin-icon" style="background:linear-gradient(135deg,#9945ff,#14f195)">S</span><span class="coin-name">Solana</span> <span class="coin-sym">SOL</span></td><td class="coin-price">$178.50</td><td class="down">-0.92%</td><td>$82B</td><td><button class="btn-trade" style="padding:5px 14px;font-size:.75rem" onclick="alert('Покупка временно недоступна')">Купить</button></td></tr>
+                            <tr><td>4</td><td><span class="coin-icon" style="background:#f3ba2f">B</span><span class="coin-name">BNB</span> <span class="coin-sym">BNB</span></td><td class="coin-price">$612</td><td class="up">+3.41%</td><td>$91B</td><td><button class="btn-trade" style="padding:5px 14px;font-size:.75rem" onclick="alert('Покупка временно недоступна')">Купить</button></td></tr>
+                            <tr><td>5</td><td><span class="coin-icon" style="background:#0085c0">X</span><span class="coin-name">XRP</span> <span class="coin-sym">XRP</span></td><td class="coin-price">$2.18</td><td class="up">+5.23%</td><td>$124B</td><td><button class="btn-trade" style="padding:5px 14px;font-size:.75rem" onclick="alert('Покупка временно недоступна')">Купить</button></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -176,7 +176,7 @@
                 <h3 style="color:#fff;font-weight:700;font-size:2rem;margin-bottom:8px">Начните торговать сегодня</h3>
                 <p class="mb-4" style="color:var(--text)">Бонус $50 при регистрации и первом пополнении</p>
                 <div class="d-flex justify-content-center gap-3 flex-wrap">
-                    <a data-bs-toggle="modal" data-bs-target="#consultModal" href="#" class="app-btn"><i class="bi bi-apple fs-4"></i><div class="text-start"><div style="font-size:.6rem;opacity:.7">Скачать в</div>App Store</div></a>
+                    <a href="#" class="app-btn"><i class="bi bi-apple fs-4"></i><div class="text-start"><div style="font-size:.6rem;opacity:.7">Скачать в</div>App Store</div></a>
                     <a href="#" class="app-btn"><i class="bi bi-google-play fs-4"></i><div class="text-start"><div style="font-size:.6rem;opacity:.7">Доступно в</div>Google Play</div></a>
                 </div>
             </div>
