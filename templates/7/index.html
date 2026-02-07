@@ -77,15 +77,15 @@
 
     <div class="cat-nav d-none d-md-block">
         <div class="container d-flex gap-1">
-            <a href="#" class="cat-link active">Все</a>
-            <a href="#" class="cat-link">Электроника</a>
-            <a href="#" class="cat-link">Одежда</a>
-            <a href="#" class="cat-link">Дом и сад</a>
-            <a href="#" class="cat-link">Спорт</a>
-            <a href="#" class="cat-link">Красота</a>
-            <a href="#" class="cat-link">Книги</a>
-            <a href="#" class="cat-link">Игрушки</a>
-            <a href="#" class="cat-link">Авто</a>
+            <a href="#" class="cat-link active" data-category="all">Все</a>
+            <a href="#" class="cat-link" data-category="electronics">Электроника</a>
+            <a href="#" class="cat-link" data-category="clothing">Одежда</a>
+            <a href="#" class="cat-link" data-category="home">Дом и сад</a>
+            <a href="#" class="cat-link" data-category="sport">Спорт</a>
+            <a href="#" class="cat-link" data-category="beauty">Красота</a>
+            <a href="#" class="cat-link" data-category="books">Книги</a>
+            <a href="#" class="cat-link" data-category="toys">Игрушки</a>
+            <a href="#" class="cat-link" data-category="auto">Авто</a>
         </div>
     </div>
 
@@ -127,16 +127,57 @@
                 </div>
                 <div class="col-lg-9">
                     <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h5 class="fw-700 mb-0"><span class="deals-timer"><i class="bi bi-lightning-charge-fill"></i> 05:42:18</span> Горячие предложения</h5>
+                        <h5 class="fw-700 mb-0"><span class="deals-timer"><i class="bi bi-lightning-charge-fill"></i> 05:42:18</span> <span id="categoryTitle">Горячие предложения</span></h5>
                         <a href="#" class="text-decoration-none" style="color:var(--orange);font-size:.9rem;font-weight:500">Все товары →</a>
                     </div>
-                    <div class="row g-3">
-                        <div class="col-6 col-md-4"><div class="product-card"><div class="position-relative"><span class="discount-badge">-35%</span><img src="https://picsum.photos/300/220?random=91" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(128)</span></div><div class="product-title">Беспроводные наушники ProMax Air с шумоподавлением</div><div class="mt-2"><span class="product-price">4 990 ₽</span> <span class="product-old-price">7 690 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
-                        <div class="col-6 col-md-4"><div class="product-card"><div class="position-relative"><span class="discount-badge">-20%</span><img src="https://picsum.photos/300/220?random=92" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(85)</span></div><div class="product-title">Смарт-часы FitBand Ultra 7 с GPS</div><div class="mt-2"><span class="product-price">12 490 ₽</span> <span class="product-old-price">15 590 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
-                        <div class="col-6 col-md-4"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=93" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(312)</span></div><div class="product-title">Портативная Bluetooth-колонка SoundMax</div><div class="mt-2"><span class="product-price">3 290 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
-                        <div class="col-6 col-md-4"><div class="product-card"><div class="position-relative"><span class="discount-badge">-40%</span><img src="https://picsum.photos/300/220?random=94" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(67)</span></div><div class="product-title">Игровая клавиатура MechForce RGB</div><div class="mt-2"><span class="product-price">5 990 ₽</span> <span class="product-old-price">9 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
-                        <div class="col-6 col-md-4"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=95" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(203)</span></div><div class="product-title">Рюкзак Urban Travel с USB зарядкой</div><div class="mt-2"><span class="product-price">2 790 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
-                        <div class="col-6 col-md-4"><div class="product-card"><div class="position-relative"><span class="discount-badge">-15%</span><img src="https://picsum.photos/300/220?random=96" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(441)</span></div><div class="product-title">Электрическая зубная щётка SonicCare</div><div class="mt-2"><span class="product-price">4 490 ₽</span> <span class="product-old-price">5 290 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                    <div class="row g-3" id="productsContainer">
+                        <!-- Электроника -->
+                        <div class="col-6 col-md-4 product-item" data-category="electronics"><div class="product-card"><div class="position-relative"><span class="discount-badge">-35%</span><img src="https://picsum.photos/300/220?random=91" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(128)</span></div><div class="product-title">Беспроводные наушники ProMax Air</div><div class="mt-2"><span class="product-price">4 990 ₽</span> <span class="product-old-price">7 690 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="electronics"><div class="product-card"><div class="position-relative"><span class="discount-badge">-20%</span><img src="https://picsum.photos/300/220?random=92" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(85)</span></div><div class="product-title">Смарт-часы FitBand Ultra 7 с GPS</div><div class="mt-2"><span class="product-price">12 490 ₽</span> <span class="product-old-price">15 590 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="electronics"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=93" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(312)</span></div><div class="product-title">Портативная Bluetooth-колонка SoundMax</div><div class="mt-2"><span class="product-price">3 290 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="electronics"><div class="product-card"><div class="position-relative"><span class="discount-badge">-40%</span><img src="https://picsum.photos/300/220?random=94" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(67)</span></div><div class="product-title">Игровая клавиатура MechForce RGB</div><div class="mt-2"><span class="product-price">5 990 ₽</span> <span class="product-old-price">9 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="electronics"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=101" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(156)</span></div><div class="product-title">Веб-камера HD Pro 1080p</div><div class="mt-2"><span class="product-price">3 490 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="electronics"><div class="product-card"><div class="position-relative"><span class="discount-badge">-25%</span><img src="https://picsum.photos/300/220?random=102" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(89)</span></div><div class="product-title">Powerbank 20000 mAh Quick Charge</div><div class="mt-2"><span class="product-price">2 990 ₽</span> <span class="product-old-price">3 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        
+                        <!-- Одежда -->
+                        <div class="col-6 col-md-4 product-item" data-category="clothing"><div class="product-card"><div class="position-relative"><span class="discount-badge">-50%</span><img src="https://picsum.photos/300/220?random=201" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(234)</span></div><div class="product-title">Джинсы Premium Denim Slim Fit</div><div class="mt-2"><span class="product-price">2 490 ₽</span> <span class="product-old-price">4 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="clothing"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=202" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(145)</span></div><div class="product-title">Куртка Urban Style ветровка</div><div class="mt-2"><span class="product-price">5 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="clothing"><div class="product-card"><div class="position-relative"><span class="discount-badge">-30%</span><img src="https://picsum.photos/300/220?random=203" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(89)</span></div><div class="product-title">Свитшот oversized базовый</div><div class="mt-2"><span class="product-price">1 990 ₽</span> <span class="product-old-price">2 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="clothing"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=204" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(312)</span></div><div class="product-title">Кроссовки Running Pro белые</div><div class="mt-2"><span class="product-price">4 490 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="clothing"><div class="product-card"><div class="position-relative"><span class="discount-badge">-40%</span><img src="https://picsum.photos/300/220?random=205" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(67)</span></div><div class="product-title">Платье летнее миди принт</div><div class="mt-2"><span class="product-price">2 990 ₽</span> <span class="product-old-price">4 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="clothing"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=206" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(178)</span></div><div class="product-title">Рубашка классическая хлопок</div><div class="mt-2"><span class="product-price">2 290 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+
+                        <!-- Дом и сад -->
+                        <div class="col-6 col-md-4 product-item" data-category="home"><div class="product-card"><div class="position-relative"><span class="discount-badge">-35%</span><img src="https://picsum.photos/300/220?random=301" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(456)</span></div><div class="product-title">Набор кухонных ножей 6 шт</div><div class="mt-2"><span class="product-price">3 490 ₽</span> <span class="product-old-price">5 390 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="home"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=302" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(234)</span></div><div class="product-title">Постельное белье сатин евро</div><div class="mt-2"><span class="product-price">2 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="home"><div class="product-card"><div class="position-relative"><span class="discount-badge">-20%</span><img src="https://picsum.photos/300/220?random=303" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(89)</span></div><div class="product-title">Органайзер для обуви 12 пар</div><div class="mt-2"><span class="product-price">1 590 ₽</span> <span class="product-old-price">1 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="home"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=304" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(567)</span></div><div class="product-title">Плед флисовый 200x220 см</div><div class="mt-2"><span class="product-price">1 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="home"><div class="product-card"><div class="position-relative"><span class="discount-badge">-45%</span><img src="https://picsum.photos/300/220?random=305" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(123)</span></div><div class="product-title">Увлажнитель воздуха ультразвук</div><div class="mt-2"><span class="product-price">2 190 ₽</span> <span class="product-old-price">3 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="home"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=306" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(234)</span></div><div class="product-title">Торшер LED с диммером</div><div class="mt-2"><span class="product-price">4 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+
+                        <!-- Спорт -->
+                        <div class="col-6 col-md-4 product-item" data-category="sport"><div class="product-card"><div class="position-relative"><span class="discount-badge">-30%</span><img src="https://picsum.photos/300/220?random=401" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(389)</span></div><div class="product-title">Коврик для йоги TPE 183x61 см</div><div class="mt-2"><span class="product-price">1 390 ₽</span> <span class="product-old-price">1 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="sport"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=402" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(156)</span></div><div class="product-title">Гантели разборные 2x10 кг</div><div class="mt-2"><span class="product-price">3 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="sport"><div class="product-card"><div class="position-relative"><span class="discount-badge">-25%</span><img src="https://picsum.photos/300/220?random=403" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(278)</span></div><div class="product-title">Фитнес-резинки набор 5 шт</div><div class="mt-2"><span class="product-price">890 ₽</span> <span class="product-old-price">1 190 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="sport"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=404" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(423)</span></div><div class="product-title">Скакалка скоростная с счетчиком</div><div class="mt-2"><span class="product-price">690 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="sport"><div class="product-card"><div class="position-relative"><span class="discount-badge">-40%</span><img src="https://picsum.photos/300/220?random=405" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(89)</span></div><div class="product-title">Велосипед горный 26 дюймов</div><div class="mt-2"><span class="product-price">17 990 ₽</span> <span class="product-old-price">29 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="sport"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=406" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(234)</span></div><div class="product-title">Бутылка спортивная 1л с трубочкой</div><div class="mt-2"><span class="product-price">590 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+
+                        <!-- Красота -->
+                        <div class="col-6 col-md-4 product-item" data-category="beauty"><div class="product-card"><div class="position-relative"><span class="discount-badge">-15%</span><img src="https://picsum.photos/300/220?random=501" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(441)</span></div><div class="product-title">Электрическая зубная щётка SonicCare</div><div class="mt-2"><span class="product-price">4 490 ₽</span> <span class="product-old-price">5 290 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="beauty"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=502" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(178)</span></div><div class="product-title">Набор кистей для макияжа 12 шт</div><div class="mt-2"><span class="product-price">1 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="beauty"><div class="product-card"><div class="position-relative"><span class="discount-badge">-50%</span><img src="https://picsum.photos/300/220?random=503" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(567)</span></div><div class="product-title">Сыворотка с витамином C 30 мл</div><div class="mt-2"><span class="product-price">990 ₽</span> <span class="product-old-price">1 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="beauty"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=504" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(312)</span></div><div class="product-title">Фен для волос ProDry 2000W</div><div class="mt-2"><span class="product-price">3 490 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="beauty"><div class="product-card"><div class="position-relative"><span class="discount-badge">-35%</span><img src="https://picsum.photos/300/220?random=505" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(89)</span></div><div class="product-title">Маска для лица с гиалуроном</div><div class="mt-2"><span class="product-price">790 ₽</span> <span class="product-old-price">1 210 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="beauty"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=506" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(234)</span></div><div class="product-title">Утюжок для волос керамика</div><div class="mt-2"><span class="product-price">2 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+
+                        <!-- Другие категории -->
+                        <div class="col-6 col-md-4 product-item" data-category="books"><div class="product-card"><div class="position-relative"><span class="discount-badge">-20%</span><img src="https://picsum.photos/300/220?random=601" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(567)</span></div><div class="product-title">Бестселлер "Атомные привычки"</div><div class="mt-2"><span class="product-price">790 ₽</span> <span class="product-old-price">990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="toys"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=701" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★★ <span class="text-muted">(234)</span></div><div class="product-title">Конструктор LEGO City 500 деталей</div><div class="mt-2"><span class="product-price">3 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        <div class="col-6 col-md-4 product-item" data-category="auto"><div class="product-card"><div class="position-relative"><span class="discount-badge">-30%</span><img src="https://picsum.photos/300/220?random=801" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(123)</span></div><div class="product-title">Видеорегистратор Full HD 1080p</div><div class="mt-2"><span class="product-price">2 790 ₽</span> <span class="product-old-price">3 990 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
+                        
+                        <!-- Дополнительные товары для "Все" -->
+                        <div class="col-6 col-md-4 product-item" data-category="electronics"><div class="product-card"><div class="position-relative"><img src="https://picsum.photos/300/220?random=95" class="product-img" alt=""></div><div class="product-body"><div class="rating mb-1">★★★★☆ <span class="text-muted">(203)</span></div><div class="product-title">Рюкзак Urban Travel с USB зарядкой</div><div class="mt-2"><span class="product-price">2 790 ₽</span></div><button class="btn-cart mt-2"><i class="bi bi-cart-plus me-1"></i>В корзину</button></div></div></div>
                     </div>
                 </div>
             </div>
@@ -207,6 +248,73 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">document.getElementById('consultForm')?.addEventListener('submit',function(e){e.preventDefault();this.classList.add('d-none');document.getElementById('successMessage').classList.remove('d-none');setTimeout(()=>{bootstrap.Modal.getInstance(document.getElementById('consultModal')).hide();this.reset();this.classList.remove('d-none');document.getElementById('successMessage').classList.add('d-none')},3000)});</script>
+    <script>
+        // Форма консультации
+        document.getElementById('consultForm')?.addEventListener('submit',function(e){
+            e.preventDefault();
+            this.classList.add('d-none');
+            document.getElementById('successMessage').classList.remove('d-none');
+            setTimeout(()=>{
+                bootstrap.Modal.getInstance(document.getElementById('consultModal')).hide();
+                this.reset();
+                this.classList.remove('d-none');
+                document.getElementById('successMessage').classList.add('d-none');
+            },3000);
+        });
+
+        // Фильтрация товаров по категориям
+        const categoryLinks = document.querySelectorAll('.cat-link');
+        const productItems = document.querySelectorAll('.product-item');
+        const categoryTitle = document.getElementById('categoryTitle');
+        
+        const categoryTitles = {
+            'all': 'Горячие предложения',
+            'electronics': 'Электроника',
+            'clothing': 'Одежда',
+            'home': 'Дом и сад',
+            'sport': 'Спорт',
+            'beauty': 'Красота',
+            'books': 'Книги',
+            'toys': 'Игрушки',
+            'auto': 'Авто'
+        };
+        
+        categoryLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Убираем active у всех ссылок
+                categoryLinks.forEach(l => l.classList.remove('active'));
+                // Добавляем active к выбранной
+                this.classList.add('active');
+                
+                const category = this.getAttribute('data-category');
+                
+                // Обновляем заголовок
+                if (categoryTitle && categoryTitles[category]) {
+                    categoryTitle.textContent = categoryTitles[category];
+                }
+                
+                // Фильтруем товары
+                productItems.forEach(item => {
+                    if (category === 'all') {
+                        item.style.display = '';
+                    } else {
+                        if (item.getAttribute('data-category') === category) {
+                            item.style.display = '';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    }
+                });
+                
+                // Прокручиваем к товарам
+                document.getElementById('productsContainer').scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            });
+        });
+    </script>
 </body>
 </html>
