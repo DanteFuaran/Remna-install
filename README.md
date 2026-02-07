@@ -1,6 +1,3 @@
-<p align="center">
-  <img src="https://remnawave.github.io/panel/og.png" width="600" alt="Remnawave">
-</p>
 
 <h1 align="center">Remna-install</h1>
 
