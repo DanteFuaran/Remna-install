@@ -168,12 +168,26 @@ show_arrow_menu() {
                         if [ $selected -lt 0 ]; then
                             selected=$((num_options - 1))
                         fi
+                        # Пропускаем разделители вверх
+                        while [[ "${options[$selected]}" =~ ^[─\s]*$ ]]; do
+                            ((selected--))
+                            if [ $selected -lt 0 ]; then
+                                selected=$((num_options - 1))
+                            fi
+                        done
                         ;;
                     'B')  # Стрелка вниз
                         ((selected++))
                         if [ $selected -ge $num_options ]; then
                             selected=0
                         fi
+                        # Пропускаем разделители вниз
+                        while [[ "${options[$selected]}" =~ ^[─\s]*$ ]]; do
+                            ((selected++))
+                            if [ $selected -ge $num_options ]; then
+                                selected=0
+                            fi
+                        done
                         ;;
                 esac
             fi
