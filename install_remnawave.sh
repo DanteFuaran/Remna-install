@@ -313,6 +313,20 @@ generate_webhook_secret() {
     openssl rand -hex 32
 }
 
+generate_admin_password() {
+    # Генерация пароля минимум 24 символа с заглавными, строчными буквами и цифрами
+    local upper=$(tr -dc 'A-Z' < /dev/urandom | head -c 8)
+    local lower=$(tr -dc 'a-z' < /dev/urandom | head -c 8)
+    local digits=$(tr -dc '0-9' < /dev/urandom | head -c 8)
+    # Перемешиваем и добавляем ещё символов для длины
+    echo "${upper}${lower}${digits}" | fold -w1 | shuf | tr -d '\n' && tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 8
+}
+
+generate_admin_username() {
+    # Генерация логина из случайного слова + цифр
+    echo "admin$(openssl rand -hex 4)"
+}
+
 # ═══════════════════════════════════════════════
 # РАБОТА С ДОМЕНАМИ
 # ═══════════════════════════════════════════════
@@ -1552,16 +1566,15 @@ installation_full() {
     reading "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN
     check_domain "$SELFSTEAL_DOMAIN" true || return
 
-    # Учётные данные администратора
+    # Автогенерация учётных данных администратора
     echo
-    echo -e "${YELLOW}👤 УЧЁТНЫЕ ДАННЫЕ АДМИНИСТРАТОРА${NC}"
-    reading "Логин администратора:" SUPERADMIN_USERNAME
-    reading "Пароль администратора:" SUPERADMIN_PASSWORD
-
-    if [ -z "$SUPERADMIN_USERNAME" ] || [ -z "$SUPERADMIN_PASSWORD" ]; then
-        print_error "Логин и пароль не могут быть пустыми"
-        return
-    fi
+    echo -e "${YELLOW}👤 ГЕНЕРАЦИЯ УЧЁТНЫХ ДАННЫХ АДМИНИСТРАТОРА${NC}"
+    local SUPERADMIN_USERNAME
+    local SUPERADMIN_PASSWORD
+    SUPERADMIN_USERNAME=$(generate_admin_username)
+    SUPERADMIN_PASSWORD=$(generate_admin_password)
+    
+    echo -e "${DARKGRAY}Логин и пароль будут созданы автоматически и показаны в конце установки${NC}"
 
     # Название ноды
     echo
@@ -2057,108 +2070,73 @@ EOL
 change_credentials() {
     clear
     echo -e "${BLUE}════════════════════════════════════════${NC}"
-    echo -e "${GREEN}   🔐 ИЗМЕНЕНИЕ УЧЕТНЫХ ДАННЫХ${NC}"
+    echo -e "${GREEN}   🔐 СБРОС СУПЕРАДМИНА${NC}"
     echo -e "${BLUE}════════════════════════════════════════${NC}"
     echo
+    echo -e "${YELLOW}⚠️  ВНИМАНИЕ!${NC}"
+    echo -e "${WHITE}Эта операция удалит текущего суперадмина из базы данных.${NC}"
+    echo -e "${WHITE}При следующем входе в панель вам будет предложено${NC}"
+    echo -e "${WHITE}создать нового суперадмина.${NC}"
+    echo
+    reading "Вы уверены? (yes/no):" CONFIRM
 
-    reading "Текущий логин:" OLD_USERNAME
-    if [ -z "$OLD_USERNAME" ]; then
-        print_error "Логин не может быть пустым"
-        sleep 2
-        return
-    fi
-
-    reading "Текущий пароль:" OLD_PASSWORD
-    if [ -z "$OLD_PASSWORD" ]; then
-        print_error "Пароль не может быть пустым"
-        sleep 2
-        return
-    fi
-
-    reading "Новый логин:" NEW_USERNAME
-    if [ -z "$NEW_USERNAME" ]; then
-        print_error "Логин не может быть пустым"
-        sleep 2
-        return
-    fi
-
-    reading "Новый пароль:" NEW_PASSWORD
-    if [ -z "$NEW_PASSWORD" ]; then
-        print_error "Пароль не может быть пустым"
+    if [ "$CONFIRM" != "yes" ]; then
+        print_error "Операция отменена"
         sleep 2
         return
     fi
 
     echo
-    print_action "Изменение учетных данных через API..."
+    print_action "Сброс суперадмина..."
 
-    local domain_url="127.0.0.1:3000"
+    # Останавливаем панель
+    (
+        cd /opt/remnawave
+        docker compose stop remnawave >/dev/null 2>&1
+    ) &
+    show_spinner "Остановка панели"
 
-    # Авторизация со старыми данными
-    local login_data='{"username":"'"$OLD_USERNAME"'","password":"'"$OLD_PASSWORD"'"}'
-    local response
-    response=$(curl -s -X POST "http://$domain_url/api/auth/login" \
-        -H "Content-Type: application/json" \
-        -H "X-Forwarded-For: 127.0.0.1" \
-        -H "X-Forwarded-Proto: https" \
-        -d "$login_data")
+    # Подключаемся к базе и удаляем суперадмина
+    docker exec -i remnawave-db psql -U postgres -d postgres <<'EOSQL' >/dev/null 2>&1
+DELETE FROM "User" WHERE "role" = 'SUPER_DEV';
+EOSQL
 
-    local token
-    token=$(echo "$response" | jq -r '.response.accessToken // empty' 2>/dev/null)
-
-    if [ -z "$token" ]; then
-        print_error "Не удалось авторизоваться. Проверьте текущие учетные данные"
-        echo
-        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
-        return
-    fi
-
-    # Получаем UUID пользователя
-    local user_response
-    user_response=$(curl -s -X GET "http://$domain_url/api/users/me" \
-        -H "Authorization: Bearer $token" \
-        -H "Content-Type: application/json" \
-        -H "X-Forwarded-For: 127.0.0.1" \
-        -H "X-Forwarded-Proto: https")
-
-    local user_uuid
-    user_uuid=$(echo "$user_response" | jq -r '.response.uuid // empty' 2>/dev/null)
-
-    if [ -z "$user_uuid" ]; then
-        print_error "Не удалось получить данные пользователя"
-        echo
-        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
-        return
-    fi
-
-    # Обновляем учетные данные
-    local update_data='{"username":"'"$NEW_USERNAME"'","password":"'"$NEW_PASSWORD"'"}'
-    local update_response
-    update_response=$(curl -s -X PATCH "http://$domain_url/api/users/$user_uuid" \
-        -H "Authorization: Bearer $token" \
-        -H "Content-Type: application/json" \
-        -H "X-Forwarded-For: 127.0.0.1" \
-        -H "X-Forwarded-Proto: https" \
-        -d "$update_data")
-
-    if echo "$update_response" | jq -e '.response' >/dev/null 2>&1; then
-        print_success "Учетные данные успешно изменены!"
-        echo
-        echo -e "${WHITE}Новый логин:${NC}  $NEW_USERNAME"
-        echo -e "${WHITE}Новый пароль:${NC} $NEW_PASSWORD"
-        echo
-        echo -e "${YELLOW}💡 Сохраните новые учетные данные в безопасном месте${NC}"
+    if [ $? -eq 0 ]; then
+        print_success "Суперадмин удалён из базы данных"
     else
-        print_error "Не удалось изменить учетные данные"
-        local error_msg
-        error_msg=$(echo "$update_response" | jq -r '.message // "Неизвестная ошибка"' 2>/dev/null)
-        echo -e "${RED}Ошибка: $error_msg${NC}"
+        print_error "Не удалось удалить суперадмина"
+        # Запускаем панель обратно
+        (
+            cd /opt/remnawave
+            docker compose start remnawave >/dev/null 2>&1
+        ) &
+        show_spinner "Запуск панели"
+        sleep 2
+        return
     fi
 
+    # Запускаем панель обратно
+    (
+        cd /opt/remnawave
+        docker compose start remnawave >/dev/null 2>&1
+    ) &
+    show_spinner "Запуск панели"
+
+    # Ждём готовности
+    show_spinner_timer 10 "Ожидание запуска панели"
+
+    echo
+    echo -e "${GREEN}✅ Сброс выполнен успешно!${NC}"
+    echo
+    echo -e "${WHITE}При следующем входе в панель вы сможете создать${NC}"
+    echo -e "${WHITE}нового суперадмина с любым логином и паролем.${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
 }
 
+# ═══════════════════════════════════════════════
+# УПРАВЛЕНИЕ: СЛУЧАЙНЫЙ ШАБЛОН
+# ═══════════════════════════════════════════════
 manage_start() {
     (
         cd /opt/remnawave
@@ -2391,7 +2369,7 @@ main_menu() {
                 "▶️   Запустить сервисы" \
                 "⏹️   Остановить сервисы" \
                 "📋  Просмотр логов" \
-                "🔐  Изменить логин и пароль" \
+                "🔐  Сбросить суперадмина" \
                 "🎨  Случайный шаблон selfsteal" \
                 "🔄  Переустановить" \
                 "🔄  Обновить скрипт" \
