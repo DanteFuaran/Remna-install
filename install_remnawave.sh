@@ -101,11 +101,10 @@ show_arrow_menu() {
     local options=("$@")
     local num_options=${#options[@]}
     local selected=0
-    local original_stty
-    original_stty=$(stty -g 2>/dev/null)
-
-    tput civis 2>/dev/null || true
-    stty -icanon -echo min 1 time 0 2>/dev/null || true
+    
+    # Сохраняем текущие настройки терминала
+    local old_tty_settings
+    old_tty_settings=$(stty -g)
 
     while true; do
         clear
@@ -126,32 +125,40 @@ show_arrow_menu() {
         echo -e "${BLUE}════════════════════════════════════════${NC}"
         echo -e "${DARKGRAY}Используйте ↑↓ для навигации, Enter для выбора${NC}"
 
+        # Читаем один символ без эха
+        stty raw -echo
         local key
-        read -rsn1 key 2>/dev/null || key=""
+        key=$(dd bs=1 count=1 2>/dev/null)
+        stty "$old_tty_settings"
 
-        if [[ "$key" == $'\e' ]]; then
-            local seq1="" seq2=""
-            read -rsn1 -t 0.1 seq1 2>/dev/null || seq1=""
-            if [[ "$seq1" == '[' ]]; then
-                read -rsn1 -t 0.1 seq2 2>/dev/null || seq2=""
-                case "$seq2" in
-                    'A') ((selected--)); [ $selected -lt 0 ] && selected=$((num_options - 1)) ;;
-                    'B') ((selected++)); [ $selected -ge $num_options ] && selected=0 ;;
-                esac
-            fi
-        else
-            local key_code
-            if [ -n "$key" ]; then
-                key_code=$(printf '%d' "'$key" 2>/dev/null || echo 0)
-            else
-                key_code=13
-            fi
-            if [ "$key_code" -eq 10 ] || [ "$key_code" -eq 13 ]; then
-                stty "$original_stty" 2>/dev/null || true
-                tput cnorm 2>/dev/null || true
+        # Обрабатываем нажатие клавиши
+        case "$key" in
+            $'\x1b')  # ESC - начало escape-последовательности
+                # Читаем следующие символы для стрелок
+                stty raw -echo
+                local key2 key3
+                key2=$(dd bs=1 count=1 2>/dev/null)
+                key3=$(dd bs=1 count=1 2>/dev/null)
+                stty "$old_tty_settings"
+                
+                if [[ "$key2" == "[" ]]; then
+                    case "$key3" in
+                        A)  # Стрелка вверх
+                            ((selected--))
+                            [ $selected -lt 0 ] && selected=$((num_options - 1))
+                            ;;
+                        B)  # Стрелка вниз
+                            ((selected++))
+                            [ $selected -ge $num_options ] && selected=0
+                            ;;
+                    esac
+                fi
+                ;;
+            $'\x0a'|$'\x0d')  # Enter (LF или CR)
+                stty "$old_tty_settings"
                 return $selected
-            fi
-        fi
+                ;;
+        esac
     done
 }
 
