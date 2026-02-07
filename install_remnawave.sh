@@ -1675,6 +1675,24 @@ installation_full() {
     echo
     echo -e "${RED}⚠️  СОХРАНИТЕ ЭТИ ДАННЫЕ! Они больше не будут показаны.${NC}"
     echo
+
+    # Сохраняем учетные данные
+    mkdir -p /opt/remnawave/.config
+    cat > /opt/remnawave/.config/credentials <<EOF
+USERNAME=$SUPERADMIN_USERNAME
+PASSWORD=$SUPERADMIN_PASSWORD
+EOF
+    chmod 600 /opt/remnawave/.config/credentials
+
+
+    # Сохраняем учетные данные
+    mkdir -p /opt/remnawave/.config
+    cat > /opt/remnawave/.config/credentials <<EOF
+USERNAME=$SUPERADMIN_USERNAME
+PASSWORD=$SUPERADMIN_PASSWORD
+EOF
+    chmod 600 /opt/remnawave/.config/credentials
+
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
 
@@ -1945,6 +1963,138 @@ EOL
 # ═══════════════════════════════════════════════
 # УПРАВЛЕНИЕ
 # ═══════════════════════════════════════════════
+show_credentials() {
+    if [ ! -f "/opt/remnawave/.config/credentials" ]; then
+        print_error "Файл с учетными данными не найден"
+        echo -e "${YELLOW}Возможно установка еще не выполнена${NC}"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        return
+    fi
+
+    source /opt/remnawave/.config/credentials
+
+    clear
+    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${GREEN}   🔑 УЧЕТНЫЕ ДАННЫЕ АДМИНИСТРАТОРА${NC}"
+    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo
+    echo -e "${WHITE}Логин:${NC}        $USERNAME"
+    echo -e "${WHITE}Пароль:${NC}       $PASSWORD"
+    echo
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+}
+
+change_credentials() {
+    if [ ! -f "/opt/remnawave/.config/credentials" ]; then
+        print_error "Файл с учетными данными не найден"
+        echo -e "${YELLOW}Возможно установка еще не выполнена${NC}"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        return
+    fi
+
+    source /opt/remnawave/.config/credentials
+    local OLD_USERNAME=$USERNAME
+    local OLD_PASSWORD=$PASSWORD
+
+    clear
+    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${GREEN}   🔐 ИЗМЕНЕНИЕ УЧЕТНЫХ ДАННЫХ${NC}"
+    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo
+    echo -e "${YELLOW}Текущий логин:${NC} $OLD_USERNAME"
+    echo
+
+    reading "Новый логин:" NEW_USERNAME
+    if [ -z "$NEW_USERNAME" ]; then
+        print_error "Логин не может быть пустым"
+        sleep 2
+        return
+    fi
+
+    reading "Новый пароль:" NEW_PASSWORD
+    if [ -z "$NEW_PASSWORD" ]; then
+        print_error "Пароль не может быть пустым"
+        sleep 2
+        return
+    fi
+
+    echo
+    print_action "Изменение учетных данных через API..."
+
+    local domain_url="127.0.0.1:3000"
+
+    # Авторизация со старыми данными
+    local login_data='{"username":"'"$OLD_USERNAME"'","password":"'"$OLD_PASSWORD"'"}'
+    local response
+    response=$(curl -s -X POST "http://$domain_url/api/auth/login" \
+        -H "Content-Type: application/json" \
+        -H "X-Forwarded-For: 127.0.0.1" \
+        -H "X-Forwarded-Proto: https" \
+        -d "$login_data")
+
+    local token
+    token=$(echo "$response" | jq -r '.response.accessToken // empty' 2>/dev/null)
+
+    if [ -z "$token" ]; then
+        print_error "Не удалось авторизоваться. Проверьте текущие учетные данные"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        return
+    fi
+
+    # Получаем UUID пользователя
+    local user_response
+    user_response=$(curl -s -X GET "http://$domain_url/api/users/me" \
+        -H "Authorization: Bearer $token" \
+        -H "Content-Type: application/json" \
+        -H "X-Forwarded-For: 127.0.0.1" \
+        -H "X-Forwarded-Proto: https")
+
+    local user_uuid
+    user_uuid=$(echo "$user_response" | jq -r '.response.uuid // empty' 2>/dev/null)
+
+    if [ -z "$user_uuid" ]; then
+        print_error "Не удалось получить данные пользователя"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        return
+    fi
+
+    # Обновляем учетные данные
+    local update_data='{"username":"'"$NEW_USERNAME"'","password":"'"$NEW_PASSWORD"'"}'
+    local update_response
+    update_response=$(curl -s -X PATCH "http://$domain_url/api/users/$user_uuid" \
+        -H "Authorization: Bearer $token" \
+        -H "Content-Type: application/json" \
+        -H "X-Forwarded-For: 127.0.0.1" \
+        -H "X-Forwarded-Proto: https" \
+        -d "$update_data")
+
+    if echo "$update_response" | jq -e '.response' >/dev/null 2>&1; then
+        # Сохраняем новые учетные данные
+        cat > /opt/remnawave/.config/credentials <<EOF
+USERNAME=$NEW_USERNAME
+PASSWORD=$NEW_PASSWORD
+EOF
+        chmod 600 /opt/remnawave/.config/credentials
+
+        print_success "Учетные данные успешно изменены!"
+        echo
+        echo -e "${WHITE}Новый логин:${NC}  $NEW_USERNAME"
+        echo -e "${WHITE}Новый пароль:${NC} $NEW_PASSWORD"
+    else
+        print_error "Не удалось изменить учетные данные"
+        local error_msg
+        error_msg=$(echo "$update_response" | jq -r '.message // "Неизвестная ошибка"' 2>/dev/null)
+        echo -e "${RED}Ошибка: $error_msg${NC}"
+    fi
+
+    echo
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+}
+
 manage_start() {
     (
         cd /opt/remnawave
@@ -2177,6 +2327,8 @@ main_menu() {
                 "▶️   Запустить сервисы" \
                 "⏹️   Остановить сервисы" \
                 "📋  Просмотр логов" \
+                "🔑  Показать логин и пароль" \
+                "🔐  Изменить логин и пароль" \
                 "🎨  Случайный шаблон selfsteal" \
                 "🔄  Переустановить" \
                 "🔄  Обновить скрипт" \
@@ -2218,11 +2370,13 @@ main_menu() {
                 2) manage_start ;;
                 3) manage_stop ;;
                 4) manage_logs ;;
-                5) manage_random_template ;;
-                6) manage_reinstall ;;
-                7) update_script ;;
-                8) remove_script ;;
-                9) clear; exit 0 ;;
+                5) show_credentials ;;
+                6) change_credentials ;;
+                7) manage_random_template ;;
+                8) manage_reinstall ;;
+                9) update_script ;;
+                10) remove_script ;;
+                11) clear; exit 0 ;;
             esac
         else
             show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
