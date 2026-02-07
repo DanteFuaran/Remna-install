@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="1.4.0"
+SCRIPT_VERSION="1.5.0"
 DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
