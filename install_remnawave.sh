@@ -2398,14 +2398,13 @@ install_script() {
 # ═══════════════════════════════════════════════
 main_menu() {
     while true; do
-        clear
-        
         # Проверка наличия обновлений
         if [ -f /tmp/remna_update_available ]; then
+            clear
             local new_version
             new_version=$(cat /tmp/remna_update_available)
             show_update_notification "$new_version"
-            sleep 2
+            read -t 3 -n 1 -s || true
         fi
         
         local is_installed=false
