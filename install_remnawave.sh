@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="1.5.0"
+SCRIPT_VERSION="1.5.1"
 DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
@@ -802,14 +802,26 @@ create_api_token() {
 # ШАБЛОНЫ SELFSTEAL
 # ═══════════════════════════════════════════════
 randomhtml() {
+    # Массив шаблонов с названиями: "URL|Название"
     local templates=(
-        "https://github.com/eGamesAPI/simple-web-templates/archive/refs/heads/main.zip"
-        "https://github.com/eGamesAPI/sni-templates/archive/refs/heads/main.zip"
-        "https://github.com/eGamesAPI/nothing-sni/archive/refs/heads/main.zip"
+        "https://github.com/eGamesAPI/simple-web-templates/archive/refs/heads/main.zip|Простые веб-шаблоны"
+        "https://github.com/eGamesAPI/sni-templates/archive/refs/heads/main.zip|SNI маскировка"
+        "https://github.com/eGamesAPI/nothing-sni/archive/refs/heads/main.zip|Минималистичный стиль"
+        "https://github.com/ColorlibHQ/AdminLTE/archive/refs/heads/master.zip|Админ панель"
+        "https://github.com/creativetimofficial/material-dashboard/archive/refs/heads/master.zip|Material дизайн"
+        "https://github.com/puikinsh/Adminator-admin-dashboard/archive/refs/heads/master.zip|Современный дашборд"
+        "https://github.com/themefisher/small-apps-free-app-landing-page-template/archive/refs/heads/master.zip|Лендинг приложения"
+        "https://github.com/leroyg/html5up-paradigm-shift/archive/refs/heads/master.zip|HTML5 стиль"
+        "https://github.com/startbootstrap/startbootstrap-agency/archive/refs/heads/master.zip|Корпоративный стиль"
+        "https://github.com/thomaspark/bootswatch/archive/refs/heads/master.zip|Bootstrap темы"
     )
 
     local random_index=$((RANDOM % ${#templates[@]}))
-    local template_url="${templates[$random_index]}"
+    local selected="${templates[$random_index]}"
+    local template_url="${selected%%|*}"
+    local template_name="${selected##*|}"
+
+    echo -e "${BLUE}➜${NC}  Выбран шаблон: ${GREEN}${template_name}${NC}"
 
     (
         local tmp_dir
@@ -827,14 +839,27 @@ randomhtml() {
             dirs=($(find "$extracted_dir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null))
             if [ ${#dirs[@]} -gt 0 ]; then
                 local random_dir="${dirs[$((RANDOM % ${#dirs[@]}))]}"
+                local subtemplate_name=$(basename "$random_dir")
                 rm -rf /var/www/html/*
                 cp -r "$random_dir"/* /var/www/html/ 2>/dev/null || true
+                echo "$template_name ($subtemplate_name)" > /var/www/.current_template
+            else
+                # Если нет подпапок, используем весь контент
+                rm -rf /var/www/html/*
+                cp -r "$extracted_dir"/* /var/www/html/ 2>/dev/null || true
+                echo "$template_name" > /var/www/.current_template
             fi
         fi
 
         rm -rf "$tmp_dir"
     ) &
-    show_spinner "Установка случайного шаблона"
+    show_spinner "Установка шаблона: ${template_name}"
+    
+    # Выводим информацию после установки
+    if [ -f /var/www/.current_template ]; then
+        local installed=$(cat /var/www/.current_template)
+        echo -e "${GREEN}✅${NC} Установлен: ${WHITE}${installed}${NC}"
+    fi
 }
 
 # ═══════════════════════════════════════════════
