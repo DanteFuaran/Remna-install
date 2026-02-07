@@ -5,14 +5,22 @@ DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
 # ═══════════════════════════════════════════════
-# ВОССТАНОВЛЕНИЕ ТЕРМИНАЛА
+# ВОССТАНОВЛЕНИЕ ТЕРМИНАЛА И ОБРАБОТКА ПРЕРЫВАНИЙ
 # ═══════════════════════════════════════════════
 cleanup_terminal() {
     stty sane 2>/dev/null || true
     tput cnorm 2>/dev/null || true
 }
 
-trap cleanup_terminal EXIT INT TERM
+handle_interrupt() {
+    cleanup_terminal
+    echo
+    echo -e "${YELLOW}Скрипт прерван пользователем${NC}"
+    exit 130
+}
+
+trap cleanup_terminal EXIT
+trap handle_interrupt INT TERM
 
 # ═══════════════════════════════════════════════
 # ЦВЕТА
@@ -186,8 +194,9 @@ show_arrow_menu() {
 reading() {
     local prompt="$1"
     local var_name="$2"
-    echo -ne "${YELLOW}$prompt${NC} "
-    read -r $var_name
+    local input
+    read -e -p "$(echo -e "${YELLOW}$prompt${NC} ")" input
+    eval "$var_name='$input'"
 }
 
 # ═══════════════════════════════════════════════
@@ -339,9 +348,9 @@ check_domain() {
     if [ "$check_ip" = true ] && [ "$domain_ip" != "$server_ip" ]; then
         print_error "Домен $domain ($domain_ip) не указывает на этот сервер ($server_ip)"
         echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно (DNS Only, без прокси Cloudflare)${NC}"
-        echo -ne "${YELLOW}Продолжить всё равно? [y/N]: ${NC}"
+        echo
         local confirm
-        read -r confirm
+        read -e -p "$(echo -e "${YELLOW}Продолжить всё равно? [y/N]: ${NC}")" confirm
         if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
             return 2
         fi
@@ -740,6 +749,10 @@ generate_env_file() {
     jwt_api_secret=$(generate_secret)
     local webhook_secret
     webhook_secret=$(generate_webhook_secret)
+    local metrics_user
+    metrics_user=$(generate_username)
+    local metrics_pass
+    metrics_pass=$(generate_password)
 
     cat > /opt/remnawave/.env <<EOL
 ### APP ###
@@ -747,9 +760,13 @@ APP_PORT=3000
 METRICS_PORT=3001
 
 ### API ###
+# Possible values: max (start instances on all cores), number (start instances on number of cores), -1 (start instances on all cores - 1)
+# !!! Do not set this value more than physical cores count in your machine !!!
+# Review documentation: https://remna.st/docs/install/environment-variables#scaling-api
 API_INSTANCES=1
 
 ### DATABASE ###
+# FORMAT: postgresql://{user}:{password}@{host}:{port}/{database}
 DATABASE_URL="postgresql://postgres:postgres@remnawave-db:5432/postgres"
 
 ### REDIS ###
@@ -760,41 +777,70 @@ REDIS_PORT=6379
 JWT_AUTH_SECRET=$jwt_auth_secret
 JWT_API_TOKENS_SECRET=$jwt_api_secret
 
-# Session idle timeout (format: 1d, 7d, 30d)
-JWT_ACCESS_TOKEN_TTL=1d
+# Set the session idle timeout in the panel to avoid daily logins.
+# Value in hours: 12–168
+JWT_AUTH_LIFETIME=168
 
-### NODES ###
-PLAIN_CONNECTIONS=false
-SECURE_CONNECTIONS=true
+### TELEGRAM NOTIFICATIONS ###
+IS_TELEGRAM_NOTIFICATIONS_ENABLED=false
+TELEGRAM_BOT_TOKEN=change_me
+TELEGRAM_NOTIFY_USERS_CHAT_ID=change_me
+TELEGRAM_NOTIFY_NODES_CHAT_ID=change_me
+TELEGRAM_NOTIFY_CRM_CHAT_ID=change_me
 
-### FRONT ###
+# Optional
+# Only set if you want to use topics
+TELEGRAM_NOTIFY_USERS_THREAD_ID=
+TELEGRAM_NOTIFY_NODES_THREAD_ID=
+TELEGRAM_NOTIFY_CRM_THREAD_ID=
+
+### FRONT_END ###
+# Used by CORS, you can leave it as * or place your domain there
 FRONT_END_DOMAIN=$panel_domain
 
-### SUBSCRIPTION ###
+### SUBSCRIPTION PUBLIC DOMAIN ###
+### DOMAIN, WITHOUT HTTP/HTTPS, DO NOT ADD / AT THE END ###
+### Used in "profile-web-page-url" response header and in UI/API ###
+### Review documentation: https://remna.st/docs/install/environment-variables#domains
 SUB_PUBLIC_DOMAIN=$sub_domain
-RAW_SUB_PUBLIC_DOMAIN=$sub_domain
-IS_SUBSCRIPTION_HSTS_ENABLED=true
-SUBSCRIPTION_EXPIRE_DAYS_INADVANCE=3
 
-### WEBHOOK ###
-WEBHOOK_ENABLED=false
-WEBHOOK_URL=
-WEBHOOK_SECRET_HEADER=$webhook_secret
-
-### TELEGRAM ###
-IS_TELEGRAM_NOTIFICATIONS_ENABLED=false
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_ADMIN_ID=0
-TELEGRAM_NOTIFICATION_THREAD_ID=0
+### If CUSTOM_SUB_PREFIX is set in @remnawave/subscription-page, append the same path to SUB_PUBLIC_DOMAIN. Example: SUB_PUBLIC_DOMAIN=sub-page.example.com/sub ###
 
 ### SWAGGER ###
+SWAGGER_PATH=/docs
+SCALAR_PATH=/scalar
 IS_DOCS_ENABLED=false
 
 ### PROMETHEUS ###
-IS_METRICS_ENABLED=false
+### Metrics are available at /api/metrics
+METRICS_USER=$metrics_user
+METRICS_PASS=$metrics_pass
 
-### CORS ###
-CORS_ALLOWED_ORIGINS=
+### Webhook configuration
+### Enable webhook notifications (true/false, defaults to false if not set or empty)
+WEBHOOK_ENABLED=false
+### Webhook URL to send notifications to (can specify multiple URLs separated by commas if needed)
+### Only http:// or https:// are allowed.
+WEBHOOK_URL=https://your-webhook-url.com/endpoint
+### This secret is used to sign the webhook payload, must be exact 64 characters. Only a-z, 0-9, A-Z are allowed.
+WEBHOOK_SECRET_HEADER=$webhook_secret
+
+### Bandwidth usage reached notifications
+BANDWIDTH_USAGE_NOTIFICATIONS_ENABLED=false
+# Only in ASC order (example: [60, 80]), must be valid array of integer(min: 25, max: 95) numbers. No more than 5 values.
+BANDWIDTH_USAGE_NOTIFICATIONS_THRESHOLD=[60, 80]
+
+### CLOUDFLARE ###
+# USED ONLY FOR docker-compose-prod-with-cf.yml
+# NOT USED BY THE APP ITSELF
+CLOUDFLARE_TOKEN=ey...
+
+### Database ###
+### For Postgres Docker container ###
+# NOT USED BY THE APP ITSELF
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=postgres
 EOL
 }
 
@@ -1628,8 +1674,7 @@ installation_full() {
     echo
     echo -e "${RED}⚠️  СОХРАНИТЕ ЭТИ ДАННЫЕ! Они больше не будут показаны.${NC}"
     echo
-    echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}"
-    read -p ""
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
 
 # ═══════════════════════════════════════════════
@@ -1744,8 +1789,7 @@ installation_panel() {
     echo
     echo -e "${RED}⚠️  СОХРАНИТЕ ЭТИ ДАННЫЕ!${NC}"
     echo
-    echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}"
-    read -p ""
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
 
 # ═══════════════════════════════════════════════
@@ -1894,8 +1938,7 @@ EOL
     echo
     echo -e "${YELLOW}Проверьте подключение ноды в панели Remnawave${NC}"
     echo
-    echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}"
-    read -p ""
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
 
 # ═══════════════════════════════════════════════
@@ -1908,8 +1951,7 @@ manage_start() {
     ) &
     show_spinner "Запуск сервисов"
     print_success "Сервисы запущены"
-    echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}"
-    read -p ""
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
 
 manage_stop() {
@@ -1919,8 +1961,7 @@ manage_stop() {
     ) &
     show_spinner "Остановка сервисов"
     print_success "Сервисы остановлены"
-    echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}"
-    read -p ""
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
 
 manage_update() {
@@ -1948,8 +1989,7 @@ manage_update() {
     show_spinner "Очистка старых образов"
 
     print_success "Обновление завершено"
-    echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}"
-    read -p ""
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
 
 manage_logs() {
@@ -1968,9 +2008,9 @@ manage_reinstall() {
     echo
 
     echo -e "${RED}⚠️  Все данные будут удалены!${NC}"
-    echo -ne "${YELLOW}Вы уверены? [y/N]: ${NC}"
+    echo
     local confirm
-    read -r confirm
+    read -e -p "$(echo -e "${YELLOW}Вы уверены? [y/N]: ${NC}")" confirm
     if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
         return
     fi
@@ -2022,8 +2062,7 @@ manage_random_template() {
     show_spinner "Перезапуск Nginx"
 
     print_success "Шаблон обновлён"
-    echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}"
-    read -p ""
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
 
 update_script() {
@@ -2041,8 +2080,7 @@ update_script() {
     show_spinner "Загрузка обновлений"
 
     print_success "Скрипт обновлён до последней версии"
-    echo -e "${DARKGRAY}Нажмите Enter для перезапуска${NC}"
-    read -p ""
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для перезапуска${NC}")"
     exec "$0"
 }
 
@@ -2068,9 +2106,9 @@ remove_script() {
             ;;
         1)
             echo -e "${RED}⚠️  ВСЕ ДАННЫЕ БУДУТ УДАЛЕНЫ!${NC}"
-            echo -ne "${YELLOW}Подтвердите: [y/N]: ${NC}"
+            echo
             local confirm
-            read -r confirm
+            read -e -p "$(echo -e "${YELLOW}Подтвердите: [y/N]: ${NC}")" confirm
             if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
                 (
                     cd /opt/remnawave 2>/dev/null
