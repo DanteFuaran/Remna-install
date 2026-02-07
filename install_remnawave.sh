@@ -1245,12 +1245,12 @@ ssl_session_tickets off;
 
 server {
     server_name $panel_domain;
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen unix:/dev/shm/nginx.sock ssl proxy_protocol;
+    http2 on;
 
-    ssl_certificate "/etc/letsencrypt/live/$panel_cert/fullchain.pem";
-    ssl_certificate_key "/etc/letsencrypt/live/$panel_cert/privkey.pem";
-    ssl_trusted_certificate "/etc/letsencrypt/live/$panel_cert/fullchain.pem";
+    ssl_certificate "/etc/nginx/ssl/$panel_cert/fullchain.pem";
+    ssl_certificate_key "/etc/nginx/ssl/$panel_cert/privkey.pem";
+    ssl_trusted_certificate "/etc/nginx/ssl/$panel_cert/fullchain.pem";
 
     location / {
         proxy_http_version 1.1;
@@ -1258,8 +1258,8 @@ server {
         proxy_set_header Host \$host;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection \$connection_upgrade;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$remote_addr;
+        proxy_set_header X-Real-IP \$proxy_protocol_addr;
+        proxy_set_header X-Forwarded-For \$proxy_protocol_addr;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_set_header X-Forwarded-Host \$host;
         proxy_set_header X-Forwarded-Port \$server_port;
