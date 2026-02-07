@@ -141,7 +141,7 @@ show_arrow_menu() {
             if [ $i -eq $selected ]; then
                 echo -e "${BLUE}▶${NC} ${GREEN}${options[$i]}${NC}"
             else
-                echo "  ${options[$i]}"
+                echo -e "  ${options[$i]}"
             fi
         done
 
