@@ -960,7 +960,17 @@ services:
         hard: 1048576
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
+COMPOSE_HEAD
+
+    # Монтируем сертификаты для каждого домена
+    for cert in "$panel_cert_domain" "$sub_cert_domain" "$node_cert_domain"; do
+        cat >> /opt/remnawave/docker-compose.yml <<COMPOSE_CERT
+      - /etc/letsencrypt/live/$cert/fullchain.pem:/etc/nginx/ssl/$cert/fullchain.pem:ro
+      - /etc/letsencrypt/live/$cert/privkey.pem:/etc/nginx/ssl/$cert/privkey.pem:ro
+COMPOSE_CERT
+    done
+
+    cat >> /opt/remnawave/docker-compose.yml <<'COMPOSE_TAIL'
       - /dev/shm:/dev/shm:rw
       - /var/www/html:/var/www/html:ro
     command: sh -c 'rm -f /dev/shm/nginx.sock && exec nginx -g "daemon off;"'
@@ -1260,12 +1270,12 @@ server {
 
 server {
     server_name $sub_domain;
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen unix:/dev/shm/nginx.sock ssl proxy_protocol;
+    http2 on;
 
-    ssl_certificate "/etc/letsencrypt/live/$sub_cert/fullchain.pem";
-    ssl_certificate_key "/etc/letsencrypt/live/$sub_cert/privkey.pem";
-    ssl_trusted_certificate "/etc/letsencrypt/live/$sub_cert/fullchain.pem";
+    ssl_certificate "/etc/nginx/ssl/$sub_cert/fullchain.pem";
+    ssl_certificate_key "/etc/nginx/ssl/$sub_cert/privkey.pem";
+    ssl_trusted_certificate "/etc/nginx/ssl/$sub_cert/fullchain.pem";
 
     location / {
         proxy_http_version 1.1;
@@ -1273,8 +1283,8 @@ server {
         proxy_set_header Host \$host;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection \$connection_upgrade;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$remote_addr;
+        proxy_set_header X-Real-IP \$proxy_protocol_addr;
+        proxy_set_header X-Forwarded-For \$proxy_protocol_addr;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_set_header X-Forwarded-Host \$host;
         proxy_set_header X-Forwarded-Port \$server_port;
@@ -1291,12 +1301,12 @@ server {
 
 server {
     server_name $selfsteal_domain;
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen unix:/dev/shm/nginx.sock ssl proxy_protocol;
+    http2 on;
 
-    ssl_certificate "/etc/letsencrypt/live/$node_cert/fullchain.pem";
-    ssl_certificate_key "/etc/letsencrypt/live/$node_cert/privkey.pem";
-    ssl_trusted_certificate "/etc/letsencrypt/live/$node_cert/fullchain.pem";
+    ssl_certificate "/etc/nginx/ssl/$node_cert/fullchain.pem";
+    ssl_certificate_key "/etc/nginx/ssl/$node_cert/privkey.pem";
+    ssl_trusted_certificate "/etc/nginx/ssl/$node_cert/fullchain.pem";
 
     root /var/www/html;
     index index.html;
@@ -1304,8 +1314,7 @@ server {
 }
 
 server {
-    listen 443 ssl http2 default_server;
-    listen [::]:443 ssl http2 default_server;
+    listen unix:/dev/shm/nginx.sock ssl proxy_protocol default_server;
     server_name _;
     add_header X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex" always;
     ssl_reject_handshake on;
