@@ -6,6 +6,16 @@ DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
 # ═══════════════════════════════════════════════
+# ВОССТАНОВЛЕНИЕ ТЕРМИНАЛА
+# ═══════════════════════════════════════════════
+cleanup_terminal() {
+    stty sane 2>/dev/null || true
+    tput cnorm 2>/dev/null || true
+}
+
+trap cleanup_terminal EXIT INT TERM
+
+# ═══════════════════════════════════════════════
 # ЦВЕТА
 # ═══════════════════════════════════════════════
 RED='\033[0;31m'
@@ -104,7 +114,7 @@ show_arrow_menu() {
     
     # Сохраняем текущие настройки терминала
     local old_tty_settings
-    old_tty_settings=$(stty -g)
+    old_tty_settings=$(stty -g) || true
 
     while true; do
         clear
@@ -126,39 +136,40 @@ show_arrow_menu() {
         echo -e "${DARKGRAY}Используйте ↑↓ для навигации, Enter для выбора${NC}"
 
         # Читаем один символ без эха
-        stty raw -echo
+        stty raw -echo 2>/dev/null || true
         local key
-        key=$(dd bs=1 count=1 2>/dev/null)
-        stty "$old_tty_settings"
+        key=$(timeout 0.1 dd bs=1 count=1 2>/dev/null) || key=""
+        stty "$old_tty_settings" 2>/dev/null || true
 
         # Обрабатываем нажатие клавиши
-        case "$key" in
-            $'\x1b')  # ESC - начало escape-последовательности
-                # Читаем следующие символы для стрелок
-                stty raw -echo
-                local key2 key3
-                key2=$(dd bs=1 count=1 2>/dev/null)
-                key3=$(dd bs=1 count=1 2>/dev/null)
-                stty "$old_tty_settings"
-                
-                if [[ "$key2" == "[" ]]; then
-                    case "$key3" in
-                        A)  # Стрелка вверх
-                            ((selected--))
-                            [ $selected -lt 0 ] && selected=$((num_options - 1))
-                            ;;
-                        B)  # Стрелка вниз
-                            ((selected++))
-                            [ $selected -ge $num_options ] && selected=0
-                            ;;
-                    esac
-                fi
-                ;;
-            $'\x0a'|$'\x0d')  # Enter (LF или CR)
-                stty "$old_tty_settings"
-                return $selected
-                ;;
-        esac
+        if [ -z "$key" ]; then
+            # Таймаут - просто продолжаем
+            continue
+        elif [ "$key" = "$(printf '\033')" ]; then
+            # ESC - начало escape-последовательности
+            stty raw -echo 2>/dev/null || true
+            local key2 key3
+            key2=$(timeout 0.1 dd bs=1 count=1 2>/dev/null) || key2=""
+            key3=$(timeout 0.1 dd bs=1 count=1 2>/dev/null) || key3=""
+            stty "$old_tty_settings" 2>/dev/null || true
+            
+            if [ "$key2" = "[" ]; then
+                case "$key3" in
+                    A)  # Стрелка вверх
+                        ((selected--)) || true
+                        [ $selected -lt 0 ] && selected=$((num_options - 1))
+                        ;;
+                    B)  # Стрелка вниз
+                        ((selected++)) || true
+                        [ $selected -ge $num_options ] && selected=0
+                        ;;
+                esac
+            fi
+        elif [ "$(printf '%d' "'$key")" = "13" ] || [ "$(printf '%d' "'$key")" = "10" ]; then
+            # Enter (CR или LF)
+            stty "$old_tty_settings" 2>/dev/null || true
+            return $selected
+        fi
     done
 }
 
