@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.2.2"
+SCRIPT_VERSION="2.2.3"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -133,9 +133,9 @@ show_arrow_menu() {
 
     while true; do
         clear
-        echo -e "${BLUE}════════════════════════════════════════${NC}"
+        echo -e "${BLUE}──────────────────────────────────────${NC}"
         echo -e "${GREEN}   $title${NC}"
-        echo -e "${BLUE}════════════════════════════════════════${NC}"
+        echo -e "${BLUE}──────────────────────────────────────${NC}"
         echo
 
         for i in "${!options[@]}"; do
@@ -151,7 +151,7 @@ show_arrow_menu() {
         done
 
         echo
-        echo -e "${BLUE}════════════════════════════════════════${NC}"
+        echo -e "${BLUE}──────────────────────────────────────${NC}"
         echo -e "${DARKGRAY}Используйте ↑↓ для навигации, Enter для выбора${NC}"
 
         local key
@@ -1595,9 +1595,9 @@ EOL
 # ═══════════════════════════════════════════════
 installation_full() {
     clear
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo -e "${GREEN}   📦 УСТАНОВКА ПАНЕЛИ + НОДЫ${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
@@ -1744,9 +1744,9 @@ installation_full() {
         print_error "Настройте ноду вручную через панель: https://$PANEL_DOMAIN"
         randomhtml
         echo
-        echo -e "${BLUE}════════════════════════════════════════${NC}"
+        echo -e "${BLUE}──────────────────────────────────────${NC}"
         echo -e "${GREEN}   ⚠️  УСТАНОВКА ЧАСТИЧНО ЗАВЕРШЕНА${NC}"
-        echo -e "${BLUE}════════════════════════════════════════${NC}"
+        echo -e "${BLUE}──────────────────────────────────────${NC}"
         echo
         echo -e "${WHITE}Панель:${NC}       https://$PANEL_DOMAIN"
         echo -e "${WHITE}Подписка:${NC}     https://$SUB_DOMAIN"
@@ -1850,9 +1850,9 @@ installation_full() {
 
     # Итог
     echo
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo -e "${GREEN}   🎉 УСТАНОВКА ЗАВЕРШЕНА!${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo
     echo -e "${WHITE}Панель:${NC}       https://$PANEL_DOMAIN"
     echo -e "${WHITE}Подписка:${NC}     https://$SUB_DOMAIN"
@@ -1874,9 +1874,9 @@ installation_full() {
 # ═══════════════════════════════════════════════
 installation_panel() {
     clear
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo -e "${GREEN}   📦 УСТАНОВКА ТОЛЬКО ПАНЕЛИ${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
@@ -1949,9 +1949,9 @@ installation_panel() {
     print_action "Панель готова к использованию"
 
     echo
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo -e "${GREEN}   🎉 ПАНЕЛЬ УСТАНОВЛЕНА!${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo
     echo -e "${WHITE}Панель:${NC}       https://$PANEL_DOMAIN"
     echo -e "${WHITE}Подписка:${NC}     https://$SUB_DOMAIN"
@@ -1967,9 +1967,9 @@ installation_panel() {
 # ═══════════════════════════════════════════════
 installation_node() {
     clear
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo -e "${GREEN}   📦 УСТАНОВКА ТОЛЬКО НОДЫ${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
@@ -2099,9 +2099,9 @@ EOL
     randomhtml
 
     echo
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo -e "${GREEN}   🎉 НОДА УСТАНОВЛЕНА!${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo
     echo -e "${WHITE}SelfSteal:${NC}    https://$SELFSTEAL_DOMAIN"
     echo -e "${WHITE}IP панели:${NC}    $PANEL_IP"
@@ -2116,9 +2116,9 @@ EOL
 # ═══════════════════════════════════════════════
 change_credentials() {
     clear
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo -e "${GREEN}   🔐 СБРОС СУПЕРАДМИНА${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo
     echo -e "${YELLOW}⚠️  ВНИМАНИЕ!${NC}"
     echo -e "${WHITE}Эта операция удалит текущего суперадмина из базы данных.${NC}"
@@ -2206,9 +2206,9 @@ manage_stop() {
 
 manage_update() {
     clear
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo -e "${GREEN}   🔄 ОБНОВЛЕНИЕ КОМПОНЕНТОВ${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo
 
     (
@@ -2242,9 +2242,9 @@ manage_logs() {
 
 manage_reinstall() {
     clear
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo -e "${RED}   🗑️ ПЕРЕУСТАНОВКА${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo
 
     echo -e "${RED}⚠️  Все данные будут удалены!${NC}"
@@ -2288,9 +2288,9 @@ manage_reinstall() {
 
 manage_random_template() {
     clear
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo -e "${GREEN}   🎨 СМЕНА ШАБЛОНА САЙТА-ЗАГЛУШКИ${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo
 
     # Показываем текущий шаблон
@@ -2320,9 +2320,9 @@ manage_random_template() {
         0)
             # Случайный шаблон
             clear
-            echo -e "${BLUE}════════════════════════════════════════${NC}"
+            echo -e "${BLUE}──────────────────────────────────────${NC}"
             echo -e "${GREEN}   🎲 СЛУЧАЙНЫЙ ШАБЛОН${NC}"
-            echo -e "${BLUE}════════════════════════════════════════${NC}"
+            echo -e "${BLUE}──────────────────────────────────────${NC}"
             echo
             randomhtml
             ;;
@@ -2357,9 +2357,9 @@ manage_random_template() {
             fi
             
             clear
-            echo -e "${BLUE}════════════════════════════════════════${NC}"
+            echo -e "${BLUE}──────────────────────────────────────${NC}"
             echo -e "${GREEN}   🎨 ПРИМЕНЕНИЕ ШАБЛОНА${NC}"
-            echo -e "${BLUE}════════════════════════════════════════${NC}"
+            echo -e "${BLUE}──────────────────────────────────────${NC}"
             echo
             
             # Применяем выбранный шаблон (template_choice + 1)
@@ -2418,12 +2418,8 @@ check_for_updates() {
         return 1
     fi
     
-    # Проверяем версию установленного скрипта, а не текущего
-    local installed_version
-    installed_version=$(get_installed_version)
-    
-    # Если скрипт не установлен или версии отличаются
-    if [ -z "$installed_version" ] || [ "$remote_version" != "$installed_version" ]; then
+    # Сравниваем текущую запущенную версию с удаленной
+    if [ "$remote_version" != "$SCRIPT_VERSION" ]; then
         echo "$remote_version"
         return 0
     fi
@@ -2434,24 +2430,24 @@ check_for_updates() {
 show_update_notification() {
     local new_version=$1
     echo
-    echo -e "${YELLOW}╔══════════════════════════════════════════════════╗${NC}"
-    echo -e "${YELLOW}║${NC}  ${GREEN}🔔 ДОСТУПНО ОБНОВЛЕНИЕ!${NC}                        ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║${NC}                                                  ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║${NC}  Текущая версия:  ${WHITE}v$SCRIPT_VERSION${NC}                      ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║${NC}  Новая версия:     ${GREEN}v$new_version${NC}                      ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║${NC}                                                  ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║${NC}  Обновите скрипт через меню:                    ${YELLOW}║${NC}"
-    echo -e "${YELLOW}║${NC}  ${BLUE}🔄 Обновить скрипт${NC}                             ${YELLOW}║${NC}"
-    echo -e "${YELLOW}╚══════════════════════════════════════════════════╝${NC}"
+    echo -e "${YELLOW}┌──────────────────────────────────────────────────┐${NC}"
+    echo -e "${YELLOW}│${NC}  ${GREEN}🔔 ДОСТУПНО ОБНОВЛЕНИЕ!${NC}                        ${YELLOW}│${NC}"
+    echo -e "${YELLOW}│${NC}                                                  ${YELLOW}│${NC}"
+    echo -e "${YELLOW}│${NC}  Текущая версия:  ${WHITE}v$SCRIPT_VERSION${NC}                      ${YELLOW}│${NC}"
+    echo -e "${YELLOW}│${NC}  Новая версия:     ${GREEN}v$new_version${NC}                      ${YELLOW}│${NC}"
+    echo -e "${YELLOW}│${NC}                                                  ${YELLOW}│${NC}"
+    echo -e "${YELLOW}│${NC}  Обновите скрипт через меню:                    ${YELLOW}│${NC}"
+    echo -e "${YELLOW}│${NC}  ${BLUE}🔄 Обновить скрипт${NC}                             ${YELLOW}│${NC}"
+    echo -e "${YELLOW}└──────────────────────────────────────────────────┘${NC}"
     echo
 }
 
 update_script() {
     local force_update="$1"
     clear
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo -e "${GREEN}   🔄 ОБНОВЛЕНИЕ СКРИПТА${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo
 
     local installed_version
@@ -2522,9 +2518,9 @@ update_script() {
 
 remove_script() {
     clear
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo -e "${RED}   🗑️ УДАЛЕНИЕ СКРИПТА${NC}"
-    echo -e "${BLUE}════════════════════════════════════════${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
     echo
 
     show_arrow_menu "Выберите действие" \
@@ -2613,6 +2609,9 @@ main_menu() {
             local new_version
             new_version=$(cat /tmp/remna_update_available)
             update_notice=" ${YELLOW}(Обновление до v$new_version)${NC}"
+            # Показываем уведомление об обновлении перед меню
+            clear
+            show_update_notification "$new_version"
         elif [ -n "$installed_ver" ] && [ "$installed_ver" != "$SCRIPT_VERSION" ]; then
             update_notice=" ${YELLOW}(Установлена v$installed_ver)${NC}"
         fi
@@ -2684,10 +2683,10 @@ main_menu() {
         else
             show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
                 "📦  Установить компоненты" \
-                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" \
+                "──────────────────────────────────────" \
                 "🔄  Обновить скрипт$update_notice" \
                 "🗑️   Удалить скрипт" \
-                "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" \
+                "──────────────────────────────────────" \
                 "❌  Выход"
             local choice=$?
 
