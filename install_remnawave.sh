@@ -1585,67 +1585,6 @@ installation_full() {
         return
     fi
 
-    # Регистрация и настройка через API
-    echo
-    print_action "Настройка панели..."
-
-    local token
-    token=$(register_remnawave "$domain_url" "$SUPERADMIN_USERNAME" "$SUPERADMIN_PASSWORD")
-    if [ -z "$token" ]; then
-        print_error "Не удалось зарегистрировать суперадмина"
-        return
-    fi
-    print_success "Суперадмин зарегистрирован"
-
-    (
-        get_public_key "$domain_url" "$token" "/opt/remnawave"
-    ) &
-    show_spinner "Получение публичного ключа"
-
-    local private_key
-    private_key=$(generate_xray_keys "$domain_url" "$token")
-    print_success "Xray ключи сгенерированы"
-
-    local config_uuid
-    config_uuid=$(create_config_profile "$domain_url" "$token" "Default" "$SELFSTEAL_DOMAIN" "$private_key")
-    print_success "Профиль конфигурации создан"
-
-    local node_uuid
-    node_uuid=$(create_node "$domain_url" "$token" "Main Node" "$SELFSTEAL_DOMAIN" 2222 "$config_uuid")
-    print_success "Нода создана"
-
-    # Получаем inbound UUID
-    local config_response
-    config_response=$(make_api_request "GET" "$domain_url/api/config-profiles" "$token")
-    local inbound_uuid
-    inbound_uuid=$(echo "$config_response" | jq -r '.response[] | select(.uuid == "'"$config_uuid"'") | .configProfileInbounds[0].uuid // empty' 2>/dev/null)
-
-    if [ -n "$inbound_uuid" ]; then
-        create_host "$domain_url" "$token" "$config_uuid" "$inbound_uuid" "Main" "$SELFSTEAL_DOMAIN"
-        print_success "Хост создан"
-
-        local squad_uuid
-        squad_uuid=$(get_default_squad "$domain_url" "$token")
-        if [ -n "$squad_uuid" ]; then
-            update_squad "$domain_url" "$token" "$squad_uuid" "$inbound_uuid"
-            print_success "Сквад обновлён"
-        fi
-    fi
-
-    # API токен для subscription page
-    local api_token
-    api_token=$(create_api_token "$domain_url" "$token")
-    if [ -n "$api_token" ]; then
-        sed -i "s|REMNAWAVE_API_TOKEN=.*|REMNAWAVE_API_TOKEN=$api_token|" /opt/remnawave/docker-compose.yml
-        print_success "API токен для страницы подписки создан"
-
-        (
-            cd /opt/remnawave
-            docker compose restart remnawave-subscription-page >/dev/null 2>&1
-        ) &
-        show_spinner "Перезапуск страницы подписки"
-    fi
-
     # Шаблон
     randomhtml
 
@@ -1666,8 +1605,14 @@ installation_full() {
     echo -e "${WHITE}Подписка:${NC}     https://$SUB_DOMAIN"
     echo -e "${WHITE}SelfSteal:${NC}    https://$SELFSTEAL_DOMAIN"
     echo
-    echo -e "${YELLOW}📝 Откройте панель и создайте свой аккаунт администратора${NC}"
-    echo -e "${DARKGRAY}   При первом входе Remnawave попросит вас установить логин и пароль${NC}"
+    echo -e "${YELLOW}📝 ДАЛЬНЕЙШИЕ ДЕЙСТВИЯ:${NC}"
+    echo -e "${WHITE}1.${NC} Откройте панель и создайте аккаунт администратора"
+    echo -e "${DARKGRAY}   При первом входе вы сможете установить логин и пароль${NC}"
+    echo
+    echo -e "${WHITE}2.${NC} После входа настройте ноду через интерфейс панели:"
+    echo -e "${DARKGRAY}   • Создайте конфигурацию (Config Profile)${NC}"
+    echo -e "${DARKGRAY}   • Добавьте ноду с доменом: $SELFSTEAL_DOMAIN${NC}"
+    echo -e "${DARKGRAY}   • Порт для ноды: 2222${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
