@@ -960,19 +960,7 @@ services:
         hard: 1048576
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-COMPOSE_HEAD
-
-    # Добавляем монтирование сертификатов
-    for cert_domain in "$panel_cert_domain" "$sub_cert_domain" "$node_cert_domain"; do
-        if [ -n "$cert_domain" ]; then
-            cat >> /opt/remnawave/docker-compose.yml <<EOL
-      - /etc/letsencrypt/live/$cert_domain/fullchain.pem:/etc/nginx/ssl/$cert_domain/fullchain.pem
-      - /etc/letsencrypt/live/$cert_domain/privkey.pem:/etc/nginx/ssl/$cert_domain/privkey.pem
-EOL
-        fi
-    done
-
-    cat >> /opt/remnawave/docker-compose.yml <<'COMPOSE_MID'
+      - /etc/letsencrypt:/etc/letsencrypt:ro
       - /dev/shm:/dev/shm:rw
       - /var/www/html:/var/www/html:ro
     command: sh -c 'rm -f /dev/shm/nginx.sock && exec nginx -g "daemon off;"'
@@ -1159,18 +1147,7 @@ services:
         hard: 1048576
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-COMPOSE_HEAD
-
-    for cert_domain in "$panel_cert_domain" "$sub_cert_domain"; do
-        if [ -n "$cert_domain" ]; then
-            cat >> /opt/remnawave/docker-compose.yml <<EOL
-      - /etc/letsencrypt/live/$cert_domain/fullchain.pem:/etc/nginx/ssl/$cert_domain/fullchain.pem
-      - /etc/letsencrypt/live/$cert_domain/privkey.pem:/etc/nginx/ssl/$cert_domain/privkey.pem
-EOL
-        fi
-    done
-
-    cat >> /opt/remnawave/docker-compose.yml <<'COMPOSE_TAIL'
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     network_mode: host
     depends_on:
       - remnawave
@@ -1258,12 +1235,12 @@ ssl_session_tickets off;
 
 server {
     server_name $panel_domain;
-    listen unix:/dev/shm/nginx.sock ssl proxy_protocol;
-    http2 on;
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
 
-    ssl_certificate "/etc/nginx/ssl/$panel_cert/fullchain.pem";
-    ssl_certificate_key "/etc/nginx/ssl/$panel_cert/privkey.pem";
-    ssl_trusted_certificate "/etc/nginx/ssl/$panel_cert/fullchain.pem";
+    ssl_certificate "/etc/letsencrypt/live/$panel_cert/fullchain.pem";
+    ssl_certificate_key "/etc/letsencrypt/live/$panel_cert/privkey.pem";
+    ssl_trusted_certificate "/etc/letsencrypt/live/$panel_cert/fullchain.pem";
 
     location / {
         proxy_http_version 1.1;
@@ -1271,8 +1248,8 @@ server {
         proxy_set_header Host \$host;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection \$connection_upgrade;
-        proxy_set_header X-Real-IP \$proxy_protocol_addr;
-        proxy_set_header X-Forwarded-For \$proxy_protocol_addr;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$remote_addr;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_set_header X-Forwarded-Host \$host;
         proxy_set_header X-Forwarded-Port \$server_port;
@@ -1283,12 +1260,12 @@ server {
 
 server {
     server_name $sub_domain;
-    listen unix:/dev/shm/nginx.sock ssl proxy_protocol;
-    http2 on;
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
 
-    ssl_certificate "/etc/nginx/ssl/$sub_cert/fullchain.pem";
-    ssl_certificate_key "/etc/nginx/ssl/$sub_cert/privkey.pem";
-    ssl_trusted_certificate "/etc/nginx/ssl/$sub_cert/fullchain.pem";
+    ssl_certificate "/etc/letsencrypt/live/$sub_cert/fullchain.pem";
+    ssl_certificate_key "/etc/letsencrypt/live/$sub_cert/privkey.pem";
+    ssl_trusted_certificate "/etc/letsencrypt/live/$sub_cert/fullchain.pem";
 
     location / {
         proxy_http_version 1.1;
@@ -1296,8 +1273,8 @@ server {
         proxy_set_header Host \$host;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection \$connection_upgrade;
-        proxy_set_header X-Real-IP \$proxy_protocol_addr;
-        proxy_set_header X-Forwarded-For \$proxy_protocol_addr;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$remote_addr;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_set_header X-Forwarded-Host \$host;
         proxy_set_header X-Forwarded-Port \$server_port;
@@ -1314,12 +1291,12 @@ server {
 
 server {
     server_name $selfsteal_domain;
-    listen unix:/dev/shm/nginx.sock ssl proxy_protocol;
-    http2 on;
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
 
-    ssl_certificate "/etc/nginx/ssl/$node_cert/fullchain.pem";
-    ssl_certificate_key "/etc/nginx/ssl/$node_cert/privkey.pem";
-    ssl_trusted_certificate "/etc/nginx/ssl/$node_cert/fullchain.pem";
+    ssl_certificate "/etc/letsencrypt/live/$node_cert/fullchain.pem";
+    ssl_certificate_key "/etc/letsencrypt/live/$node_cert/privkey.pem";
+    ssl_trusted_certificate "/etc/letsencrypt/live/$node_cert/fullchain.pem";
 
     root /var/www/html;
     index index.html;
@@ -1327,7 +1304,8 @@ server {
 }
 
 server {
-    listen unix:/dev/shm/nginx.sock ssl proxy_protocol default_server;
+    listen 443 ssl http2 default_server;
+    listen [::]:443 ssl http2 default_server;
     server_name _;
     add_header X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex" always;
     ssl_reject_handshake on;
@@ -1368,12 +1346,12 @@ ssl_session_tickets off;
 
 server {
     server_name $panel_domain;
-    listen 443 ssl;
-    http2 on;
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
 
-    ssl_certificate "/etc/nginx/ssl/$panel_cert/fullchain.pem";
-    ssl_certificate_key "/etc/nginx/ssl/$panel_cert/privkey.pem";
-    ssl_trusted_certificate "/etc/nginx/ssl/$panel_cert/fullchain.pem";
+    ssl_certificate "/etc/letsencrypt/live/$panel_cert/fullchain.pem";
+    ssl_certificate_key "/etc/letsencrypt/live/$panel_cert/privkey.pem";
+    ssl_trusted_certificate "/etc/letsencrypt/live/$panel_cert/fullchain.pem";
 
     location / {
         proxy_http_version 1.1;
@@ -1382,7 +1360,7 @@ server {
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection \$connection_upgrade;
         proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For \$remote_addr;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_set_header X-Forwarded-Host \$host;
         proxy_set_header X-Forwarded-Port \$server_port;
@@ -1393,12 +1371,12 @@ server {
 
 server {
     server_name $sub_domain;
-    listen 443 ssl;
-    http2 on;
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
 
-    ssl_certificate "/etc/nginx/ssl/$sub_cert/fullchain.pem";
-    ssl_certificate_key "/etc/nginx/ssl/$sub_cert/privkey.pem";
-    ssl_trusted_certificate "/etc/nginx/ssl/$sub_cert/fullchain.pem";
+    ssl_certificate "/etc/letsencrypt/live/$sub_cert/fullchain.pem";
+    ssl_certificate_key "/etc/letsencrypt/live/$sub_cert/privkey.pem";
+    ssl_trusted_certificate "/etc/letsencrypt/live/$sub_cert/fullchain.pem";
 
     location / {
         proxy_http_version 1.1;
@@ -1407,7 +1385,7 @@ server {
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection \$connection_upgrade;
         proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For \$remote_addr;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_set_header X-Forwarded-Host \$host;
         proxy_set_header X-Forwarded-Port \$server_port;
