@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="1.5.5"
+SCRIPT_VERSION="1.6.0"
 DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
@@ -801,65 +801,86 @@ create_api_token() {
 # ═══════════════════════════════════════════════
 # ШАБЛОНЫ SELFSTEAL
 # ═══════════════════════════════════════════════
-randomhtml() {
-    # Массив шаблонов с названиями: "URL|Название"
-    local templates=(
-        "https://github.com/eGamesAPI/simple-web-templates/archive/refs/heads/main.zip|Простые веб-шаблоны"
-        "https://github.com/eGamesAPI/sni-templates/archive/refs/heads/main.zip|SNI маскировка"
-        "https://github.com/eGamesAPI/nothing-sni/archive/refs/heads/main.zip|Минималистичный стиль"
-        "https://github.com/ColorlibHQ/AdminLTE/archive/refs/heads/master.zip|Админ панель"
-        "https://github.com/creativetimofficial/material-dashboard/archive/refs/heads/master.zip|Material дизайн"
-        "https://github.com/puikinsh/Adminator-admin-dashboard/archive/refs/heads/master.zip|Современный дашборд"
-        "https://github.com/themefisher/small-apps-free-app-landing-page-template/archive/refs/heads/master.zip|Лендинг приложения"
-        "https://github.com/leroyg/html5up-paradigm-shift/archive/refs/heads/master.zip|HTML5 стиль"
-        "https://github.com/startbootstrap/startbootstrap-agency/archive/refs/heads/master.zip|Корпоративный стиль"
-        "https://github.com/thomaspark/bootswatch/archive/refs/heads/master.zip|Bootstrap темы"
-    )
+create_template_html() {
+    local template_id=$1
+    local title=$2
+    local content=$3
+    local color=$4
+    
+    cat > /var/www/html/index.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: ${color};
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; color: #fff;
+        }
+        .container { text-align: center; max-width: 600px; padding: 40px; }
+        h1 { font-size: 3em; margin-bottom: 20px; animation: fadeIn 1s; }
+        p { font-size: 1.2em; opacity: 0.9; animation: fadeIn 1.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        ${content}
+    </div>
+</body>
+</html>
+EOF
+}
 
+randomhtml() {
+    # 20 уникальных шаблонов с разным содержанием и дизайном
+    local templates=(
+        "1|Корпоративный портал|<h1>🏢 Corporate Portal</h1><p>Enterprise solutions for modern business</p>|linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+        "2|Технологический хаб|<h1>💻 Tech Innovation</h1><p>Building the future with cutting-edge technology</p>|linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+        "3|Облачные сервисы|<h1>☁️ Cloud Services</h1><p>Scalable infrastructure for your applications</p>|linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+        "4|Финтех платформа|<h1>💳 Financial Technology</h1><p>Secure payment processing solutions</p>|linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
+        "5|Образовательная платформа|<h1>📚 Learning Platform</h1><p>Knowledge and skills for everyone</p>|linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
+        "6|Медиа портал|<h1>🎬 Media Network</h1><p>Your source for entertainment and news</p>|linear-gradient(135deg, #30cfd0 0%, #330867 100%)"
+        "7|E-commerce хаб|<h1>🛒 Online Marketplace</h1><p>Shop smarter, live better</p>|linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)"
+        "8|Игровой портал|<h1>🎮 Gaming Platform</h1><p>Play, compete, and connect with gamers worldwide</p>|linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)"
+        "9|Социальная сеть|<h1>👥 Social Network</h1><p>Connect with friends and share moments</p>|linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)"
+        "10|Аналитический центр|<h1>📊 Data Analytics</h1><p>Transform data into insights</p>|linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%)"
+        "11|Криптовалютная биржа|<h1>₿ Crypto Exchange</h1><p>Trade digital assets securely</p>|linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)"
+        "12|Туристическое агентство|<h1>✈️ Travel Agency</h1><p>Discover amazing destinations worldwide</p>|linear-gradient(135deg, #f77062 0%, #fe5196 100%)"
+        "13|Фитнес платформа|<h1>💪 Fitness Network</h1><p>Your personal health and wellness guide</p>|linear-gradient(135deg, #c471f5 0%, #fa71cd 100%)"
+        "14|Новостной портал|<h1>📰 News Network</h1><p>Stay informed with latest updates</p>|linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+        "15|Музыкальный сервис|<h1>🎵 Music Streaming</h1><p>Listen to millions of songs</p>|linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)"
+        "16|Недвижимость онлайн|<h1>🏠 Real Estate</h1><p>Find your dream home today</p>|linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)"
+        "17|Доставка еды|<h1>🍕 Food Delivery</h1><p>Your favorite meals at your doorstep</p>|linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+        "18|Автомобильный портал|<h1>🚗 Auto Marketplace</h1><p>Buy, sell, and explore vehicles</p>|linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+        "19|Дизайн студия|<h1>🎨 Design Studio</h1><p>Creative solutions for your brand</p>|linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
+        "20|Консалтинг центр|<h1>💼 Business Consulting</h1><p>Expert advice for your success</p>|linear-gradient(135deg, #30cfd0 0%, #330867 100%)"
+    )
+    
     local random_index=$((RANDOM % ${#templates[@]}))
     local selected="${templates[$random_index]}"
-    local template_url="${selected%%|*}"
-    local template_name="${selected##*|}"
-
-    echo -e "${BLUE}➜${NC}  Выбран шаблон: ${GREEN}${template_name}${NC}"
-
-    (
-        local tmp_dir
-        tmp_dir=$(mktemp -d)
-        cd "$tmp_dir"
-
-        wget -q "$template_url" -O template.zip 2>/dev/null
-        unzip -q template.zip 2>/dev/null
-
-        local extracted_dir
-        extracted_dir=$(find . -maxdepth 1 -type d ! -name '.' | head -1)
-
-        if [ -d "$extracted_dir" ]; then
-            local dirs
-            dirs=($(find "$extracted_dir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null))
-            if [ ${#dirs[@]} -gt 0 ]; then
-                local random_dir="${dirs[$((RANDOM % ${#dirs[@]}))]}"
-                local subtemplate_name=$(basename "$random_dir")
-                rm -rf /var/www/html/*
-                cp -r "$random_dir"/* /var/www/html/ 2>/dev/null || true
-                echo "$template_name ($subtemplate_name)" > /var/www/.current_template
-            else
-                # Если нет подпапок, используем весь контент
-                rm -rf /var/www/html/*
-                cp -r "$extracted_dir"/* /var/www/html/ 2>/dev/null || true
-                echo "$template_name" > /var/www/.current_template
-            fi
-        fi
-
-        rm -rf "$tmp_dir"
-    ) &
-    show_spinner "Установка шаблона: ${template_name}"
     
-    # Выводим информацию после установки
-    if [ -f /var/www/.current_template ]; then
-        local installed=$(cat /var/www/.current_template)
-        echo -e "${GREEN}✅${NC} Установлен: ${WHITE}${installed}${NC}"
-    fi
+    IFS='|' read -r template_id template_name template_content template_color <<< "$selected"
+    
+    echo -e "${BLUE}➜${NC}  Выбран шаблон: ${GREEN}${template_name}${NC}"
+    
+    # Создаём директорию если её нет
+    mkdir -p /var/www/html
+    
+    # Удаляем старые файлы и создаём новый шаблон
+    rm -rf /var/www/html/*
+    create_template_html "$template_id" "$template_name" "$template_content" "$template_color"
+    
+    # Сохраняем информацию о текущем шаблоне
+    echo "$template_name" > /var/www/.current_template
+    echo "$(date '+%Y-%m-%d %H:%M:%S')" > /var/www/.template_changed
+    
+    echo -e "${GREEN}✅${NC} Установлен шаблон: ${WHITE}${template_name}${NC}"
 }
 
 # ═══════════════════════════════════════════════
@@ -2289,15 +2310,36 @@ manage_random_template() {
     echo -e "${BLUE}════════════════════════════════════════${NC}"
     echo
 
+    # Показываем текущий шаблон
+    if [ -f /var/www/.current_template ]; then
+        local current_template
+        current_template=$(cat /var/www/.current_template)
+        echo -e "${WHITE}Текущий шаблон:${NC} ${YELLOW}${current_template}${NC}"
+        if [ -f /var/www/.template_changed ]; then
+            local changed_date
+            changed_date=$(cat /var/www/.template_changed)
+            echo -e "${DARKGRAY}Установлен: ${changed_date}${NC}"
+        fi
+        echo
+    else
+        echo -e "${YELLOW}Шаблон ещё не установлен${NC}"
+        echo
+    fi
+
+    # Применяем новый шаблон
     randomhtml
+    echo
 
-    (
-        cd /opt/remnawave
-        docker compose restart remnawave-nginx >/dev/null 2>&1
-    ) &
-    show_spinner "Перезапуск Nginx"
+    # Перезапускаем Nginx для применения изменений
+    if docker ps --filter "name=remnawave-nginx" --format "{{.Names}}" 2>/dev/null | grep -q "remnawave-nginx"; then
+        (
+            cd /opt/remnawave 2>/dev/null
+            docker compose restart remnawave-nginx >/dev/null 2>&1
+        ) &
+        show_spinner "Применение изменений"
+    fi
 
-    print_success "Шаблон обновлён"
+    print_success "Шаблон успешно изменён"
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
 
