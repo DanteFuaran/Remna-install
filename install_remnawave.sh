@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.1.0"
 DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
@@ -2258,6 +2258,47 @@ manage_random_template() {
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
 
+# ═══════════════════════════════════════════════
+# ПРОВЕРКА ВЕРСИИ И ОБНОВЛЕНИЕ СКРИПТА
+# ═══════════════════════════════════════════════
+check_for_updates() {
+    local remote_version
+    remote_version=$(curl -s --max-time 3 "$SCRIPT_URL" | grep -m 1 'SCRIPT_VERSION=' | cut -d'"' -f2 2>/dev/null)
+    
+    if [ -z "$remote_version" ]; then
+        return 1
+    fi
+    
+    # Сравнение версий (простое сравнение строк)
+    if [ "$remote_version" != "$SCRIPT_VERSION" ]; then
+        # Дополнительная проверка что remote_version новее
+        local current_ver="${SCRIPT_VERSION//./}"
+        local remote_ver="${remote_version//./}"
+        
+        if [ "$remote_ver" -gt "$current_ver" ] 2>/dev/null; then
+            echo "$remote_version"
+            return 0
+        fi
+    fi
+    
+    return 1
+}
+
+show_update_notification() {
+    local new_version=$1
+    echo
+    echo -e "${YELLOW}╔══════════════════════════════════════════════════╗${NC}"
+    echo -e "${YELLOW}║${NC}  ${GREEN}🔔 ДОСТУПНО ОБНОВЛЕНИЕ!${NC}                        ${YELLOW}║${NC}"
+    echo -e "${YELLOW}║${NC}                                                  ${YELLOW}║${NC}"
+    echo -e "${YELLOW}║${NC}  Текущая версия:  ${WHITE}v$SCRIPT_VERSION${NC}                      ${YELLOW}║${NC}"
+    echo -e "${YELLOW}║${NC}  Новая версия:     ${GREEN}v$new_version${NC}                      ${YELLOW}║${NC}"
+    echo -e "${YELLOW}║${NC}                                                  ${YELLOW}║${NC}"
+    echo -e "${YELLOW}║${NC}  Обновите скрипт через меню:                    ${YELLOW}║${NC}"
+    echo -e "${YELLOW}║${NC}  ${BLUE}🔄 Обновить скрипт${NC}                             ${YELLOW}║${NC}"
+    echo -e "${YELLOW}╚══════════════════════════════════════════════════╝${NC}"
+    echo
+}
+
 update_script() {
     clear
     echo -e "${BLUE}════════════════════════════════════════${NC}"
@@ -2357,6 +2398,13 @@ install_script() {
 # ═══════════════════════════════════════════════
 main_menu() {
     while true; do
+        # Проверка наличия обновлений
+        if [ -f /tmp/remna_update_available ]; then
+            local new_version
+            new_version=$(cat /tmp/remna_update_available)
+            show_update_notification "$new_version"
+        fi
+        
         local is_installed=false
         if [ -f "/opt/remnawave/docker-compose.yml" ]; then
             is_installed=true
@@ -2485,5 +2533,16 @@ if [ ! -L "/usr/local/bin/remna_install" ] || [ ! -f "${DIR_REMNAWAVE}remna_inst
     sleep 1
     exec /usr/local/bin/remna_install
 fi
+
+# Проверка обновлений (в фоне, не блокирует запуск)
+(
+    new_version=$(check_for_updates)
+    if [ $? -eq 0 ] && [ -n "$new_version" ]; then
+        # Сохраняем информацию об обновлении
+        echo "$new_version" > /tmp/remna_update_available
+    else
+        rm -f /tmp/remna_update_available 2>/dev/null
+    fi
+) &
 
 main_menu
