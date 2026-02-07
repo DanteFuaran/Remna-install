@@ -538,7 +538,15 @@ generate_xray_keys() {
 
     local response
     response=$(make_api_request "GET" "$domain_url/api/system/tools/x25519/generate" "$token")
-    echo "$response" | jq -r '.response.privateKey // empty' 2>/dev/null
+    local private_key
+    private_key=$(echo "$response" | jq -r '.response.keypairs[0].privateKey // empty' 2>/dev/null)
+
+    if [ -z "$private_key" ] || [ "$private_key" = "null" ]; then
+        # Fallback — возможно другая версия API
+        private_key=$(echo "$response" | jq -r '.response.privateKey // empty' 2>/dev/null)
+    fi
+
+    echo "$private_key"
 }
 
 create_config_profile() {
@@ -598,36 +606,75 @@ create_config_profile() {
 
     local response
     response=$(make_api_request "POST" "$domain_url/api/config-profiles" "$token" "$request_body")
-    echo "$response" | jq -r '.response.uuid // empty' 2>/dev/null
+
+    local config_uuid
+    config_uuid=$(echo "$response" | jq -r '.response.uuid // empty' 2>/dev/null)
+    local inbound_uuid
+    inbound_uuid=$(echo "$response" | jq -r '.response.inbounds[0].uuid // empty' 2>/dev/null)
+
+    if [ -z "$config_uuid" ] || [ "$config_uuid" = "null" ] || \
+       [ -z "$inbound_uuid" ] || [ "$inbound_uuid" = "null" ]; then
+        echo "ERROR" >&2
+        return 1
+    fi
+
+    echo "$config_uuid $inbound_uuid"
+}
+
+delete_config_profile() {
+    local domain_url=$1
+    local token=$2
+
+    local response
+    response=$(make_api_request "GET" "$domain_url/api/config-profiles" "$token")
+
+    local config_uuids
+    config_uuids=$(echo "$response" | jq -r '.response.configProfiles[].uuid // empty' 2>/dev/null)
+
+    if [ -n "$config_uuids" ]; then
+        while IFS= read -r uuid; do
+            [ -z "$uuid" ] && continue
+            make_api_request "DELETE" "$domain_url/api/config-profiles/$uuid" "$token" >/dev/null 2>&1
+        done <<< "$config_uuids"
+    fi
 }
 
 create_node() {
     local domain_url=$1
     local token=$2
-    local name=$3
-    local address=$4
-    local port=${5:-2222}
-    local config_uuid=$6
+    local config_profile_uuid=$3
+    local inbound_uuid=$4
+    local node_address="${5:-172.30.0.1}"
+    local node_name="${6:-Steal}"
 
     local request_body
-    request_body=$(jq -n --arg name "$name" --arg address "$address" \
-        --argjson port "$port" --arg config_uuid "$config_uuid" '{
+    request_body=$(jq -n --arg name "$node_name" --arg address "$node_address" \
+        --arg config_uuid "$config_profile_uuid" --arg inbound "$inbound_uuid" '{
         name: $name,
         address: $address,
-        port: $port,
-        isTrafficTrackingActive: true,
+        port: 2222,
+        configProfile: {
+            activeConfigProfileUuid: $config_uuid,
+            activeInbounds: [$inbound]
+        },
+        isTrafficTrackingActive: false,
         trafficLimitBytes: 0,
-        notifyPercent: 80,
-        trafficResetDay: 0,
+        notifyPercent: 0,
+        trafficResetDay: 31,
         excludedInbounds: [],
         countryCode: "XX",
-        consumptionMultiplier: 1,
-        configProfileUuid: $config_uuid
+        consumptionMultiplier: 1.0
     }')
 
     local response
     response=$(make_api_request "POST" "$domain_url/api/nodes" "$token" "$request_body")
-    echo "$response" | jq -r '.response.uuid // empty' 2>/dev/null
+
+    if echo "$response" | jq -e '.response.uuid' >/dev/null 2>&1; then
+        return 0
+    else
+        echo "ERROR: $response" >&2
+        return 1
+    fi
 }
 
 create_host() {
@@ -667,7 +714,7 @@ get_default_squad() {
 
     local response
     response=$(make_api_request "GET" "$domain_url/api/internal-squads" "$token")
-    echo "$response" | jq -r '.response[0].uuid // empty' 2>/dev/null
+    echo "$response" | jq -r '.response.internalSquads[].uuid // empty' 2>/dev/null
 }
 
 update_squad() {
@@ -678,24 +725,45 @@ update_squad() {
 
     local current
     current=$(make_api_request "GET" "$domain_url/api/internal-squads" "$token")
-    local squad_data
-    squad_data=$(echo "$current" | jq --arg uuid "$squad_uuid" '.response[] | select(.uuid == $uuid)' 2>/dev/null)
 
-    local updated
-    updated=$(echo "$squad_data" | jq --arg inbound "$inbound_uuid" \
-        '.inboundUuids += [$inbound]' 2>/dev/null)
+    # Получаем текущие inbounds сквада
+    local current_inbounds
+    current_inbounds=$(echo "$current" | jq -r --arg uuid "$squad_uuid" \
+        '[.response.internalSquads[] | select(.uuid == $uuid) | .inbounds[].uuid] // []' 2>/dev/null)
 
-    make_api_request "PUT" "$domain_url/api/internal-squads/$squad_uuid" "$token" "$updated" >/dev/null
+    # Добавляем новый inbound к существующим
+    local inbounds_array
+    inbounds_array=$(echo "$current_inbounds" | jq --arg inbound "$inbound_uuid" \
+        '. + [$inbound] | unique | map({uuid: .})' 2>/dev/null)
+
+    local request_body
+    request_body=$(jq -n --arg uuid "$squad_uuid" --argjson inbounds "$inbounds_array" '{
+        uuid: $uuid,
+        inbounds: $inbounds
+    }')
+
+    make_api_request "PATCH" "$domain_url/api/internal-squads" "$token" "$request_body" >/dev/null
 }
 
 create_api_token() {
     local domain_url=$1
     local token=$2
+    local target_dir=${3:-/opt/remnawave}
 
-    local request_body='{"tokenName":"subscription-page","tokenDescription":"API token for subscription page"}'
+    local request_body='{"tokenName":"subscription-page"}'
     local response
     response=$(make_api_request "POST" "$domain_url/api/tokens" "$token" "$request_body")
-    echo "$response" | jq -r '.response.token // empty' 2>/dev/null
+
+    local api_token
+    api_token=$(echo "$response" | jq -r '.response.token // empty' 2>/dev/null)
+
+    if [ -z "$api_token" ] || [ "$api_token" = "null" ]; then
+        print_error "Не удалось создать API токен: $(echo "$response" | jq -r '.message // "Unknown error"')"
+        return 1
+    fi
+
+    sed -i "s|REMNAWAVE_API_TOKEN=.*|REMNAWAVE_API_TOKEN=$api_token|" "$target_dir/docker-compose.yml"
+    print_success "API токен создан и добавлен в docker-compose.yml"
 }
 
 # ═══════════════════════════════════════════════
@@ -1044,14 +1112,14 @@ volumes:
     driver: local
     external: false
     name: remnawave-db-data
-COMPOSE_MID
+COMPOSE_TAIL
 }
 
 generate_docker_compose_panel() {
     local panel_cert_domain=$1
     local sub_cert_domain=$2
 
-    cat > /opt/remnawave/docker-compose.yml <<'COMPOSE_HEAD'
+    cat > /opt/remnawave/docker-compose.yml <<'COMPOSE_TAIL'
 services:
   remnawave-db:
     image: postgres:17
@@ -1484,6 +1552,33 @@ installation_full() {
     reading "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN
     check_domain "$SELFSTEAL_DOMAIN" true || return
 
+    # Учётные данные администратора
+    echo
+    echo -e "${YELLOW}👤 УЧЁТНЫЕ ДАННЫЕ АДМИНИСТРАТОРА${NC}"
+    reading "Логин администратора:" SUPERADMIN_USERNAME
+    reading "Пароль администратора:" SUPERADMIN_PASSWORD
+
+    if [ -z "$SUPERADMIN_USERNAME" ] || [ -z "$SUPERADMIN_PASSWORD" ]; then
+        print_error "Логин и пароль не могут быть пустыми"
+        return
+    fi
+
+    # Название ноды
+    echo
+    local entity_name=""
+    while true; do
+        reading "Название ноды (3-20 символов, a-zA-Z0-9-):" entity_name
+        if [[ "$entity_name" =~ ^[a-zA-Z0-9-]+$ ]]; then
+            if [ ${#entity_name} -ge 3 ] && [ ${#entity_name} -le 20 ]; then
+                break
+            else
+                print_error "Название должно быть от 3 до 20 символов"
+            fi
+        else
+            print_error "Допустимы только символы: a-zA-Z0-9 и дефис"
+        fi
+    done
+
     # Сертификаты
     echo
     show_arrow_menu "🔐 МЕТОД ПОЛУЧЕНИЯ СЕРТИФИКАТОВ" \
@@ -1565,6 +1660,7 @@ installation_full() {
     show_spinner_timer 20 "Ожидание запуска Remnawave"
 
     local domain_url="127.0.0.1:3000"
+    local target_dir="/opt/remnawave"
 
     show_spinner_until_ready "http://$domain_url/api/auth/status" "Проверка доступности API" 120
     if [ $? -ne 0 ]; then
@@ -1572,15 +1668,125 @@ installation_full() {
         return
     fi
 
-    # Шаблон
-    randomhtml
+    # ═══════════════════════════════════════════
+    # АВТОНАСТРОЙКА: РЕГИСТРАЦИЯ И СОЗДАНИЕ НОДЫ
+    # ═══════════════════════════════════════════
+    echo
+    print_action "Автонастройка панели и ноды..."
 
-    # Перезапуск nginx
+    # 1. Регистрация суперадмина → получение токена
+    print_action "Регистрация администратора..."
+    local token
+    token=$(register_remnawave "$domain_url" "$SUPERADMIN_USERNAME" "$SUPERADMIN_PASSWORD")
+
+    if [ -z "$token" ]; then
+        print_error "Не удалось зарегистрироваться/авторизоваться в панели"
+        print_error "Настройте ноду вручную через панель: https://$PANEL_DOMAIN"
+        randomhtml
+        echo
+        echo -e "${BLUE}════════════════════════════════════════${NC}"
+        echo -e "${GREEN}   ⚠️  УСТАНОВКА ЧАСТИЧНО ЗАВЕРШЕНА${NC}"
+        echo -e "${BLUE}════════════════════════════════════════${NC}"
+        echo
+        echo -e "${WHITE}Панель:${NC}       https://$PANEL_DOMAIN"
+        echo -e "${WHITE}Подписка:${NC}     https://$SUB_DOMAIN"
+        echo -e "${WHITE}SelfSteal:${NC}    https://$SELFSTEAL_DOMAIN"
+        echo
+        echo -e "${YELLOW}Нода не настроена автоматически. Настройте вручную.${NC}"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
+        return
+    fi
+    print_success "Администратор зарегистрирован"
+
+    # 2. Получение публичного ключа → SECRET_KEY для ноды
+    print_action "Получение публичного ключа панели..."
+    get_public_key "$domain_url" "$token" "$target_dir"
+    print_success "Публичный ключ получен и записан в docker-compose"
+
+    # 3. Генерация ключей x25519 (REALITY)
+    print_action "Генерация REALITY ключей..."
+    local private_key
+    private_key=$(generate_xray_keys "$domain_url" "$token")
+
+    if [ -z "$private_key" ]; then
+        print_error "Не удалось сгенерировать REALITY ключи"
+        return
+    fi
+    print_success "REALITY ключи сгенерированы"
+
+    # 4. Удаление дефолтного config profile
+    print_action "Удаление дефолтного конфиг-профиля..."
+    delete_config_profile "$domain_url" "$token"
+    print_success "Дефолтный конфиг-профиль удалён"
+
+    # 5. Создание config profile с VLESS REALITY
+    print_action "Создание конфиг-профиля ($entity_name)..."
+    local config_result
+    config_result=$(create_config_profile "$domain_url" "$token" "$entity_name" "$SELFSTEAL_DOMAIN" "$private_key" "$entity_name")
+
+    local config_profile_uuid inbound_uuid
+    read config_profile_uuid inbound_uuid <<< "$config_result"
+
+    if [ -z "$config_profile_uuid" ] || [ "$config_profile_uuid" = "ERROR" ] || \
+       [ -z "$inbound_uuid" ]; then
+        print_error "Не удалось создать конфиг-профиль"
+        return
+    fi
+    print_success "Конфиг-профиль создан"
+
+    # 6. Создание ноды
+    print_action "Создание ноды ($entity_name)..."
+    create_node "$domain_url" "$token" "$config_profile_uuid" "$inbound_uuid" "172.30.0.1" "$entity_name"
+    if [ $? -eq 0 ]; then
+        print_success "Нода создана"
+    else
+        print_error "Не удалось создать ноду"
+    fi
+
+    # 7. Создание хоста
+    print_action "Создание хоста ($SELFSTEAL_DOMAIN)..."
+    create_host "$domain_url" "$token" "$config_profile_uuid" "$inbound_uuid" "$entity_name" "$SELFSTEAL_DOMAIN"
+    print_success "Хост создан"
+
+    # 8. Получение и обновление сквадов
+    print_action "Настройка сквадов..."
+    local squad_uuids
+    squad_uuids=$(get_default_squad "$domain_url" "$token")
+
+    if [ -n "$squad_uuids" ]; then
+        while IFS= read -r squad_uuid; do
+            [ -z "$squad_uuid" ] && continue
+            update_squad "$domain_url" "$token" "$squad_uuid" "$inbound_uuid"
+        done <<< "$squad_uuids"
+        print_success "Сквады обновлены"
+    else
+        echo -e "${YELLOW}⚠️  Сквады не найдены (будут настроены при создании пользователей)${NC}"
+    fi
+
+    # 9. Создание API токена для subscription-page
+    print_action "Создание API токена для страницы подписки..."
+    create_api_token "$domain_url" "$token" "$target_dir"
+
+    # 10. Перезапуск Docker Compose (с обновлённым docker-compose.yml)
+    print_action "Перезапуск сервисов с обновлённой конфигурацией..."
     (
         cd /opt/remnawave
-        docker compose restart remnawave-nginx >/dev/null 2>&1
+        docker compose down >/dev/null 2>&1
     ) &
-    show_spinner "Перезапуск Nginx"
+    show_spinner "Остановка контейнеров"
+
+    (
+        cd /opt/remnawave
+        docker compose up -d >/dev/null 2>&1
+    ) &
+    show_spinner "Запуск контейнеров"
+
+    # 11. Шаблон selfsteal
+    randomhtml
+
+    # Ожидаем готовность после перезапуска
+    show_spinner_timer 10 "Ожидание запуска сервисов"
 
     # Итог
     echo
@@ -1592,14 +1798,13 @@ installation_full() {
     echo -e "${WHITE}Подписка:${NC}     https://$SUB_DOMAIN"
     echo -e "${WHITE}SelfSteal:${NC}    https://$SELFSTEAL_DOMAIN"
     echo
-    echo -e "${YELLOW}📝 ДАЛЬНЕЙШИЕ ДЕЙСТВИЯ:${NC}"
-    echo -e "${WHITE}1.${NC} Откройте панель и создайте аккаунт администратора"
-    echo -e "${DARKGRAY}   При первом входе вы сможете установить логин и пароль${NC}"
+    echo -e "${YELLOW}👤 ДАННЫЕ АДМИНИСТРАТОРА:${NC}"
+    echo -e "${WHITE}Логин:${NC}        $SUPERADMIN_USERNAME"
+    echo -e "${WHITE}Пароль:${NC}        $SUPERADMIN_PASSWORD"
     echo
-    echo -e "${WHITE}2.${NC} После входа настройте ноду через интерфейс панели:"
-    echo -e "${DARKGRAY}   • Создайте конфигурацию (Config Profile)${NC}"
-    echo -e "${DARKGRAY}   • Добавьте ноду с доменом: $SELFSTEAL_DOMAIN${NC}"
-    echo -e "${DARKGRAY}   • Порт для ноды: 2222${NC}"
+    echo -e "${GREEN}✅ Нода \"$entity_name\" настроена автоматически${NC}"
+    echo -e "${GREEN}✅ API токен для страницы подписки создан${NC}"
+    echo -e "${GREEN}✅ REALITY конфиг-профиль создан${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
