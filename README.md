@@ -20,10 +20,10 @@
 ### Архитектура
 
 ```
-Клиент → :443 (XRAY VLESS Reality) → Unix Socket → NGINX → Remnawave Panel / Subscription / SelfSteal
+Клиент → XRAY VLESS Reality → Unix Socket → NGINX → Remnawave Panel / Subscription / SelfSteal
 ```
 
-XRAY слушает на порту 443 и обрабатывает TLS. Авторизованный VPN-трафик маршрутизируется напрямую. Остальной (браузерный) трафик передаётся через Unix socket (`/dev/shm/nginx.sock`) на NGINX, который проксирует запросы по доменам.
+XRAY обрабатывает TLS-соединения. Авторизованный VPN-трафик маршрутизируется напрямую. Остальной (браузерный) трафик передаётся через Unix socket на NGINX, который проксирует запросы по доменам.
 
 ---
 
