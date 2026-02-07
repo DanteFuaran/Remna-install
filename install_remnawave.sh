@@ -111,10 +111,6 @@ show_arrow_menu() {
     local options=("$@")
     local num_options=${#options[@]}
     local selected=0
-    
-    # Сохраняем текущие настройки терминала
-    local old_tty_settings
-    old_tty_settings=$(stty -g) || true
 
     while true; do
         clear
@@ -135,39 +131,24 @@ show_arrow_menu() {
         echo -e "${BLUE}════════════════════════════════════════${NC}"
         echo -e "${DARKGRAY}Используйте ↑↓ для навигации, Enter для выбора${NC}"
 
-        # Читаем один символ без эха
-        stty raw -echo 2>/dev/null || true
-        local key
-        key=$(timeout 0.1 dd bs=1 count=1 2>/dev/null) || key=""
-        stty "$old_tty_settings" 2>/dev/null || true
+        # Читаем нажатие клавиши
+        IFS= read -r -n1 key 2>/dev/null
 
-        # Обрабатываем нажатие клавиши
-        if [ -z "$key" ]; then
-            # Таймаут - просто продолжаем
-            continue
-        elif [ "$key" = "$(printf '\033')" ]; then
-            # ESC - начало escape-последовательности
-            stty raw -echo 2>/dev/null || true
-            local key2 key3
-            key2=$(timeout 0.1 dd bs=1 count=1 2>/dev/null) || key2=""
-            key3=$(timeout 0.1 dd bs=1 count=1 2>/dev/null) || key3=""
-            stty "$old_tty_settings" 2>/dev/null || true
-            
-            if [ "$key2" = "[" ]; then
-                case "$key3" in
-                    A)  # Стрелка вверх
-                        ((selected--)) || true
-                        [ $selected -lt 0 ] && selected=$((num_options - 1))
-                        ;;
-                    B)  # Стрелка вниз
-                        ((selected++)) || true
-                        [ $selected -ge $num_options ] && selected=0
-                        ;;
-                esac
-            fi
-        elif [ "$(printf '%d' "'$key")" = "13" ] || [ "$(printf '%d' "'$key")" = "10" ]; then
-            # Enter (CR или LF)
-            stty "$old_tty_settings" 2>/dev/null || true
+        # Обрабатываем escape-последовательности для стрелок
+        if [[ $key == $'\e' ]]; then
+            read -r -n2 -t 0.1 key 2>/dev/null
+            case "$key" in
+                '[A')  # Стрелка вверх
+                    ((selected--))
+                    [ $selected -lt 0 ] && selected=$((num_options - 1))
+                    ;;
+                '[B')  # Стрелка вниз
+                    ((selected++))
+                    [ $selected -ge $num_options ] && selected=0
+                    ;;
+            esac
+        elif [[ $key == "" ]]; then
+            # Enter нажат
             return $selected
         fi
     done
