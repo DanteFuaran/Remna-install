@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 SCRIPT_VERSION="1.0.0"
 DIR_REMNAWAVE="/opt/remnawave/"
@@ -106,11 +105,22 @@ show_spinner_until_ready() {
 # МЕНЮ СО СТРЕЛОЧКАМИ
 # ═══════════════════════════════════════════════
 show_arrow_menu() {
+    set +e
     local title="$1"
     shift
     local options=("$@")
     local num_options=${#options[@]}
     local selected=0
+
+    # Сохраняем настройки терминала
+    local original_stty
+    original_stty=$(stty -g 2>/dev/null)
+
+    # Скрываем курсор
+    tput civis 2>/dev/null || true
+
+    # Отключаем canonical mode и echo, включаем чтение отдельных символов
+    stty -icanon -echo min 1 time 0 2>/dev/null || true
 
     while true; do
         clear
@@ -131,24 +141,43 @@ show_arrow_menu() {
         echo -e "${BLUE}════════════════════════════════════════${NC}"
         echo -e "${DARKGRAY}Используйте ↑↓ для навигации, Enter для выбора${NC}"
 
-        # Читаем 3 символа для обработки escape-последовательностей
-        read -rsn1 c1
-        if [[ $c1 == $'\x1b' ]]; then
-            read -rsn1 -t 0.01 c2
-            read -rsn1 -t 0.01 c3
-            if [[ $c2 == '[' ]]; then
-                case $c3 in
+        local key
+        read -rsn1 key 2>/dev/null || key=""
+
+        # Проверяем escape-последовательность для стрелок
+        if [[ "$key" == $'\e' ]]; then
+            local seq1="" seq2=""
+            read -rsn1 -t 0.1 seq1 2>/dev/null || seq1=""
+            if [[ "$seq1" == '[' ]]; then
+                read -rsn1 -t 0.1 seq2 2>/dev/null || seq2=""
+                case "$seq2" in
                     'A')  # Стрелка вверх
-                        ((selected > 0)) && ((selected--)) || selected=$((num_options - 1))
+                        ((selected--))
+                        if [ $selected -lt 0 ]; then
+                            selected=$((num_options - 1))
+                        fi
                         ;;
                     'B')  # Стрелка вниз
-                        ((selected < num_options - 1)) && ((selected++)) || selected=0
+                        ((selected++))
+                        if [ $selected -ge $num_options ]; then
+                            selected=0
+                        fi
                         ;;
                 esac
             fi
-        elif [[ $c1 == "" ]] || [[ $c1 == $'\n' ]] || [[ $c1 == $'\r' ]]; then
-            # Enter
-            return $selected
+        else
+            local key_code
+            if [ -n "$key" ]; then
+                key_code=$(printf '%d' "'$key" 2>/dev/null || echo 0)
+            else
+                key_code=13
+            fi
+
+            if [ "$key_code" -eq 10 ] || [ "$key_code" -eq 13 ]; then
+                stty "$original_stty" 2>/dev/null || true
+                tput cnorm 2>/dev/null || true
+                return $selected
+            fi
         fi
     done
 }
