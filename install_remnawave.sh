@@ -1,7 +1,8 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.2.1"
-DIR_REMNAWAVE="/opt/remnawave/"
+SCRIPT_VERSION="2.2.2"
+DIR_REMNAWAVE="/usr/local/remna-install/"
+DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
 # ═══════════════════════════════════════════════
@@ -445,7 +446,7 @@ get_cert_cloudflare() {
     show_spinner "Получение wildcard сертификата для *.$domain"
 
     # Добавляем cron для обновления
-    local cron_rule="0 3 * * * certbot renew --quiet --deploy-hook 'cd /opt/remnawave && docker compose restart remnawave-nginx' 2>/dev/null"
+    local cron_rule="0 3 * * * certbot renew --quiet --deploy-hook 'cd ${DIR_PANEL} && docker compose restart remnawave-nginx' 2>/dev/null"
     if ! crontab -l 2>/dev/null | grep -q "certbot renew"; then
         (crontab -l 2>/dev/null; echo "$cron_rule") | crontab -
     fi
@@ -467,7 +468,7 @@ get_cert_acme() {
     ) &
     show_spinner "Получение сертификата для $domain"
 
-    local cron_rule="0 3 * * * certbot renew --quiet --deploy-hook 'cd /opt/remnawave && docker compose restart remnawave-nginx' 2>/dev/null"
+    local cron_rule="0 3 * * * certbot renew --quiet --deploy-hook 'cd ${DIR_PANEL} && docker compose restart remnawave-nginx' 2>/dev/null"
     if ! crontab -l 2>/dev/null | grep -q "certbot renew"; then
         (crontab -l 2>/dev/null; echo "$cron_rule") | crontab -
     fi
@@ -780,7 +781,7 @@ update_squad() {
 create_api_token() {
     local domain_url=$1
     local token=$2
-    local target_dir=${3:-/opt/remnawave}
+    local target_dir=${3:-${DIR_PANEL}}
 
     local request_body='{"tokenName":"subscription-page"}'
     local response
@@ -1599,7 +1600,7 @@ installation_full() {
     echo -e "${BLUE}════════════════════════════════════════${NC}"
     echo
 
-    mkdir -p /opt/remnawave && cd /opt/remnawave
+    mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
 
     # Домены
@@ -1719,7 +1720,7 @@ installation_full() {
     show_spinner_timer 20 "Ожидание запуска Remnawave"
 
     local domain_url="127.0.0.1:3000"
-    local target_dir="/opt/remnawave"
+    local target_dir="${DIR_PANEL}"
 
     show_spinner_until_ready "http://$domain_url/api/auth/status" "Проверка доступности API" 120
     if [ $? -ne 0 ]; then
@@ -1878,7 +1879,7 @@ installation_panel() {
     echo -e "${BLUE}════════════════════════════════════════${NC}"
     echo
 
-    mkdir -p /opt/remnawave && cd /opt/remnawave
+    mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
 
     reading "Домен панели (например panel.example.com):" PANEL_DOMAIN
     check_domain "$PANEL_DOMAIN" true || return
@@ -1971,7 +1972,7 @@ installation_node() {
     echo -e "${BLUE}════════════════════════════════════════${NC}"
     echo
 
-    mkdir -p /opt/remnawave && cd /opt/remnawave
+    mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
 
     reading "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN
@@ -2374,7 +2375,7 @@ manage_random_template() {
     # Перезапускаем Nginx для применения изменений
     if docker ps --filter "name=remnawave-nginx" --format "{{.Names}}" 2>/dev/null | grep -q "remnawave-nginx"; then
         (
-            cd /opt/remnawave 2>/dev/null
+            cd "${DIR_PANEL}" 2>/dev/null
             docker compose restart remnawave-nginx >/dev/null 2>&1
         ) &
         show_spinner "Применение изменений"
@@ -2546,12 +2547,12 @@ remove_script() {
             read -e -p "$(echo -e "${YELLOW}Подтвердите: [y/N]: ${NC}")" confirm
             if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
                 (
-                    cd /opt/remnawave 2>/dev/null
+                    cd "${DIR_PANEL}" 2>/dev/null
                     docker compose down -v --rmi all >/dev/null 2>&1 || true
                     docker system prune -af >/dev/null 2>&1 || true
                 ) &
                 show_spinner "Удаление контейнеров"
-                rm -rf /opt/remnawave
+                rm -rf "${DIR_PANEL}"
                 rm -f /usr/local/bin/remna_install
                 rm -rf "${DIR_REMNAWAVE}"
                 print_success "Всё удалено"
