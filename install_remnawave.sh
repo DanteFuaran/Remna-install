@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="1.3.0"
+SCRIPT_VERSION="1.4.0"
 DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
@@ -2263,7 +2263,14 @@ manage_random_template() {
 # ═══════════════════════════════════════════════
 check_for_updates() {
     local remote_version
-    remote_version=$(curl -s --max-time 3 "$SCRIPT_URL" | grep -m 1 'SCRIPT_VERSION=' | cut -d'"' -f2 2>/dev/null)
+    
+    # Получаем последний коммит SHA и используем его для обхода кеша
+    local latest_sha
+    latest_sha=$(curl -sL --max-time 3 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/main" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
+    
+    if [ -n "$latest_sha" ]; then
+        remote_version=$(curl -sL --max-time 3 "https://raw.githubusercontent.com/DanteFuaran/Remna-install/$latest_sha/install_remnawave.sh" 2>/dev/null | grep -m 1 'SCRIPT_VERSION=' | cut -d'"' -f2)
+    fi
     
     if [ -z "$remote_version" ]; then
         return 1
