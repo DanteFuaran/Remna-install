@@ -2066,9 +2066,20 @@ remove_script() {
 # УСТАНОВКА СКРИПТА
 # ═══════════════════════════════════════════════
 install_script() {
+    # Проверяем, запущен ли скрипт из постоянного местоположения
+    if [[ "$0" == *"remna_install"* ]] || [ -f "/usr/local/bin/remna_install" ]; then
+        # Скрипт уже установлен
+        return 0
+    fi
+
+    # Скачиваем скрипт в постоянное местоположение
     mkdir -p "${DIR_REMNAWAVE}"
-    cp "$0" "${DIR_REMNAWAVE}remna_install" 2>/dev/null || \
-        wget -q -O "${DIR_REMNAWAVE}remna_install" "$SCRIPT_URL" 2>/dev/null
+    
+    if ! wget -q -O "${DIR_REMNAWAVE}remna_install" "$SCRIPT_URL" 2>/dev/null; then
+        print_error "Не удалось скачать скрипт"
+        exit 1
+    fi
+    
     chmod +x "${DIR_REMNAWAVE}remna_install"
     ln -sf "${DIR_REMNAWAVE}remna_install" /usr/local/bin/remna_install
 
@@ -2077,6 +2088,10 @@ install_script() {
     if [ -f "$bashrc_file" ] && ! grep -q "$alias_line" "$bashrc_file"; then
         echo "$alias_line" >> "$bashrc_file"
     fi
+
+    # Перезапускаем скрипт из нового местоположения
+    print_success "Скрипт установлен"
+    exec /usr/local/bin/remna_install
 }
 
 # ═══════════════════════════════════════════════
