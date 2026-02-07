@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.0.0"
+SCRIPT_VERSION="2.1.0"
 DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
@@ -1174,48 +1174,58 @@ EOF
 }
 
 # Для экономии места, создам упрощенные версии остальных шаблонов
-# Они будут использовать ту же структуру, но с разным контентом
+# Они будут использовать разные уникальные стили
 
-create_tech_site() { create_generic_site "TechHub" "💻" "Technology Innovation" "Building the future with cutting-edge technology" "Our Products" "Our Vision" "Get Started"; }
-create_cloud_site() { create_generic_site "CloudServ" "☁️" "Cloud Solutions" "Scalable infrastructure for modern applications" "Solutions" "Why Cloud" "Try Free"; }
-create_fintech_site() { create_generic_site "FinTech" "💳" "Financial Technology" "Secure payment processing and financial services" "Products" "Security" "Open Account"; }
-create_education_site() { create_generic_site "EduPlatform" "📚" "Online Learning" "Knowledge and skills for everyone, anywhere" "Courses" "Instructors" "Start Learning"; }
-create_media_site() { create_generic_site "MediaNet" "🎬" "Media Network" "Entertainment, news and streaming content" "Shows" "Schedule" "Watch Now"; }
-create_ecommerce_site() { create_generic_site "ShopHub" "🛒" "Online Marketplace" "Shop smarter, live better with great deals" "Products" "Categories" "Shop Now"; }
-create_gaming_site() { create_generic_site "GameZone" "🎮" "Gaming Platform" "Play, compete, connect with gamers worldwide" "Games" "Tournaments" "Play Now"; }
-create_social_site() { create_generic_site "SocialNet" "👥" "Social Network" "Connect with friends and share life moments" "Features" "Community" "Join Now"; }
-create_analytics_site() { create_generic_site "DataLytics" "📊" "Data Analytics" "Transform data into actionable insights" "Platform" "Insights" "Get Demo"; }
-create_crypto_site() { create_generic_site "CryptoX" "₿" "Crypto Exchange" "Trade digital assets securely and efficiently" "Markets" "Trading" "Start Trading"; }
-create_travel_site() { create_generic_site "TravelPro" "✈️" "Travel Agency" "Discover amazing destinations worldwide" "Destinations" "Packages" "Book Trip"; }
-create_fitness_site() { create_generic_site "FitLife" "💪" "Fitness Network" "Your personal health and wellness journey" "Programs" "Trainers" "Start Free"; }
-create_news_site() { create_generic_site "NewsHub" "📰" "News Network" "Stay informed with latest breaking news" "Top Stories" "Categories" "Read More"; }
-create_music_site() { create_generic_site "MusicStream" "🎵" "Music Streaming" "Listen to millions of songs and podcasts" "Library" "Playlists" "Listen Free"; }
-create_realestate_site() { create_generic_site "RealtyHub" "🏠" "Real Estate" "Find your dream home or perfect investment" "Listings" "Agents" "Search Homes"; }
-create_food_site() { create_generic_site "FoodDeliv" "🍕" "Food Delivery" "Your favorite meals delivered to your door" "Restaurants" "Menu" "Order Now"; }
-create_auto_site() { create_generic_site "AutoMart" "🚗" "Auto Marketplace" "Buy, sell and explore quality vehicles" "Inventory" "Dealers" "Browse Cars"; }
-create_design_site() { create_generic_site "DesignStudio" "🎨" "Design Studio" "Creative design solutions for your brand" "Portfolio" "Services" "Hire Us"; }
-create_consulting_site() { create_generic_site "ConsultPro" "💼" "Business Consulting" "Expert advice for business success" "Services" "Experts" "Consult Now"; }
+# Шаблон 2: Tech Hub - Dark theme with neon accents
+create_tech_site() {
+    cat > /var/www/html/css/style.css <<'EOF'
+:root { --primary: #00ff88; --secondary: #0099ff; --dark: #0a0e27; --darker: #050816; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Courier New', monospace; background: var(--darker); color: #fff; line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+header { background: var(--dark); border-bottom: 2px solid var(--primary); padding: 15px 0; position: sticky; top: 0; z-index: 1000; }
+nav { display: flex; justify-content: space-between; align-items: center; }
+nav .logo { font-size: 1.5em; color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+nav ul { list-style: none; display: flex; gap: 20px; }
+nav a { color: #fff; text-decoration: none; transition: color 0.3s; }
+nav a:hover { color: var(--primary); }
+.hero { padding: 120px 0; text-align: center; background: linear-gradient(135deg, var(--dark), var(--darker)); }
+.hero h1 { font-size: 3.5em; margin-bottom: 20px; color: var(--primary); animation: glow 2s ease-in-out infinite alternate; }
+@keyframes glow { from { text-shadow: 0 0 20px var(--primary); } to { text-shadow: 0 0 30px var(--primary), 0 0 40px var(--secondary); } }
+.hero p { font-size: 1.3em; margin-bottom: 30px; color: #aaa; }
+.btn { display: inline-block; padding: 15px 40px; background: var(--primary); color: var(--dark); text-decoration: none; border-radius: 5px; font-weight: bold; transition: all 0.3s; border: 2px solid var(--primary); }
+.btn:hover { background: transparent; color: var(--primary); }
+.section { padding: 80px 0; }
+.section-title { text-align: center; font-size: 2.5em; margin-bottom: 50px; color: var(--secondary); }
+.tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+.tech-card { background: var(--dark); padding: 30px; border-radius: 10px; border: 1px solid #333; transition: all 0.3s; }
+.tech-card:hover { border-color: var(--primary); transform: translateY(-5px); box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3); }
+.tech-card-icon { font-size: 3em; margin-bottom: 15px; }
+footer { background: var(--dark); color: #fff; padding: 40px 0; text-align: center; border-top: 2px solid var(--primary); }
+.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+.gallery-item { position: relative; overflow: hidden; border-radius: 10px; border: 2px solid var(--primary); }
+.gallery-item img { width: 100%; height: 250px; object-fit: cover; filter: grayscale(50%); transition: all 0.3s; }
+.gallery-item:hover img { filter: grayscale(0%); transform: scale(1.05); }
+EOF
 
-create_generic_site() {
-    local name=$1 icon=$2 title=$3 subtitle=$4 link1=$5 link2=$6 cta=$7
-    cat > /var/www/html/index.html <<EOF
+    cat > /var/www/html/index.html <<'EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
+    <title>TechHub - Innovation Platform</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <header>
         <div class="container">
             <nav>
-                <div class="logo">${icon} ${name}</div>
+                <div class="logo">&lt;TechHub/&gt;</div>
                 <ul>
                     <li><a href="index.html">Home</a></li>
-                    <li><a href="about.html">${link2}</a></li>
-                    <li><a href="services.html">${link1}</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="services.html">Products</a></li>
                     <li><a href="contact.html">Contact</a></li>
                 </ul>
             </nav>
@@ -1223,64 +1233,113 @@ create_generic_site() {
     </header>
     <section class="hero">
         <div class="container">
-            <h1>${title}</h1>
-            <p>${subtitle}</p>
-            <a href="services.html" class="btn">${cta}</a>
+            <h1>$ Building The Future</h1>
+            <p>Next-generation technology for modern developers</p>
+            <a href="services.html" class="btn">Explore Tech Stack</a>
         </div>
     </section>
     <section class="section">
         <div class="container">
-            <h2 class="section-title">Key Features</h2>
-            <div class="features">
-                <div class="feature"><div class="feature-icon">⚡</div><h3>Fast & Reliable</h3><p>Lightning-fast performance you can trust</p></div>
-                <div class="feature"><div class="feature-icon">🔒</div><h3>Secure</h3><p>Enterprise-grade security protection</p></div>
-                <div class="feature"><div class="feature-icon">🌐</div><h3>Global</h3><p>Available worldwide, 24/7 support</p></div>
+            <h2 class="section-title">Core Technologies</h2>
+            <div class="tech-grid">
+                <div class="tech-card"><div class="tech-card-icon">⚡</div><h3>Lightning Fast</h3><p>Optimized performance at scale</p></div>
+                <div class="tech-card"><div class="tech-card-icon">🔐</div><h3>Secure by Design</h3><p>Enterprise-grade encryption</p></div>
+                <div class="tech-card"><div class="tech-card-icon">🚀</div><h3>Scalable</h3><p>From startup to enterprise</p></div>
+                <div class="tech-card"><div class="tech-card-icon">🤖</div><h3>AI Powered</h3><p>Machine learning integration</p></div>
             </div>
         </div>
     </section>
-    <section class="section" style="background: #f8f9fa;">
+    <section class="section">
         <div class="container">
-            <h2 class="section-title">Gallery</h2>
+            <h2 class="section-title">Featured Projects</h2>
             <div class="gallery">
-                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=21" alt="Gallery 1"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=22" alt="Gallery 2"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=23" alt="Gallery 3"></div>
-                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=24" alt="Gallery 4"></div>
+                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=31" alt="Project"></div>
+                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=32" alt="Project"></div>
+                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=33" alt="Project"></div>
+                <div class="gallery-item"><img src="https://picsum.photos/400/300?random=34" alt="Project"></div>
             </div>
         </div>
     </section>
     <footer>
-        <div class="footer-links">
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Support</a>
-        </div>
-        <p>&copy; 2024 ${name}. All rights reserved.</p>
+        <p>&copy; 2024 TechHub. Built with passion.</p>
     </footer>
 </body>
 </html>
 EOF
-    
-    # Создаём остальные страницы
+
     for page in about services contact; do
         cat > /var/www/html/${page}.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${page^} - TechHub</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<header><div class="container"><nav><div class="logo">&lt;TechHub/&gt;</div><ul>
+<li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li>
+<li><a href="services.html">Products</a></li><li><a href="contact.html">Contact</a></li>
+</ul></nav></div></header>
+<section class="hero"><div class="container"><h1>${page^}</h1><p>Discover our technology solutions</p></div></section>
+<section class="section"><div class="container"><h2 class="section-title">Information</h2>
+<div class="tech-grid">
+<div class="tech-card"><div class="tech-card-icon">💡</div><h3>Innovation</h3><p>Cutting-edge solutions</p></div>
+<div class="tech-card"><div class="tech-card-icon">📊</div><h3>Analytics</h3><p>Data-driven insights</p></div>
+<div class="tech-card"><div class="tech-card-icon">🔧</div><h3>Tools</h3><p>Developer-friendly APIs</p></div>
+</div></div></section>
+<footer><p>&copy; 2024 TechHub. Built with passion.</p></footer>
+</body></html>
+EOF
+    done
+}
+
+# Шаблон 3: Cloud Services - Minimalist light design
+create_cloud_site() {
+    cat > /var/www/html/css/style.css <<'EOF'
+:root { --primary: #4facfe; --secondary: #00f2fe; --light: #f0f8ff; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fff; color: #333; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+header { background: #fff; padding: 20px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
+nav { display: flex; justify-content: space-between; align-items: center; }
+nav .logo { font-size: 2em; font-weight: 300; color: var(--primary); }
+nav ul { list-style: none; display: flex; gap: 35px; }
+nav a { color: #555; text-decoration: none; font-weight: 500; transition: color 0.3s; }
+nav a:hover { color: var(--primary); }
+.hero { background: var(--light); padding: 100px 0; text-align: center; }
+.hero h1 { font-size: 3.8em; font-weight: 300; margin-bottom: 20px; color: #222; }
+.hero p { font-size: 1.4em; color: #666; margin-bottom: 30px; }
+.btn { display: inline-block; padding: 18px 45px; background: var(--primary); color: #fff; text-decoration: none; border-radius: 50px; font-weight: 500; transition: all 0.3s; box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3); }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(79, 172, 254, 0.4); }
+.section { padding: 90px 0; }
+.section-title { text-align: center; font-size: 2.8em; font-weight: 300; margin-bottom: 60px; color: #222; }
+.cloud-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
+.cloud-feature { background: #fff; padding: 40px; border-radius: 15px; box-shadow: 0 3px 15px rgba(0,0,0,0.08); transition: all 0.3s; text-align: center; }
+.cloud-feature:hover { box-shadow: 0 10px 30px rgba(79, 172, 254, 0.2); transform: translateY(-5px); }
+.cloud-feature-icon { font-size: 3.5em; margin-bottom: 20px; }
+.cloud-feature h3 { font-size: 1.5em; font-weight: 500; margin-bottom: 15px; color: #333; }
+footer { background: var(--light); padding: 50px 0; text-align: center; color: #666; }
+.gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; }
+.gallery-item { border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+.gallery-item img { width: 100%; height: 300px; object-fit: cover; }
+EOF
+
+    cat > /var/www/html/index.html <<'EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${page^} - ${name}</title>
+    <title>CloudServ - Infrastructure Solutions</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <header>
         <div class="container">
             <nav>
-                <div class="logo">${icon} ${name}</div>
+                <div class="logo">☁️ CloudServ</div>
                 <ul>
                     <li><a href="index.html">Home</a></li>
-                    <li><a href="about.html">${link2}</a></li>
-                    <li><a href="services.html">${link1}</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="services.html">Solutions</a></li>
                     <li><a href="contact.html">Contact</a></li>
                 </ul>
             </nav>
@@ -1288,16 +1347,171 @@ EOF
     </header>
     <section class="hero">
         <div class="container">
-            <h1>${page^}</h1>
-            <p>Learn more about what we offer</p>
+            <h1>The Cloud. Simplified.</h1>
+            <p>Deploy, scale, and manage your infrastructure with ease</p>
+            <a href="services.html" class="btn">Get Started Free</a>
+        </div>
+    </section>
+    <section class="section" style="background: #fafafa;">
+        <div class="container">
+            <h2 class="section-title">Why CloudServ</h2>
+            <div class="cloud-features">
+                <div class="cloud-feature"><div class="cloud-feature-icon">⚡</div><h3>Ultra Fast</h3><p>99.99% uptime guarantee with global CDN</p></div>
+                <div class="cloud-feature"><div class="cloud-feature-icon">🔒</div><h3>Secure</h3><p>Bank-level security and encryption</p></div>
+                <div class="cloud-feature"><div class="cloud-feature-icon">💰</div><h3>Cost Effective</h3><p>Pay only for what you use</p></div>
+            </div>
         </div>
     </section>
     <section class="section">
         <div class="container">
-            <h2 class="section-title">Information</h2>
-            <div class="features">
-                <div class="feature"><div class="feature-icon">📋</div><h3>Details</h3><p>Comprehensive information about our platform</p></div>
-                <div class="feature"><div class="feature-icon">💡</div><h3>Solutions</h3><p>Tailored approaches for your needs</p></div>
+            <h2 class="section-title">Trusted by Thousands</h2>
+            <div class="gallery">
+                <div class="gallery-item"><img src="https://picsum.photos/500/350?random=41" alt="Client"></div>
+                <div class="gallery-item"><img src="https://picsum.photos/500/350?random=42" alt="Client"></div>
+            </div>
+        </div>
+    </section>
+    <footer>
+        <p>&copy; 2024 CloudServ. Simple, Secure, Scalable.</p>
+    </footer>
+</body>
+</html>
+EOF
+
+    for page in about services contact; do
+        cat > /var/www/html/${page}.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${page^} - CloudServ</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<header><div class="container"><nav><div class="logo">☁️ CloudServ</div><ul>
+<li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li>
+<li><a href="services.html">Solutions</a></li><li><a href="contact.html">Contact</a></li>
+</ul></nav></div></header>
+<section class="hero"><div class="container"><h1>${page^}</h1><p>Cloud infrastructure at your fingertips</p></div></section>
+<section class="section"><div class="container"><h2 class="section-title">Our Services</h2>
+<div class="cloud-features">
+<div class="cloud-feature"><div class="cloud-feature-icon">📦</div><h3>Storage</h3><p>Unlimited cloud storage</p></div>
+<div class="cloud-feature"><div class="cloud-feature-icon">🖥️</div><h3>Compute</h3><p>Powerful virtual machines</p></div>
+<div class="cloud-feature"><div class="cloud-feature-icon">🌐</div><h3>Network</h3><p>Global infrastructure</p></div>
+</div></div></section>
+<footer><p>&copy; 2024 CloudServ. Simple, Secure, Scalable.</p></footer>
+</body></html>
+EOF
+    done
+}
+
+# Остальные шаблоны с уникальными дизайнами (короткая версия для экономии места)
+create_fintech_site() { create_varied_site "FinTech" "💳" "Secure Payments" "Financial technology you can trust" "#43e97b" "#38f9d7" "modern" "Open Account" "Security" "Features"; }
+create_education_site() { create_varied_site "EduHub" "📚" "Learn Anything" "Education for the modern world" "#fa709a" "#fee140" "creative" "Start Learning" "Courses" "Instructors"; }
+create_media_site() { create_varied_site "MediaStream" "🎬" "Entertainment Hub" "Your favorite shows and movies" "#30cfd0" "#330867" "dark" "Watch Now" "Shows" "Schedule"; }
+create_ecommerce_site() { create_varied_site "ShopNow" "🛒" "Shop Smart" "Best deals online" "#a8edea" "#fed6e3" "modern" "Browse Products" "Categories" "Deals"; }
+create_gaming_site() { create_varied_site "GameVerse" "🎮" "Level Up" "Join millions of gamers" "#ff9a9e" "#fecfef" "dark" "Play Now" "Games" "Tournaments"; }
+create_social_site() { create_varied_site "SocialHub" "👥" "Connect & Share" "Where friends meet" "#ffecd2" "#fcb69f" "modern" "Join Now" "Features" "Community"; }
+create_analytics_site() { create_varied_site "DataPro" "📊" "Insights Driven" "Transform data to decisions" "#ff6e7f" "#bfe9ff" "creative" "Get Started" "Platform" "Analytics"; }
+create_crypto_site() { create_varied_site "CryptoTrade" "₿" "Trade Smart" "Secure crypto trading" "#e0c3fc" "#8ec5fc" "dark" "Start Trading" "Markets" "Security"; }
+create_travel_site() { create_varied_site "TravelWorld" "✈️" "Explore More" "Discover your next adventure" "#f77062" "#fe5196" "creative" "Book Trip" "Destinations" "Packages"; }
+create_fitness_site() { create_varied_site "FitPro" "💪" "Get Fit" "Your wellness journey starts here" "#c471f5" "#fa71cd" "modern" "Start Free" "Programs" "Trainers"; }
+create_news_site() { create_varied_site "NewsDaily" "📰" "Stay Informed" "Breaking news worldwide" "#667eea" "#764ba2" "modern" "Read More" "Top Stories" "Categories"; }
+create_music_site() { create_varied_site "MusicBox" "🎵" "Stream Music" "Millions of songs, one app" "#fccb90" "#d57eeb" "dark" "Listen Free" "Library" "Playlists"; }
+create_realestate_site() { create_varied_site "HomeFind" "🏠" "Find Your Home" "Dream homes await" "#e0c3fc" "#8ec5fc" "modern" "Search Homes" "Listings" "Agents"; }
+create_food_site() { create_varied_site "FoodFast" "🍕" "Order Food" "Delivered in 30 minutes" "#f093fb" "#f5576c" "creative" "Order Now" "Restaurants" "Menu"; }
+create_auto_site() { create_varied_site "AutoHub" "🚗" "Buy Vehicles" "Quality cars, best prices" "#4facfe" "#00f2fe" "modern" "Browse Cars" "Inventory" "Dealers"; }
+create_design_site() { create_varied_site "DesignCo" "🎨" "Creative Studio" "We bring ideas to life" "#fa709a" "#fee140" "creative" "View Work" "Portfolio" "Services"; }
+create_consulting_site() { create_varied_site "ConsultPro" "💼" "Expert Advice" "Business growth strategies" "#30cfd0" "#330867" "modern" "Get Consultation" "Services" "Experts"; }
+
+create_varied_site() {
+    local name=$1 icon=$2 title=$3 subtitle=$4 c1=$5 c2=$6 theme=$7 cta=$8 link1=$9 link2=${10}
+    
+    if [ "$theme" = "dark" ]; then
+        local bg="#1a1a2e" txt="#fff" card="#16213e"
+    elif [ "$theme" = "creative" ]; then
+        local bg="#fff" txt="#333" card="#f5f5f5"
+    else
+        local bg="#ffffff" txt="#222" card="#fafafa"
+    fi
+    
+    cat > /var/www/html/css/style.css <<EOF
+:root { --primary: ${c1}; --secondary: ${c2}; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto; background: ${bg}; color: ${txt}; line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+header { background: linear-gradient(90deg, var(--primary), var(--secondary)); padding: 18px 0; position: sticky; top: 0; z-index: 1000; }
+nav { display: flex; justify-content: space-between; align-items: center; }
+nav .logo { font-size: 1.8em; color: #fff; font-weight: bold; }
+nav ul { list-style: none; display: flex; gap: 25px; }
+nav a { color: #fff; text-decoration: none; transition: opacity 0.3s; }
+nav a:hover { opacity: 0.8; }
+.hero { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; padding: 100px 0; text-align: center; }
+.hero h1 { font-size: 3.2em; margin-bottom: 20px; }
+.hero p { font-size: 1.3em; margin-bottom: 30px; opacity: 0.95; }
+.btn { display: inline-block; padding: 16px 45px; background: #fff; color: var(--primary); text-decoration: none; border-radius: 50px; font-weight: 600; transition: transform 0.3s; }
+.btn:hover { transform: scale(1.05); }
+.section { padding: 70px 0; }
+.section-title { text-align: center; font-size: 2.3em; margin-bottom: 40px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; }
+.card { background: ${card}; padding: 35px; border-radius: 12px; text-align: center; transition: transform 0.3s; }
+.card:hover { transform: translateY(-8px); }
+.card-icon { font-size: 3em; margin-bottom: 15px; }
+footer { background: linear-gradient(90deg, var(--primary), var(--secondary)); color: #fff; padding: 35px 0; text-align: center; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+.gallery-item { border-radius: 10px; overflow: hidden; }
+.gallery-item img { width: 100%; height: 250px; object-fit: cover; }
+EOF
+
+    cat > /var/www/html/index.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title} - ${name}</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<header><div class="container"><nav><div class="logo">${icon} ${name}</div><ul>
+<li><a href="index.html">Home</a></li><li><a href="about.html">${link2}</a></li>
+<li><a href="services.html">${link1}</a></li><li><a href="contact.html">Contact</a></li>
+</ul></nav></div></header>
+<section class="hero"><div class="container"><h1>${title}</h1><p>${subtitle}</p>
+<a href="services.html" class="btn">${cta}</a></div></section>
+<section class="section"><div class="container"><h2 class="section-title">Why Choose Us</h2>
+<div class="grid">
+<div class="card"><div class="card-icon">🚀</div><h3>Fast</h3><p>Lightning speed performance</p></div>
+<div class="card"><div class="card-icon">🔐</div><h3>Secure</h3><p>Top-level security</p></div>
+<div class="card"><div class="card-icon">💡</div><h3>Smart</h3><p>Intelligent solutions</p></div>
+</div></div></section>
+<section class="section"><div class="container"><h2 class="section-title">Gallery</h2>
+<div class="gallery">
+<div class="gallery-item"><img src="https://picsum.photos/400/300?random=51" alt="Item"></div>
+<div class="gallery-item"><img src="https://picsum.photos/400/300?random=52" alt="Item"></div>
+<div class="gallery-item"><img src="https://picsum.photos/400/300?random=53" alt="Item"></div>
+<div class="gallery-item"><img src="https://picsum.photos/400/300?random=54" alt="Item"></div>
+</div></div></section>
+<footer><p>&copy; 2024 ${name}. All rights reserved.</p></footer>
+</body></html>
+EOF
+
+    for page in about services contact; do
+        cat > /var/www/html/${page}.html <<EOF
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${page^} - ${name}</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<header><div class="container"><nav><div class="logo">${icon} ${name}</div><ul>
+<li><a href="index.html">Home</a></li><li><a href="about.html">${link2}</a></li>
+<li><a href="services.html">${link1}</a></li><li><a href="contact.html">Contact</a></li>
+</ul></nav></div></header>
+<section class="hero"><div class="container"><h1>${page^}</h1><p>Learn more about our services</p></div></section>
+<section class="section"><div class="container"><h2 class="section-title">Details</h2>
+<div class="grid">
+<div class="card"><div class="card-icon">📋</div><h3>Info</h3><p>Complete information</p></div>
+<div class="card"><div class="card-icon">💼</div><h3>Services</h3><p>Professional solutions</p></div>
+<div class="card"><div class="card-icon">🎯</div><h3>Results</h3><p>Proven success</p></div>
+</div></div></section>
+<footer><p>&copy; 2024 ${name}. All rights reserved.</p></footer>
+</body></html>
+EOF
+    done
+}
                 <div class="feature"><div class="feature-icon">🎯</div><h3>Results</h3><p>Proven track record of success</p></div>
             </div>
         </div>
