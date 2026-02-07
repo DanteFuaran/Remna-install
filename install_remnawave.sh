@@ -2534,15 +2534,25 @@ if [ ! -L "/usr/local/bin/remna_install" ] || [ ! -f "${DIR_REMNAWAVE}remna_inst
     exec /usr/local/bin/remna_install
 fi
 
-# Проверка обновлений (в фоне, не блокирует запуск)
-(
+# Проверка обновлений (синхронно, но только если прошло больше часа с последней проверки)
+UPDATE_CHECK_FILE="/tmp/remna_last_update_check"
+current_time=$(date +%s)
+last_check=0
+
+if [ -f "$UPDATE_CHECK_FILE" ]; then
+    last_check=$(cat "$UPDATE_CHECK_FILE" 2>/dev/null || echo 0)
+fi
+
+# Проверяем раз в час (3600 секунд)
+time_diff=$((current_time - last_check))
+if [ $time_diff -gt 3600 ] || [ ! -f /tmp/remna_update_available ]; then
     new_version=$(check_for_updates)
     if [ $? -eq 0 ] && [ -n "$new_version" ]; then
-        # Сохраняем информацию об обновлении
         echo "$new_version" > /tmp/remna_update_available
     else
         rm -f /tmp/remna_update_available 2>/dev/null
     fi
-) &
+    echo "$current_time" > "$UPDATE_CHECK_FILE"
+fi
 
 main_menu
