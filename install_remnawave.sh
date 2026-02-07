@@ -131,25 +131,23 @@ show_arrow_menu() {
         echo -e "${BLUE}════════════════════════════════════════${NC}"
         echo -e "${DARKGRAY}Используйте ↑↓ для навигации, Enter для выбора${NC}"
 
-        # Читаем нажатие клавиши (с подавлением эха)
-        IFS= read -rsn1 key 2>/dev/null
-
-        # Обрабатываем escape-последовательности для стрелок
-        if [[ $key == $'\x1b' ]]; then
-            # Читаем оставшуюся часть escape-последовательности
-            read -rsn2 -t 0.001 key 2>/dev/null
-            case "$key" in
-                '[A')  # Стрелка вверх
-                    ((selected--))
-                    [ $selected -lt 0 ] && selected=$((num_options - 1))
-                    ;;
-                '[B')  # Стрелка вниз
-                    ((selected++))
-                    [ $selected -ge $num_options ] && selected=0
-                    ;;
-            esac
-        elif [[ $key == "" ]]; then
-            # Enter нажат
+        # Читаем 3 символа для обработки escape-последовательностей
+        read -rsn1 c1
+        if [[ $c1 == $'\x1b' ]]; then
+            read -rsn1 -t 0.01 c2
+            read -rsn1 -t 0.01 c3
+            if [[ $c2 == '[' ]]; then
+                case $c3 in
+                    'A')  # Стрелка вверх
+                        ((selected > 0)) && ((selected--)) || selected=$((num_options - 1))
+                        ;;
+                    'B')  # Стрелка вниз
+                        ((selected < num_options - 1)) && ((selected++)) || selected=0
+                        ;;
+                esac
+            fi
+        elif [[ $c1 == "" ]] || [[ $c1 == $'\n' ]] || [[ $c1 == $'\r' ]]; then
+            # Enter
             return $selected
         fi
     done
