@@ -428,6 +428,7 @@ get_cert_acme() {
         certbot certonly --standalone \
             -d "$domain" \
             --email "$email" --agree-tos --non-interactive \
+            --http-01-port 80 \
             --key-type ecdsa >/dev/null 2>&1
         ufw delete allow 80/tcp >/dev/null 2>&1
         ufw reload >/dev/null 2>&1
