@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="1.5.3"
+SCRIPT_VERSION="1.5.4"
 DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
@@ -2313,8 +2313,17 @@ get_installed_version() {
 }
 
 get_remote_version() {
-    # Получаем версию напрямую с GitHub с обходом кеша
-    curl -sL --max-time 5 "https://raw.githubusercontent.com/DanteFuaran/Remna-install/main/install_remnawave.sh?$(date +%s)" 2>/dev/null | grep -m 1 'SCRIPT_VERSION=' | cut -d'"' -f2
+    # Получаем SHA последнего коммита для обхода кеша CDN
+    local latest_sha
+    latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/main" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
+    
+    if [ -n "$latest_sha" ]; then
+        # Используем конкретный SHA для получения актуальной версии
+        curl -sL --max-time 5 "https://raw.githubusercontent.com/DanteFuaran/Remna-install/$latest_sha/install_remnawave.sh" 2>/dev/null | grep -m 1 'SCRIPT_VERSION=' | cut -d'"' -f2
+    else
+        # Фоллбек на прямое обращение с timestamp
+        curl -sL --max-time 5 "https://raw.githubusercontent.com/DanteFuaran/Remna-install/main/install_remnawave.sh?t=$(date +%s)" 2>/dev/null | grep -m 1 'SCRIPT_VERSION=' | cut -d'"' -f2
+    fi
 }
 
 check_for_updates() {
@@ -2392,8 +2401,18 @@ update_script() {
     (
         # Создаём директорию если её нет
         mkdir -p "${DIR_REMNAWAVE}"
+        
+        # Получаем SHA для скачивания точной версии
+        local download_url="$SCRIPT_URL"
+        local latest_sha
+        latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/main" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
+        
+        if [ -n "$latest_sha" ]; then
+            download_url="https://raw.githubusercontent.com/DanteFuaran/Remna-install/$latest_sha/install_remnawave.sh"
+        fi
+        
         # Скачиваем с обходом кеша
-        wget -q --no-cache -O "${DIR_REMNAWAVE}remna_install" "$SCRIPT_URL" 2>/dev/null
+        wget -q --no-cache -O "${DIR_REMNAWAVE}remna_install" "$download_url" 2>/dev/null
         chmod +x "${DIR_REMNAWAVE}remna_install"
         ln -sf "${DIR_REMNAWAVE}remna_install" /usr/local/bin/remna_install
     ) &
