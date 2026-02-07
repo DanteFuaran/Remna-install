@@ -131,12 +131,13 @@ show_arrow_menu() {
         echo -e "${BLUE}════════════════════════════════════════${NC}"
         echo -e "${DARKGRAY}Используйте ↑↓ для навигации, Enter для выбора${NC}"
 
-        # Читаем нажатие клавиши
-        IFS= read -r -n1 key 2>/dev/null
+        # Читаем нажатие клавиши (с подавлением эха)
+        IFS= read -rsn1 key 2>/dev/null
 
         # Обрабатываем escape-последовательности для стрелок
-        if [[ $key == $'\e' ]]; then
-            read -r -n2 -t 0.1 key 2>/dev/null
+        if [[ $key == $'\x1b' ]]; then
+            # Читаем оставшуюся часть escape-последовательности
+            read -rsn2 -t 0.001 key 2>/dev/null
             case "$key" in
                 '[A')  # Стрелка вверх
                     ((selected--))
