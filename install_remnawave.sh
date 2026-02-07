@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="1.5.1"
+SCRIPT_VERSION="1.5.2"
 DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
@@ -2363,9 +2363,12 @@ update_script() {
     ) &
     show_spinner "Загрузка обновлений"
 
+    # Удаляем файл с информацией об обновлении
+    rm -f /tmp/remna_update_available 2>/dev/null
+
     print_success "Скрипт обновлён до последней версии"
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для перезапуска${NC}")"
-    exec "$0"
+    exec /usr/local/bin/remna_install
 }
 
 remove_script() {
