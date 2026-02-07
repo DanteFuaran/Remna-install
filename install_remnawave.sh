@@ -1512,23 +1512,6 @@ EOF
 EOF
     done
 }
-                <div class="feature"><div class="feature-icon">🎯</div><h3>Results</h3><p>Proven track record of success</p></div>
-            </div>
-        </div>
-    </section>
-    <footer>
-        <div class="footer-links">
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Support</a>
-        </div>
-        <p>&copy; 2024 ${name}. All rights reserved.</p>
-    </footer>
-</body>
-</html>
-EOF
-    done
-}
 
 # Список шаблонов
 get_templates_list() {
