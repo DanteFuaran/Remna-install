@@ -38,7 +38,7 @@
         .service-icon{width:60px;height:60px;background:rgba(6,182,212,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:var(--primary);margin-bottom:20px}
         .team-card{background:var(--dark2);border:1px solid rgba(107,114,128,.15);border-radius:16px;padding:30px;text-align:center;transition:.3s}
         .team-card:hover{border-color:rgba(6,182,212,.3);transform:translateY(-5px)}
-        .team-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;margin:0 auto 16px;font-weight:700}
+        .team-avatar{width:80px;height:80px;border-radius:50%;margin:0 auto 16px;object-fit:cover;border:3px solid rgba(6,182,212,.3)}
         .testimonial{background:var(--glass);border:1px solid rgba(107,114,128,.12);border-radius:16px;padding:32px;border-left:4px solid var(--primary)}
         .cta-section{background:linear-gradient(135deg,rgba(6,182,212,.12),rgba(14,165,233,.08));border:1px solid rgba(6,182,212,.2);border-radius:24px;padding:60px;text-align:center}
         footer{background:var(--dark2);border-top:1px solid rgba(107,114,128,.12);padding:50px 0 30px}
@@ -121,10 +121,10 @@
             <span class="section-label">Команда</span>
             <h2 class="section-title">Наши специалисты</h2>
             <div class="row g-4 mt-2">
-                <div class="col-md-6 col-lg-3 anim"><div class="team-card"><div class="team-avatar">АИ</div><h6 class="text-white fw-semibold">Алексей Иванов</h6><small class="text-secondary">CTO / Архитектор</small></div></div>
-                <div class="col-md-6 col-lg-3 anim"><div class="team-card"><div class="team-avatar">МК</div><h6 class="text-white fw-semibold">Мария Козлова</h6><small class="text-secondary">Lead Developer</small></div></div>
-                <div class="col-md-6 col-lg-3 anim"><div class="team-card"><div class="team-avatar">ДС</div><h6 class="text-white fw-semibold">Дмитрий Смирнов</h6><small class="text-secondary">DevOps Engineer</small></div></div>
-                <div class="col-md-6 col-lg-3 anim"><div class="team-card"><div class="team-avatar">ЕН</div><h6 class="text-white fw-semibold">Елена Новикова</h6><small class="text-secondary">Security Analyst</small></div></div>
+                <div class="col-md-6 col-lg-3 anim"><div class="team-card"><img src="https://i.pravatar.cc/80?img=12" class="team-avatar" alt="Алексей Иванов"><h6 class="text-white fw-semibold">Алексей Иванов</h6><small class="text-secondary">CTO / Архитектор</small></div></div>
+                <div class="col-md-6 col-lg-3 anim"><div class="team-card"><img src="https://i.pravatar.cc/80?img=47" class="team-avatar" alt="Мария Козлова"><h6 class="text-white fw-semibold">Мария Козлова</h6><small class="text-secondary">Lead Developer</small></div></div>
+                <div class="col-md-6 col-lg-3 anim"><div class="team-card"><img src="https://i.pravatar.cc/80?img=33" class="team-avatar" alt="Дмитрий Смирнов"><h6 class="text-white fw-semibold">Дмитрий Смирнов</h6><small class="text-secondary">DevOps Engineer</small></div></div>
+                <div class="col-md-6 col-lg-3 anim"><div class="team-card"><img src="https://i.pravatar.cc/80?img=28" class="team-avatar" alt="Елена Новикова"><h6 class="text-white fw-semibold">Елена Новикова</h6><small class="text-secondary">Security Analyst</small></div></div>
             </div>
         </div>
     </section>
@@ -134,8 +134,8 @@
             <span class="section-label">Отзывы</span>
             <h2 class="section-title">Нас рекомендуют</h2>
             <div class="row g-4 mt-2">
-                <div class="col-md-6 anim"><div class="testimonial"><div class="d-flex align-items-center mb-3"><div class="team-avatar" style="width:48px;height:48px;font-size:1rem;margin:0">ОР</div><div class="ms-3"><h6 class="text-white mb-0">Олег Романов</h6><small class="text-secondary">CEO, TechStart</small></div></div><p class="mb-0 text-secondary">"NexCore помогли нам перенести инфраструктуру в облако за 2 недели. Снизили расходы на 40% и повысили отказоустойчивость."</p></div></div>
-                <div class="col-md-6 anim"><div class="testimonial"><div class="d-flex align-items-center mb-3"><div class="team-avatar" style="width:48px;height:48px;font-size:1rem;margin:0;background:linear-gradient(135deg,#f59e0b,#ef4444)">АВ</div><div class="ms-3"><h6 class="text-white mb-0">Анна Волкова</h6><small class="text-secondary">CTO, FinGroup</small></div></div><p class="mb-0 text-secondary">"Отличная команда! Провели аудит безопасности и устранили критические уязвимости. Работают быстро и профессионально."</p></div></div>
+                <div class="col-md-6 anim"><div class="testimonial"><div class="d-flex align-items-center mb-3"><img src="https://i.pravatar.cc/48?img=60" class="team-avatar" style="width:48px;height:48px;margin:0" alt="Олег Романов"><div class="ms-3"><h6 class="text-white mb-0">Олег Романов</h6><small class="text-secondary">CEO, TechStart</small></div></div><p class="mb-0 text-secondary">"NexCore помогли нам перенести инфраструктуру в облако за 2 недели. Снизили расходы на 40% и повысили отказоустойчивость."</p></div></div>
+                <div class="col-md-6 anim"><div class="testimonial"><div class="d-flex align-items-center mb-3"><img src="https://i.pravatar.cc/48?img=45" class="team-avatar" style="width:48px;height:48px;margin:0" alt="Анна Волкова"><div class="ms-3"><h6 class="text-white mb-0">Анна Волкова</h6><small class="text-secondary">CTO, FinGroup</small></div></div><p class="mb-0 text-secondary">"Отличная команда! Провели аудит безопасности и устранили критические уязвимости. Работают быстро и профессионально."</p></div></div>
             </div>
         </div>
     </section>
