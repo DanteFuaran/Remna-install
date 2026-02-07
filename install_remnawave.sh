@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="1.5.2"
+SCRIPT_VERSION="1.5.3"
 DIR_REMNAWAVE="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
 
@@ -2304,31 +2304,35 @@ manage_random_template() {
 # ═══════════════════════════════════════════════
 # ПРОВЕРКА ВЕРСИИ И ОБНОВЛЕНИЕ СКРИПТА
 # ═══════════════════════════════════════════════
+get_installed_version() {
+    if [ -f "/usr/local/bin/remna_install" ]; then
+        cat /usr/local/bin/remna_install 2>/dev/null | grep -m 1 'SCRIPT_VERSION=' | cut -d'"' -f2
+    else
+        echo ""
+    fi
+}
+
+get_remote_version() {
+    # Получаем версию напрямую с GitHub с обходом кеша
+    curl -sL --max-time 5 "https://raw.githubusercontent.com/DanteFuaran/Remna-install/main/install_remnawave.sh?$(date +%s)" 2>/dev/null | grep -m 1 'SCRIPT_VERSION=' | cut -d'"' -f2
+}
+
 check_for_updates() {
     local remote_version
-    
-    # Получаем последний коммит SHA и используем его для обхода кеша
-    local latest_sha
-    latest_sha=$(curl -sL --max-time 3 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/main" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
-    
-    if [ -n "$latest_sha" ]; then
-        remote_version=$(curl -sL --max-time 3 "https://raw.githubusercontent.com/DanteFuaran/Remna-install/$latest_sha/install_remnawave.sh" 2>/dev/null | grep -m 1 'SCRIPT_VERSION=' | cut -d'"' -f2)
-    fi
+    remote_version=$(get_remote_version)
     
     if [ -z "$remote_version" ]; then
         return 1
     fi
     
-    # Сравнение версий (простое сравнение строк)
-    if [ "$remote_version" != "$SCRIPT_VERSION" ]; then
-        # Дополнительная проверка что remote_version новее
-        local current_ver="${SCRIPT_VERSION//./}"
-        local remote_ver="${remote_version//./}"
-        
-        if [ "$remote_ver" -gt "$current_ver" ] 2>/dev/null; then
-            echo "$remote_version"
-            return 0
-        fi
+    # Проверяем версию установленного скрипта, а не текущего
+    local installed_version
+    installed_version=$(get_installed_version)
+    
+    # Если скрипт не установлен или версии отличаются
+    if [ -z "$installed_version" ] || [ "$remote_version" != "$installed_version" ]; then
+        echo "$remote_version"
+        return 0
     fi
     
     return 1
@@ -2350,25 +2354,67 @@ show_update_notification() {
 }
 
 update_script() {
+    local force_update="$1"
     clear
     echo -e "${BLUE}════════════════════════════════════════${NC}"
     echo -e "${GREEN}   🔄 ОБНОВЛЕНИЕ СКРИПТА${NC}"
     echo -e "${BLUE}════════════════════════════════════════${NC}"
     echo
 
+    local installed_version
+    installed_version=$(get_installed_version)
+    local remote_version
+    remote_version=$(get_remote_version)
+    
+    if [ -n "$installed_version" ]; then
+        echo -e "${WHITE}Установленная версия:${NC} v$installed_version"
+    else
+        echo -e "${YELLOW}Скрипт не установлен в системе${NC}"
+    fi
+    
+    if [ -n "$remote_version" ]; then
+        echo -e "${WHITE}Доступная версия:${NC}     v$remote_version"
+    else
+        print_error "Не удалось получить информацию о версии с GitHub"
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        return 1
+    fi
+    
+    echo
+    
+    # Проверяем нужно ли обновление
+    if [ "$force_update" != "force" ] && [ "$installed_version" = "$remote_version" ]; then
+        print_success "У вас уже установлена последняя версия"
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        return 0
+    fi
+
     (
-        wget -q -O "${DIR_REMNAWAVE}remna_install" "$SCRIPT_URL" 2>/dev/null
+        # Создаём директорию если её нет
+        mkdir -p "${DIR_REMNAWAVE}"
+        # Скачиваем с обходом кеша
+        wget -q --no-cache -O "${DIR_REMNAWAVE}remna_install" "$SCRIPT_URL" 2>/dev/null
         chmod +x "${DIR_REMNAWAVE}remna_install"
         ln -sf "${DIR_REMNAWAVE}remna_install" /usr/local/bin/remna_install
     ) &
     show_spinner "Загрузка обновлений"
 
-    # Удаляем файл с информацией об обновлении
-    rm -f /tmp/remna_update_available 2>/dev/null
-
-    print_success "Скрипт обновлён до последней версии"
-    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для перезапуска${NC}")"
-    exec /usr/local/bin/remna_install
+    # Проверяем успешность обновления
+    local new_installed_version
+    new_installed_version=$(get_installed_version)
+    
+    if [ "$new_installed_version" = "$remote_version" ]; then
+        # Удаляем файл с информацией об обновлении и сбрасываем кеш
+        rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
+        
+        print_success "Скрипт успешно обновлён до версии v$new_installed_version"
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для перезапуска${NC}")"
+        exec /usr/local/bin/remna_install
+    else
+        print_error "Ошибка при обновлении скрипта"
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        return 1
+    fi
 }
 
 remove_script() {
@@ -2458,10 +2504,14 @@ main_menu() {
         
         # Получаем информацию о доступной версии (если есть)
         local update_notice=""
+        local installed_ver
+        installed_ver=$(get_installed_version)
         if [ -f /tmp/remna_update_available ]; then
             local new_version
             new_version=$(cat /tmp/remna_update_available)
-            update_notice=" ${YELLOW}(Доступна версия v$new_version)${NC}"
+            update_notice=" ${YELLOW}(Обновление до v$new_version)${NC}"
+        elif [ -n "$installed_ver" ] && [ "$installed_ver" != "$SCRIPT_VERSION" ]; then
+            update_notice=" ${YELLOW}(Установлена v$installed_ver)${NC}"
         fi
 
         if [ "$is_installed" = true ]; then
