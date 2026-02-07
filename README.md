@@ -93,8 +93,6 @@ ri
 ## 🙏 Благодарности
 
 - [Remnawave](https://github.com/remnawave) — панель управления
-- [XRAY-core](https://github.com/XTLS/Xray-core) — ядро прокси
-- [eGames](https://github.com/eGamesAPI/remnawave-reverse-proxy) — вдохновение для скрипта
 
 ---
 
