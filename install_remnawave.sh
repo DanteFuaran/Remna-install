@@ -2096,9 +2096,9 @@ change_credentials() {
     ) &
     show_spinner "Остановка панели"
 
-    # Подключаемся к базе и удаляем суперадмина
+    # Подключаемся к базе и удаляем всех администраторов
     docker exec -i remnawave-db psql -U postgres -d postgres <<'EOSQL' >/dev/null 2>&1
-DELETE FROM "User" WHERE "role" = 'SUPER_DEV';
+DELETE FROM admin;
 EOSQL
 
     if [ $? -eq 0 ]; then
