@@ -3115,6 +3115,7 @@ main_menu() {
         else
             show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
                 "📦  Установить компоненты" \
+                "──────────────────────────────────────" \
                 "❌  Выход"
             local choice=$?
 
@@ -3142,7 +3143,8 @@ main_menu() {
                         3) continue ;;
                     esac
                     ;;
-                1) clear; exit 0 ;;
+                1) continue ;;
+                2) clear; exit 0 ;;
             esac
         fi
     done
