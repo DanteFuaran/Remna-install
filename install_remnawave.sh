@@ -133,9 +133,9 @@ show_arrow_menu() {
 
     while true; do
         clear
-        echo -e "${BLUE}──────────────────────────────────────${NC}"
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
         echo -e "${GREEN}   $title${NC}"
-        echo -e "${BLUE}──────────────────────────────────────${NC}"
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
         echo
 
         for i in "${!options[@]}"; do
@@ -151,7 +151,7 @@ show_arrow_menu() {
         done
 
         echo
-        echo -e "${BLUE}──────────────────────────────────────${NC}"
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
         echo -e "${DARKGRAY}Используйте ↑↓ для навигации, Enter для выбора${NC}"
 
         local key
@@ -170,7 +170,7 @@ show_arrow_menu() {
                             selected=$((num_options - 1))
                         fi
                         # Пропускаем разделители вверх
-                        while [[ "${options[$selected]}" =~ ^[─\s]*$ ]]; do
+                        while [[ "${options[$selected]}" =~ ^[─═\s]*$ ]]; do
                             ((selected--))
                             if [ $selected -lt 0 ]; then
                                 selected=$((num_options - 1))
@@ -183,7 +183,7 @@ show_arrow_menu() {
                             selected=0
                         fi
                         # Пропускаем разделители вниз
-                        while [[ "${options[$selected]}" =~ ^[─\s]*$ ]]; do
+                        while [[ "${options[$selected]}" =~ ^[─═\s]*$ ]]; do
                             ((selected++))
                             if [ $selected -ge $num_options ]; then
                                 selected=0
