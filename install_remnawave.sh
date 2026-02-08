@@ -353,6 +353,20 @@ generate_cookie_key() {
     echo "$key"
 }
 
+get_cookie_from_nginx() {
+    # Извлекаем COOKIE_NAME и COOKIE_VALUE из nginx.conf
+    local nginx_conf="/opt/remnawave/nginx.conf"
+    if [ ! -f "$nginx_conf" ]; then
+        return 1
+    fi
+    COOKIE_NAME=$(grep -oP '~\*\K[^=]+(?==[^"]+"\s+1)' "$nginx_conf" | head -1)
+    COOKIE_VALUE=$(grep -oP '~\*[^=]+=\K[^"]+(?="\s+1)' "$nginx_conf" | head -1)
+    if [ -z "$COOKIE_NAME" ] || [ -z "$COOKIE_VALUE" ]; then
+        return 1
+    fi
+    return 0
+}
+
 # ═══════════════════════════════════════════════
 # РАБОТА С ДОМЕНАМИ
 # ═══════════════════════════════════════════════
@@ -1765,13 +1779,6 @@ installation_full() {
     COOKIE_NAME=$(generate_cookie_key)
     COOKIE_VALUE=$(generate_cookie_key)
 
-    # Сохраняем cookie в файл
-    cat > /opt/remnawave/.cookie_auth <<COOKIE_EOF
-COOKIE_NAME=${COOKIE_NAME}
-COOKIE_VALUE=${COOKIE_VALUE}
-COOKIE_EOF
-    chmod 600 /opt/remnawave/.cookie_auth
-
     (
         generate_env_file "$PANEL_DOMAIN" "$SUB_DOMAIN"
     ) &
@@ -1941,9 +1948,9 @@ COOKIE_EOF
     # Итог
     clear
     echo
-    echo -e "${BLUE}═══════════════════════════════════════════════════════════════════${NC}"
-    echo -e "         ${GREEN}🎉 УСТАНОВКА ЗАВЕРШЕНА!${NC}"
-    echo -e "${BLUE}═══════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "   ${GREEN}🎉 УСТАНОВКА ЗАВЕРШЕНА!${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
     echo -e "${YELLOW}🔗 ССЫЛКА ВХОДА В ПАНЕЛЬ:${NC}"
     echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
@@ -1951,7 +1958,7 @@ COOKIE_EOF
     echo -e "${YELLOW}👤 ЛОГИН:${NC}    ${WHITE}$SUPERADMIN_USERNAME${NC}"
     echo -e "${YELLOW}🔑 ПАРОЛЬ:${NC}   ${WHITE}$SUPERADMIN_PASSWORD${NC}"
     echo
-    echo -e "${DARKGRAY}_____________________________________________________________________${NC}"
+    echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
     echo
     echo -e "${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ЭТИ ДАННЫЕ!${NC}"
     echo -e "${RED}   Ссылка, логин и пароль не будут показаны повторно.${NC}"
@@ -2020,12 +2027,6 @@ installation_panel() {
     COOKIE_NAME=$(generate_cookie_key)
     COOKIE_VALUE=$(generate_cookie_key)
 
-    cat > /opt/remnawave/.cookie_auth <<COOKIE_EOF
-COOKIE_NAME=${COOKIE_NAME}
-COOKIE_VALUE=${COOKIE_VALUE}
-COOKIE_EOF
-    chmod 600 /opt/remnawave/.cookie_auth
-
     (generate_env_file "$PANEL_DOMAIN" "$SUB_DOMAIN") &
     show_spinner "Создание .env файла"
 
@@ -2057,9 +2058,9 @@ COOKIE_EOF
 
     clear
     echo
-    echo -e "${BLUE}═══════════════════════════════════════════════════════════════════${NC}"
-    echo -e "         ${GREEN}🎉 ПАНЕЛЬ УСТАНОВЛЕНА!${NC}"
-    echo -e "${BLUE}═══════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "   ${GREEN}🎉 ПАНЕЛЬ УСТАНОВЛЕНА!${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
     echo -e "${YELLOW}🔗 ССЫЛКА ВХОДА В ПАНЕЛЬ:${NC}"
     echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
@@ -2069,7 +2070,7 @@ COOKIE_EOF
     echo -e "${YELLOW}📝 Откройте панель по ссылке выше и создайте${NC}"
     echo -e "${YELLOW}   свой аккаунт администратора.${NC}"
     echo
-    echo -e "${DARKGRAY}_____________________________________________________________________${NC}"
+    echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
     echo
     echo -e "${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ССЫЛКУ!${NC}"
     echo -e "${RED}   Без неё вы не сможете попасть в панель.${NC}"
@@ -2314,14 +2315,13 @@ regenerate_cookies() {
         return
     fi
 
-    if [ ! -f /opt/remnawave/.cookie_auth ]; then
-        print_error "Файл .cookie_auth не найден. Переустановите Remnawave."
+    # Читаем старые cookie из nginx.conf
+    local COOKIE_NAME COOKIE_VALUE
+    if ! get_cookie_from_nginx; then
+        print_error "Не удалось извлечь cookie из nginx.conf"
         sleep 2
         return
     fi
-
-    # Читаем старые cookie
-    source /opt/remnawave/.cookie_auth
     local OLD_NAME="$COOKIE_NAME"
     local OLD_VALUE="$COOKIE_VALUE"
 
@@ -2352,13 +2352,6 @@ regenerate_cookies() {
     sed -i "s|${OLD_NAME}=${OLD_VALUE}; Path=|${NEW_NAME}=${NEW_VALUE}; Path=|g" /opt/remnawave/nginx.conf
     sed -i "s|\"${OLD_VALUE}\" 1|\"${NEW_VALUE}\" 1|g" /opt/remnawave/nginx.conf
 
-    # Сохраняем новые cookie в файл
-    cat > /opt/remnawave/.cookie_auth <<COOKIE_EOF
-COOKIE_NAME=${NEW_NAME}
-COOKIE_VALUE=${NEW_VALUE}
-COOKIE_EOF
-    chmod 600 /opt/remnawave/.cookie_auth
-
     # Перезапускаем nginx
     (
         cd /opt/remnawave
@@ -2373,16 +2366,12 @@ COOKIE_EOF
     echo
     echo -e "${GREEN}✅ Cookie успешно обновлены!${NC}"
     echo
-    echo -e "${BLUE}╔══════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${NC}  ${YELLOW}🔐 НОВАЯ ССЫЛКА ДОСТУПА К ПАНЕЛИ${NC}               ${BLUE}║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║${NC}                                                  ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${WHITE}https://${panel_domain}/auth/login?${NEW_NAME}=${NEW_VALUE}${NC}"
-    echo -e "${BLUE}║${NC}                                                  ${BLUE}║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║${NC}  ${RED}⚠️  Сохраните эту ссылку! Старая больше${NC}         ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${RED}   не работает.${NC}                                ${BLUE}║${NC}"
-    echo -e "${BLUE}╚══════════════════════════════════════════════════╝${NC}"
+    echo -e "${YELLOW}🔐 НОВАЯ ССЫЛКА ДОСТУПА К ПАНЕЛИ:${NC}"
+    echo -e "${WHITE}https://${panel_domain}/auth/login?${NEW_NAME}=${NEW_VALUE}${NC}"
+    echo
+    echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
+    echo
+    echo -e "${RED}⚠️  Сохраните эту ссылку! Старая больше не работает.${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
 }
@@ -2519,8 +2508,8 @@ open_panel_access() {
         print_warning "Порт 8443 уже открыт"
 
         # Показываем ссылку
-        if [ -f /opt/remnawave/.cookie_auth ]; then
-            source /opt/remnawave/.cookie_auth
+        local COOKIE_NAME COOKIE_VALUE
+        if get_cookie_from_nginx; then
             local panel_domain
             panel_domain=$(grep -oP 'server_name\s+\K[^;]+' /opt/remnawave/nginx.conf | head -1)
             echo
@@ -2545,13 +2534,13 @@ open_panel_access() {
         is_full=true
     fi
 
-    # Читаем данные cookie
-    if [ ! -f /opt/remnawave/.cookie_auth ]; then
-        print_error "Файл .cookie_auth не найден. Переустановите Remnawave."
+    # Читаем данные cookie из nginx.conf
+    local COOKIE_NAME COOKIE_VALUE
+    if ! get_cookie_from_nginx; then
+        print_error "Не удалось извлечь cookie из nginx.conf"
         sleep 2
         return
     fi
-    source /opt/remnawave/.cookie_auth
 
     # Определяем домен панели
     local panel_domain
@@ -2652,8 +2641,8 @@ manage_panel_access() {
     fi
 
     # Показываем cookie-ссылку
-    if [ -f /opt/remnawave/.cookie_auth ]; then
-        source /opt/remnawave/.cookie_auth
+    local COOKIE_NAME COOKIE_VALUE
+    if get_cookie_from_nginx; then
         local panel_domain
         panel_domain=$(grep -oP 'server_name\s+\K[^;]+' /opt/remnawave/nginx.conf | head -1)
         echo
@@ -2666,6 +2655,7 @@ manage_panel_access() {
         "🔓  Открыть порт 8443" \
         "🔒  Закрыть порт 8443" \
         "🔗  Показать cookie-ссылку" \
+        "──────────────────────────────────────" \
         "❌  Назад"
     local choice=$?
 
@@ -2674,8 +2664,8 @@ manage_panel_access() {
         1) close_panel_access ;;
         2)
             clear
-            if [ -f /opt/remnawave/.cookie_auth ]; then
-                source /opt/remnawave/.cookie_auth
+            local COOKIE_NAME COOKIE_VALUE
+            if get_cookie_from_nginx; then
                 local pd
                 pd=$(grep -oP 'server_name\s+\K[^;]+' /opt/remnawave/nginx.conf | head -1)
                 echo
@@ -2689,12 +2679,13 @@ manage_panel_access() {
                 fi
             else
                 echo
-                print_error "Файл .cookie_auth не найден"
+                print_error "Не удалось извлечь cookie из nginx.conf"
                 echo
             fi
             read -e -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения...${NC}")" _
             ;;
-        3) return ;;
+        3) continue ;;
+        4) return ;;
     esac
 }
 
@@ -2950,8 +2941,7 @@ remove_script() {
             print_success "Скрипт удалён"
             exit 0
             ;;
-        1) continue ;;
-        2)
+        1)
             echo -e "${RED}⚠️  ВСЕ ДАННЫЕ БУДУТ УДАЛЕНЫ!${NC}"
             echo
             local confirm
@@ -2971,6 +2961,7 @@ remove_script() {
                 exit 0
             fi
             ;;
+        2) continue ;;
         3) return ;;
     esac
 }
