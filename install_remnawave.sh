@@ -2491,16 +2491,20 @@ manage_reinstall() {
 
     show_arrow_menu "📦 ВЫБЕРИТЕ ТИП УСТАНОВКИ" \
         "📦  Панель + Нода (один сервер)" \
+        "──────────────────────────────────────" \
         "🖥️   Только панель" \
         "🌐  Только нода" \
+        "──────────────────────────────────────" \
         "❌  Назад"
     local choice=$?
 
     case $choice in
         0) installation_full ;;
-        1) installation_panel ;;
-        2) installation_node ;;
-        3) return ;;
+        1) continue ;;
+        2) installation_panel ;;
+        3) installation_node ;;
+        4) continue ;;
+        5) return ;;
     esac
 }
 
@@ -3058,8 +3062,10 @@ main_menu() {
                 0)
                     show_arrow_menu "📦 ВЫБЕРИТЕ ТИП УСТАНОВКИ" \
                         "📦  Панель + Нода (один сервер)" \
+                        "──────────────────────────────────────" \
                         "🖥️   Только панель" \
                         "🌐  Только нода" \
+                        "──────────────────────────────────────" \
                         "❌  Назад"
                     local install_choice=$?
                     case $install_choice in
@@ -3069,19 +3075,21 @@ main_menu() {
                             fi
                             installation_full
                             ;;
-                        1)
+                        1) continue ;;
+                        2)
                             if [ ! -f "${DIR_REMNAWAVE}install_packages" ] || ! command -v docker >/dev/null 2>&1; then
                                 install_packages
                             fi
                             installation_panel
                             ;;
-                        2)
+                        3)
                             if [ ! -f "${DIR_REMNAWAVE}install_packages" ] || ! command -v docker >/dev/null 2>&1; then
                                 install_packages
                             fi
                             installation_node
                             ;;
-                        3) continue ;;
+                        4) continue ;;
+                        5) continue ;;
                     esac
                     ;;
                 1) manage_reinstall ;;
@@ -3111,8 +3119,10 @@ main_menu() {
                 0)
                     show_arrow_menu "📦 ВЫБЕРИТЕ ТИП УСТАНОВКИ" \
                         "📦  Панель + Нода (один сервер)" \
+                        "──────────────────────────────────────" \
                         "🖥️   Только панель" \
                         "🌐  Только нода" \
+                        "──────────────────────────────────────" \
                         "❌  Назад"
                     local install_choice=$?
                     case $install_choice in
@@ -3120,15 +3130,17 @@ main_menu() {
                             install_packages
                             installation_full
                             ;;
-                        1)
+                        1) continue ;;
+                        2)
                             install_packages
                             installation_panel
                             ;;
-                        2)
+                        3)
                             install_packages
                             installation_node
                             ;;
-                        3) continue ;;
+                        4) continue ;;
+                        5) continue ;;
                     esac
                     ;;
                 1) continue ;;
