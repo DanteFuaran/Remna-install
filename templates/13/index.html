@@ -79,7 +79,7 @@
                     <li class="nav-item"><a class="nav-link" href="#pricing">Абонементы</a></li>
                     <li class="nav-item"><a class="nav-link" href="#">Расписание</a></li>
                 </ul>
-                <button class="btn-join">Записаться</button>
+                <button class="btn-join" data-bs-toggle="modal" data-bs-target="#consultModal">Записаться</button>
             </div>
         </div>
     </nav>
@@ -126,10 +126,10 @@
         <div class="container">
             <div class="section-head text-center"><h2>НАШИ ТРЕНЕРЫ</h2><div class="line mx-auto"></div></div>
             <div class="row g-4 justify-content-center">
-                <div class="col-6 col-md-3"><div class="trainer-card"><img src="https://i.pravatar.cc/120?img=60" class="trainer-img" alt=""><div class="trainer-name">ДМИТРИЙ ВОЛКОВ</div><div class="trainer-role">Силовой тренинг</div><p class="small mt-1">Опыт 12 лет</p></div></div>
-                <div class="col-6 col-md-3"><div class="trainer-card"><img src="https://i.pravatar.cc/120?img=61" class="trainer-img" alt=""><div class="trainer-name">АННА ПЕТРОВА</div><div class="trainer-role">Кардио & HIIT</div><p class="small mt-1">Опыт 8 лет</p></div></div>
-                <div class="col-6 col-md-3"><div class="trainer-card"><img src="https://i.pravatar.cc/120?img=62" class="trainer-img" alt=""><div class="trainer-name">СЕРГЕЙ ОРЛОВ</div><div class="trainer-role">CrossFit</div><p class="small mt-1">Опыт 10 лет</p></div></div>
-                <div class="col-6 col-md-3"><div class="trainer-card"><img src="https://i.pravatar.cc/120?img=63" class="trainer-img" alt=""><div class="trainer-name">МАРИЯ ИВАНОВА</div><div class="trainer-role">Йога & Pilates</div><p class="small mt-1">Опыт 6 лет</p></div></div>
+                <div class="col-6 col-md-3"><div class="trainer-card"><img src="https://i.pravatar.cc/120?img=12" class="trainer-img" alt=""><div class="trainer-name">ДМИТРИЙ ВОЛКОВ</div><div class="trainer-role">Силовой тренинг</div><p class="small mt-1">Опыт 12 лет</p></div></div>
+                <div class="col-6 col-md-3"><div class="trainer-card"><img src="https://i.pravatar.cc/120?img=45" class="trainer-img" alt=""><div class="trainer-name">АННА ПЕТРОВА</div><div class="trainer-role">Кардио & HIIT</div><p class="small mt-1">Опыт 8 лет</p></div></div>
+                <div class="col-6 col-md-3"><div class="trainer-card"><img src="https://i.pravatar.cc/120?img=68" class="trainer-img" alt=""><div class="trainer-name">СЕРГЕЙ ОРЛОВ</div><div class="trainer-role">CrossFit</div><p class="small mt-1">Опыт 10 лет</p></div></div>
+                <div class="col-6 col-md-3"><div class="trainer-card"><img src="https://i.pravatar.cc/120?img=9" class="trainer-img" alt=""><div class="trainer-name">МАРИЯ ИВАНОВА</div><div class="trainer-role">Йога & Pilates</div><p class="small mt-1">Опыт 6 лет</p></div></div>
             </div>
         </div>
     </section>
@@ -138,9 +138,9 @@
         <div class="container">
             <div class="section-head text-center"><h2>АБОНЕМЕНТЫ</h2><div class="line mx-auto"></div></div>
             <div class="row g-4 justify-content-center">
-                <div class="col-md-4"><div class="pricing-card"><div class="pricing-name">СТАРТ</div><div class="pricing-amount">₽2 990</div><div class="pricing-period">/ месяц</div><ul class="pricing-features"><li><i class="bi bi-check-lg"></i>Тренажёрный зал</li><li><i class="bi bi-check-lg"></i>Раздевалки и душевые</li><li><i class="bi bi-check-lg"></i>1 групповое занятие</li><li><i class="bi bi-x-lg" style="color:#666"></i>Персональный тренер</li></ul><button class="btn-join w-100">Выбрать</button></div></div>
-                <div class="col-md-4"><div class="pricing-card featured"><span class="badge-pop">Популярный</span><div class="pricing-name">ПРОФИ</div><div class="pricing-amount">₽5 990</div><div class="pricing-period">/ месяц</div><ul class="pricing-features"><li><i class="bi bi-check-lg"></i>Все зоны клуба</li><li><i class="bi bi-check-lg"></i>Безлимит групповых</li><li><i class="bi bi-check-lg"></i>4 персон. тренировки</li><li><i class="bi bi-check-lg"></i>Программа питания</li></ul><button class="btn-join w-100">Выбрать</button></div></div>
-                <div class="col-md-4"><div class="pricing-card"><div class="pricing-name">ЭЛИТА</div><div class="pricing-amount">₽9 990</div><div class="pricing-period">/ месяц</div><ul class="pricing-features"><li><i class="bi bi-check-lg"></i>Всё из «Профи»</li><li><i class="bi bi-check-lg"></i>Безлимит персональных</li><li><i class="bi bi-check-lg"></i>Спа и массаж</li><li><i class="bi bi-check-lg"></i>Бассейн и сауна</li></ul><button class="btn-join w-100">Выбрать</button></div></div>
+                <div class="col-md-4"><div class="pricing-card"><div class="pricing-name">СТАРТ</div><div class="pricing-amount">₽2 990</div><div class="pricing-period">/ месяц</div><ul class="pricing-features"><li><i class="bi bi-check-lg"></i>Тренажёрный зал</li><li><i class="bi bi-check-lg"></i>Раздевалки и душевые</li><li><i class="bi bi-check-lg"></i>1 групповое занятие</li><li><i class="bi bi-x-lg" style="color:#666"></i>Персональный тренер</li></ul><button class="btn-join w-100" data-bs-toggle="modal" data-bs-target="#consultModal">Выбрать</button></div></div>
+                <div class="col-md-4"><div class="pricing-card featured"><span class="badge-pop">Популярный</span><div class="pricing-name">ПРОФИ</div><div class="pricing-amount">₽5 990</div><div class="pricing-period">/ месяц</div><ul class="pricing-features"><li><i class="bi bi-check-lg"></i>Все зоны клуба</li><li><i class="bi bi-check-lg"></i>Безлимит групповых</li><li><i class="bi bi-check-lg"></i>4 персон. тренировки</li><li><i class="bi bi-check-lg"></i>Программа питания</li></ul><button class="btn-join w-100" data-bs-toggle="modal" data-bs-target="#consultModal">Выбрать</button></div></div>
+                <div class="col-md-4"><div class="pricing-card"><div class="pricing-name">ЭЛИТА</div><div class="pricing-amount">₽9 990</div><div class="pricing-period">/ месяц</div><ul class="pricing-features"><li><i class="bi bi-check-lg"></i>Всё из «Профи»</li><li><i class="bi bi-check-lg"></i>Безлимит персональных</li><li><i class="bi bi-check-lg"></i>Спа и массаж</li><li><i class="bi bi-check-lg"></i>Бассейн и сауна</li></ul><button class="btn-join w-100" data-bs-toggle="modal" data-bs-target="#consultModal">Выбрать</button></div></div>
             </div>
         </div>
     </section>
@@ -160,7 +160,7 @@
     <!-- Модальное окно консультации -->
     <div class="modal fade" id="consultModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="background:rgba(17,24,39,0.98);border:1px solid rgba(107,114,128,0.3);backdrop-filter:blur(20px)">
+            <div class="modal-content" style="background:var(--surface);border:1px solid var(--border);backdrop-filter:blur(20px)">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title" style="color:#fff;font-weight:700">Заявка на консультацию</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -179,7 +179,7 @@
                         <div class="mb-3">
                             <textarea class="form-control" rows="3" placeholder="Комментарий или вопрос" style="background:rgba(0,0,0,0.3);border:1px solid rgba(107,114,128,0.3);color:#fff"></textarea>
                         </div>
-                        <button type="submit" class="btn w-100 py-3 fw-bold" style="background:linear-gradient(135deg,#06b6d4,#0891b2);color:#fff;border:none;border-radius:8px">Отправить заявку</button>
+                        <button type="submit" class="btn-join w-100 py-3">Отправить заявку</button>
                         <p class="small text-center mt-3 mb-0" style="color:#9ca3af">Мы свяжемся с вами в течение 24 часов</p>
                     </form>
                     <div id="successMessage" class="alert alert-success mt-3 d-none">
@@ -191,6 +191,22 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>document.getElementById('consultForm')?.addEventListener('submit',function(e){e.preventDefault();this.classList.add('d-none');document.getElementById('successMessage').classList.remove('d-none');setTimeout(()=>{bootstrap.Modal.getInstance(document.getElementById('consultModal')).hide();this.reset();this.classList.remove('d-none');document.getElementById('successMessage').classList.add('d-none')},3000)});</script>
+    <script>
+    // Таймер обратного отсчёта
+    (function(){
+        const end=new Date();end.setDate(end.getDate()+14);end.setHours(23,59,59,0);
+        function tick(){
+            const now=new Date(),d=Math.max(0,end-now);
+            const dd=Math.floor(d/864e5),hh=Math.floor(d%864e5/36e5),mm=Math.floor(d%36e5/6e4),ss=Math.floor(d%6e4/1e3);
+            document.getElementById('days').textContent=String(dd).padStart(2,'0');
+            document.getElementById('hours').textContent=String(hh).padStart(2,'0');
+            document.getElementById('mins').textContent=String(mm).padStart(2,'0');
+            document.getElementById('secs').textContent=String(ss).padStart(2,'0');
+        }
+        tick();setInterval(tick,1000);
+    })();
+    // Форма
+    document.getElementById('consultForm')?.addEventListener('submit',function(e){e.preventDefault();this.classList.add('d-none');document.getElementById('successMessage').classList.remove('d-none');setTimeout(()=>{bootstrap.Modal.getInstance(document.getElementById('consultModal')).hide();this.reset();this.classList.remove('d-none');document.getElementById('successMessage').classList.add('d-none')},3000)});
+    </script>
 </body>
 </html>
