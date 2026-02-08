@@ -2983,17 +2983,7 @@ remove_script() {
 # УСТАНОВКА СКРИПТА
 # ═══════════════════════════════════════════════
 install_script() {
-    # Проверяем, запущен ли скрипт уже из /usr/local/bin
-    if [ -L "/usr/local/bin/remna_install" ] && [ -f "${DIR_REMNAWAVE}remna_install" ]; then
-        local installed_size
-        installed_size=$(wc -c < "${DIR_REMNAWAVE}remna_install" 2>/dev/null || echo 0)
-        if [ "$installed_size" -gt 1000 ]; then
-            # Скрипт уже корректно установлен
-            return 0
-        fi
-    fi
-
-    # Скачиваем скрипт в постоянное местоположение
+    # Всегда скачиваем свежую копию
     mkdir -p "${DIR_REMNAWAVE}"
 
     # Получаем SHA последнего коммита для обхода CDN-кеша
@@ -3060,7 +3050,6 @@ main_menu() {
                 "🎨  Сменить шаблон сайта-заглушки" \
                 "──────────────────────────────────────" \
                 "🔄  Обновить скрипт$update_notice" \
-                "🗑️   Удалить скрипт" \
                 "──────────────────────────────────────" \
                 "❌  Выход"
             local choice=$?
@@ -3108,9 +3097,8 @@ main_menu() {
                 11) manage_random_template ;;
                 12) continue ;;
                 13) update_script ;;
-                14) remove_script ;;
-                15) continue ;;
-                16) clear; exit 0 ;;
+                14) continue ;;
+                15) clear; exit 0 ;;
             esac
         else
             show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
@@ -3156,13 +3144,20 @@ main_menu() {
 check_root
 check_os
 
-# Проверяем, нужно ли установить скрипт
-if [ ! -L "/usr/local/bin/remna_install" ] || [ ! -f "${DIR_REMNAWAVE}remna_install" ]; then
+# Функция очистки скрипта из системы
+cleanup_script() {
+    rm -f /usr/local/bin/remna_install 2>/dev/null
+    rm -rf "${DIR_REMNAWAVE}" 2>/dev/null
+    rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
+}
+
+# При любом выходе (Ctrl+C, exit, завершение) — чистим за собой
+trap cleanup_script EXIT
+
+# Если запущены НЕ из установленной копии — скачиваем свежую и переключаемся
+if [ "${REMNA_INSTALLED_RUN:-}" != "1" ]; then
     install_script
-    # Перезапускаем из установленной копии
-    print_success "Скрипт установлен в систему"
-    echo -e "${YELLOW}Запускаем меню установки...${NC}"
-    sleep 1
+    export REMNA_INSTALLED_RUN=1
     exec /usr/local/bin/remna_install
 fi
 
