@@ -28,8 +28,6 @@ bash <(curl -Ls https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs
 | Параметр | Значение |
 |----------|----------|
 | **ОС** | Ubuntu 22.04 / 24.04 · Debian 11 / 12 |
-| **Права** | root |
-| **Порты** | 443 (XRAY) |
 | **DNS** | A-записи доменов → IP сервера |
 
 > **3 домена (или поддомена):** панель, подписка, selfsteal/нода
@@ -113,9 +111,8 @@ XRAY обрабатывает TLS. VPN-трафик маршрутизирует
 
 | Сеть | Адрес |
 |------|-------|
-| **USDT (BEP-20)** | `0x657685922d7a9c50e3e90cae3ba9905985349fbb` |
-| **BTC** | `0x657685922d7a9c50e3e90cae3ba9905985349fbb` |
-| **SOL** | `0x657685922d7a9c50e3e90cae3ba9905985349fbb` |
+| **USDT (TRC-20)** | `THqJQsgbWY7Tw1BxdLA6SQAkBGVmMhzeLZ` |
+| **BTC (BEP-20)** | `0x657685922d7a9c50e3e90cae3ba9905985349fbb` |
 
 ---
 
