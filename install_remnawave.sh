@@ -1941,36 +1941,23 @@ COOKIE_EOF
     # Итог
     clear
     echo
-    echo -e "${BLUE}╔══════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${NC}            ${GREEN}🎉 УСТАНОВКА ЗАВЕРШЕНА!${NC}                       ${BLUE}║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${YELLOW}🔗 ССЫЛКА ВХОДА В ПАНЕЛЬ:${NC}                              ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${YELLOW}👤 ЛОГИН:${NC}    ${WHITE}$SUPERADMIN_USERNAME${NC}"
-    echo -e "${BLUE}║${NC}  ${YELLOW}🔑 ПАРОЛЬ:${NC}   ${WHITE}$SUPERADMIN_PASSWORD${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║${NC}  ${WHITE}Панель:${NC}     https://$PANEL_DOMAIN                       ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${WHITE}Подписка:${NC}   https://$SUB_DOMAIN                         ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${WHITE}SelfSteal:${NC}  https://$SELFSTEAL_DOMAIN                   ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║${NC}  ${GREEN}✅ Нода \"$entity_name\" настроена автоматически${NC}"
-    echo -e "${BLUE}║${NC}  ${GREEN}✅ API токен для страницы подписки создан${NC}"
-    echo -e "${BLUE}║${NC}  ${GREEN}✅ REALITY конфиг-профиль создан${NC}"
-    echo -e "${BLUE}║${NC}  ${GREEN}✅ Cookie-защита панели активирована${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ЭТИ ДАННЫЕ!${NC}      ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${RED}   Ссылка, логин и пароль не будут показаны повторно.${NC}   ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${DARKGRAY}Сбросить администратора или сменить cookie можно${NC}      ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${DARKGRAY}в любое время через главное меню скрипта.${NC}             ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}╚══════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════════════════${NC}"
+    echo -e "         ${GREEN}🎉 УСТАНОВКА ЗАВЕРШЕНА!${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════════════════${NC}"
+    echo
+    echo -e "${YELLOW}🔗 ССЫЛКА ВХОДА В ПАНЕЛЬ:${NC}"
+    echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+    echo
+    echo -e "${YELLOW}👤 ЛОГИН:${NC}    ${WHITE}$SUPERADMIN_USERNAME${NC}"
+    echo -e "${YELLOW}🔑 ПАРОЛЬ:${NC}   ${WHITE}$SUPERADMIN_PASSWORD${NC}"
+    echo
+    echo -e "${DARKGRAY}_____________________________________________________________________${NC}"
+    echo
+    echo -e "${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ЭТИ ДАННЫЕ!${NC}"
+    echo -e "${RED}   Ссылка, логин и пароль не будут показаны повторно.${NC}"
+    echo
+    echo -e "${DARKGRAY}Сбросить администратора или сменить cookie можно${NC}"
+    echo -e "${DARKGRAY}в любое время через главное меню скрипта.${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
 }
@@ -2070,30 +2057,25 @@ COOKIE_EOF
 
     clear
     echo
-    echo -e "${BLUE}╔══════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║${NC}            ${GREEN}🎉 ПАНЕЛЬ УСТАНОВЛЕНА!${NC}                         ${BLUE}║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${YELLOW}🔗 ССЫЛКА ВХОДА В ПАНЕЛЬ:${NC}                              ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${WHITE}Панель:${NC}     https://$PANEL_DOMAIN                       ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${WHITE}Подписка:${NC}   https://$SUB_DOMAIN                         ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${GREEN}✅ Cookie-защита панели активирована${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${YELLOW}📝 Откройте панель по ссылке выше и создайте${NC}            ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${YELLOW}   свой аккаунт администратора.${NC}                        ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}╠══════════════════════════════════════════════════════════╣${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ССЫЛКУ!${NC}          ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${RED}   Без неё вы не сможете попасть в панель.${NC}              ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${DARKGRAY}Сменить cookie можно в любое время${NC}                    ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}  ${DARKGRAY}через главное меню скрипта.${NC}                           ${BLUE}║${NC}"
-    echo -e "${BLUE}║${NC}                                                          ${BLUE}║${NC}"
-    echo -e "${BLUE}╚══════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════════════════${NC}"
+    echo -e "         ${GREEN}🎉 ПАНЕЛЬ УСТАНОВЛЕНА!${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════════════════${NC}"
+    echo
+    echo -e "${YELLOW}🔗 ССЫЛКА ВХОДА В ПАНЕЛЬ:${NC}"
+    echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+    echo
+    echo -e "${GREEN}✅ Cookie-защита панели активирована${NC}"
+    echo
+    echo -e "${YELLOW}📝 Откройте панель по ссылке выше и создайте${NC}"
+    echo -e "${YELLOW}   свой аккаунт администратора.${NC}"
+    echo
+    echo -e "${DARKGRAY}_____________________________________________________________________${NC}"
+    echo
+    echo -e "${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ССЫЛКУ!${NC}"
+    echo -e "${RED}   Без неё вы не сможете попасть в панель.${NC}"
+    echo
+    echo -e "${DARKGRAY}Сменить cookie можно в любое время${NC}"
+    echo -e "${DARKGRAY}через главное меню скрипта.${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
 }
