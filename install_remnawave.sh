@@ -2995,8 +2995,16 @@ install_script() {
 
     # Скачиваем скрипт в постоянное местоположение
     mkdir -p "${DIR_REMNAWAVE}"
-    
-    if ! wget -O "${DIR_REMNAWAVE}remna_install" "$SCRIPT_URL" >/dev/null 2>&1; then
+
+    # Получаем SHA последнего коммита для обхода CDN-кеша
+    local download_url="$SCRIPT_URL"
+    local latest_sha
+    latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/main" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
+    if [ -n "$latest_sha" ]; then
+        download_url="https://raw.githubusercontent.com/DanteFuaran/Remna-install/$latest_sha/install_remnawave.sh"
+    fi
+
+    if ! wget -O "${DIR_REMNAWAVE}remna_install" "$download_url" >/dev/null 2>&1; then
         echo -e "${RED}✖ Не удалось скачать скрипт${NC}"
         exit 1
     fi
