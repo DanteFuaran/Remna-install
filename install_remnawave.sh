@@ -2938,6 +2938,8 @@ remove_script() {
             rm -f /usr/local/bin/remna_install
             rm -rf "${DIR_REMNAWAVE}"
             rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
+            sed -i "/alias ri='remna_install'/d" /etc/bash.bashrc 2>/dev/null
+            unalias ri 2>/dev/null
             print_success "Скрипт удалён"
             exit 0
             ;;
@@ -2957,6 +2959,8 @@ remove_script() {
                 rm -f /usr/local/bin/remna_install
                 rm -rf "${DIR_REMNAWAVE}"
                 rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
+                sed -i "/alias ri='remna_install'/d" /etc/bash.bashrc 2>/dev/null
+                unalias ri 2>/dev/null
                 print_success "Всё удалено"
                 exit 0
             fi
