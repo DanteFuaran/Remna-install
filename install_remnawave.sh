@@ -3020,23 +3020,23 @@ main_menu() {
         if [ -f "/opt/remnawave/docker-compose.yml" ]; then
             is_installed=true
         fi
-        
-        # Получаем информацию о доступной версии (если есть)
-        local update_notice=""
-        local installed_ver
-        installed_ver=$(get_installed_version)
-        if [ -f /tmp/remna_update_available ]; then
-            local new_version
-            new_version=$(cat /tmp/remna_update_available)
-            update_notice=" ${YELLOW}(Обновление до v$new_version)${NC}"
-            # Показываем уведомление об обновлении перед меню
-            clear
-            show_update_notification "$new_version"
-        elif [ -n "$installed_ver" ] && [ "$installed_ver" != "$SCRIPT_VERSION" ]; then
-            update_notice=" ${YELLOW}(Установлена v$installed_ver)${NC}"
-        fi
 
         if [ "$is_installed" = true ]; then
+            # Получаем информацию о доступной версии (только если установлено)
+            local update_notice=""
+            local installed_ver
+            installed_ver=$(get_installed_version)
+            if [ -f /tmp/remna_update_available ]; then
+                local new_version
+                new_version=$(cat /tmp/remna_update_available)
+                update_notice=" ${YELLOW}(Обновление до v$new_version)${NC}"
+                # Показываем уведомление об обновлении перед меню
+                clear
+                show_update_notification "$new_version"
+            elif [ -n "$installed_ver" ] && [ "$installed_ver" != "$SCRIPT_VERSION" ]; then
+                update_notice=" ${YELLOW}(Установлена v$installed_ver)${NC}"
+            fi
+
             show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
                 "📦  Установить компоненты" \
                 "🔄  Переустановить" \
@@ -3107,10 +3107,6 @@ main_menu() {
         else
             show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
                 "📦  Установить компоненты" \
-                "──────────────────────────────────────" \
-                "🔄  Обновить скрипт$update_notice" \
-                "🗑️   Удалить скрипт" \
-                "──────────────────────────────────────" \
                 "❌  Выход"
             local choice=$?
 
@@ -3138,11 +3134,7 @@ main_menu() {
                         3) continue ;;
                     esac
                     ;;
-                1) continue ;;
-                2) update_script ;;
-                3) remove_script ;;
-                4) continue ;;
-                5) clear; exit 0 ;;
+                1) clear; exit 0 ;;
             esac
         fi
     done
@@ -3164,25 +3156,30 @@ if [ ! -L "/usr/local/bin/remna_install" ] || [ ! -f "${DIR_REMNAWAVE}remna_inst
     exec /usr/local/bin/remna_install
 fi
 
-# Проверка обновлений (синхронно, но только если прошло больше часа с последней проверки)
-UPDATE_CHECK_FILE="/tmp/remna_last_update_check"
-current_time=$(date +%s)
-last_check=0
+# Проверка обновлений только если Remnawave установлен
+if [ -f "/opt/remnawave/docker-compose.yml" ]; then
+    UPDATE_CHECK_FILE="/tmp/remna_last_update_check"
+    current_time=$(date +%s)
+    last_check=0
 
-if [ -f "$UPDATE_CHECK_FILE" ]; then
-    last_check=$(cat "$UPDATE_CHECK_FILE" 2>/dev/null || echo 0)
-fi
-
-# Проверяем раз в час (3600 секунд)
-time_diff=$((current_time - last_check))
-if [ $time_diff -gt 3600 ] || [ ! -f /tmp/remna_update_available ]; then
-    new_version=$(check_for_updates)
-    if [ $? -eq 0 ] && [ -n "$new_version" ]; then
-        echo "$new_version" > /tmp/remna_update_available
-    else
-        rm -f /tmp/remna_update_available 2>/dev/null
+    if [ -f "$UPDATE_CHECK_FILE" ]; then
+        last_check=$(cat "$UPDATE_CHECK_FILE" 2>/dev/null || echo 0)
     fi
-    echo "$current_time" > "$UPDATE_CHECK_FILE"
+
+    # Проверяем раз в час (3600 секунд)
+    time_diff=$((current_time - last_check))
+    if [ $time_diff -gt 3600 ] || [ ! -f /tmp/remna_update_available ]; then
+        new_version=$(check_for_updates)
+        if [ $? -eq 0 ] && [ -n "$new_version" ]; then
+            echo "$new_version" > /tmp/remna_update_available
+        else
+            rm -f /tmp/remna_update_available 2>/dev/null
+        fi
+        echo "$current_time" > "$UPDATE_CHECK_FILE"
+    fi
+else
+    # Очищаем файлы обновлений если Remnawave не установлен
+    rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
 fi
 
 main_menu
