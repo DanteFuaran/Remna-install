@@ -63,6 +63,7 @@ show_spinner() {
 show_spinner_timer() {
     local seconds=$1
     local msg="$2"
+    local done_msg="${3:-$msg}"
     local spin=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
     local i=0
     local delay=0.08
@@ -71,13 +72,13 @@ show_spinner_timer() {
     while [ $elapsed -lt $seconds ]; do
         local remaining=$((seconds - elapsed))
         for ((j=0; j<12; j++)); do
-            printf "\r${GREEN}%s${NC}  %s (%d сек)" "${spin[$i]}" "$msg" "$remaining"
+            printf "\r\033[K${GREEN}%s${NC}  %s (%d сек)" "${spin[$i]}" "$msg" "$remaining"
             sleep $delay
             i=$(( (i+1) % 10 ))
         done
         ((elapsed++))
     done
-    printf "\r${GREEN}✅${NC} %s\n" "$msg"
+    printf "\r\033[K${GREEN}✅${NC} %s\n" "$done_msg"
     tput cnorm 2>/dev/null || true
 }
 
@@ -1814,7 +1815,7 @@ installation_full() {
     show_spinner "Запуск Docker контейнеров"
 
     # Ожидание готовности
-    show_spinner_timer 20 "Ожидание запуска Remnawave"
+    show_spinner_timer 20 "Ожидание запуска Remnawave" "Запуск Remnawave"
 
     local domain_url="127.0.0.1:3000"
     local target_dir="${DIR_PANEL}"
@@ -1943,7 +1944,7 @@ installation_full() {
     randomhtml
 
     # Ожидаем готовность после перезапуска
-    show_spinner_timer 10 "Ожидание запуска сервисов"
+    show_spinner_timer 10 "Ожидание запуска сервисов" "Запуск сервисов"
 
     # Итог
     clear
@@ -2044,7 +2045,7 @@ installation_panel() {
     ) &
     show_spinner "Запуск Docker контейнеров"
 
-    show_spinner_timer 20 "Ожидание запуска Remnawave"
+    show_spinner_timer 20 "Ожидание запуска Remnawave" "Запуск Remnawave"
 
     local domain_url="127.0.0.1:3000"
     show_spinner_until_ready "http://$domain_url/api/auth/status" "Проверка доступности API" 120
@@ -2215,7 +2216,7 @@ EOL
     ) &
     show_spinner "Запуск Docker контейнеров"
 
-    show_spinner_timer 5 "Ожидание запуска ноды"
+    show_spinner_timer 5 "Ожидание запуска ноды" "Запуск ноды"
 
     randomhtml
 
@@ -2291,7 +2292,7 @@ EOSQL
     show_spinner "Запуск панели"
 
     # Ждём готовности
-    show_spinner_timer 10 "Ожидание запуска панели"
+    show_spinner_timer 10 "Ожидание запуска панели" "Запуск панели"
 
     echo
     echo -e "${GREEN}✅ Сброс выполнен успешно!${NC}"
