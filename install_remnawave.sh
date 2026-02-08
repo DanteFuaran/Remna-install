@@ -1719,13 +1719,15 @@ installation_full() {
     show_arrow_menu "🔐 МЕТОД ПОЛУЧЕНИЯ СЕРТИФИКАТОВ" \
         "☁️   Cloudflare DNS-01 (wildcard)" \
         "🌐  ACME HTTP-01 (Let's Encrypt)" \
+        "──────────────────────────────────────" \
         "❌  Назад"
     local cert_choice=$?
 
     case $cert_choice in
         0) CERT_METHOD=1 ;;
         1) CERT_METHOD=2 ;;
-        2) return ;;
+        2) continue ;;
+        3) return ;;
     esac
 
     reading "Email для Let's Encrypt:" LETSENCRYPT_EMAIL
@@ -1995,13 +1997,15 @@ installation_panel() {
     show_arrow_menu "🔐 МЕТОД ПОЛУЧЕНИЯ СЕРТИФИКАТОВ" \
         "☁️   Cloudflare DNS-01 (wildcard)" \
         "🌐  ACME HTTP-01 (Let's Encrypt)" \
+        "──────────────────────────────────────" \
         "❌  Назад"
     local cert_choice=$?
 
     case $cert_choice in
         0) CERT_METHOD=1 ;;
         1) CERT_METHOD=2 ;;
-        2) return ;;
+        2) continue ;;
+        3) return ;;
     esac
 
     reading "Email для Let's Encrypt:" LETSENCRYPT_EMAIL
@@ -2132,13 +2136,15 @@ installation_node() {
     show_arrow_menu "🔐 МЕТОД ПОЛУЧЕНИЯ СЕРТИФИКАТОВ" \
         "☁️   Cloudflare DNS-01 (wildcard)" \
         "🌐  ACME HTTP-01 (Let's Encrypt)" \
+        "──────────────────────────────────────" \
         "❌  Назад"
     local cert_choice=$?
 
     case $cert_choice in
         0) CERT_METHOD=1 ;;
         1) CERT_METHOD=2 ;;
-        2) return ;;
+        2) continue ;;
+        3) return ;;
     esac
 
     reading "Email для Let's Encrypt:" LETSENCRYPT_EMAIL
