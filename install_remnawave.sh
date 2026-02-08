@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.2.7"
+SCRIPT_VERSION="2.3.0"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -344,6 +344,13 @@ generate_admin_password() {
 generate_admin_username() {
     # Генерация логина из случайного слова + цифр
     echo "admin$(openssl rand -hex 4)"
+}
+
+generate_cookie_key() {
+    # Генерация случайного ключа для cookie-защиты панели (8 символов, буквы + цифры)
+    local key
+    key=$(openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 8)
+    echo "$key"
 }
 
 # ═══════════════════════════════════════════════
@@ -1347,6 +1354,8 @@ generate_nginx_conf_full() {
     local panel_cert=$4
     local sub_cert=$5
     local node_cert=$6
+    local cookie_name=$7
+    local cookie_value=$8
 
     cat > /opt/remnawave/nginx.conf <<EOL
 server_names_hash_bucket_size 64;
@@ -1362,6 +1371,26 @@ upstream json {
 map \$http_upgrade \$connection_upgrade {
     default upgrade;
     ""      close;
+}
+
+map \$http_cookie \$auth_cookie {
+    default 0;
+    "~*${cookie_name}=${cookie_value}" 1;
+}
+
+map \$arg_${cookie_name} \$set_cookie_header {
+    "${cookie_value}" "${cookie_name}=${cookie_value}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000";
+    default "";
+}
+
+map \$arg_${cookie_name} \$auth_query {
+    default 0;
+    "${cookie_value}" 1;
+}
+
+map "\$auth_cookie\$auth_query" \$authorized {
+    "~1" 1;
+    default 0;
 }
 
 ssl_protocols TLSv1.2 TLSv1.3;
@@ -1381,7 +1410,14 @@ server {
     ssl_certificate_key "/etc/nginx/ssl/$panel_cert/privkey.pem";
     ssl_trusted_certificate "/etc/nginx/ssl/$panel_cert/fullchain.pem";
 
+    add_header Set-Cookie \$set_cookie_header;
+
     location / {
+        error_page 418 = @unauthorized;
+        recursive_error_pages on;
+        if (\$authorized = 0) {
+            return 418;
+        }
         proxy_http_version 1.1;
         proxy_pass http://remnawave;
         proxy_set_header Host \$host;
@@ -1394,6 +1430,11 @@ server {
         proxy_set_header X-Forwarded-Port \$server_port;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
+    }
+
+    location @unauthorized {
+        root /var/www/html;
+        index index.html;
     }
 }
 
@@ -1457,6 +1498,8 @@ generate_nginx_conf_panel() {
     local sub_domain=$2
     local panel_cert=$3
     local sub_cert=$4
+    local cookie_name=$5
+    local cookie_value=$6
 
     cat > /opt/remnawave/nginx.conf <<EOL
 server_names_hash_bucket_size 64;
@@ -1472,6 +1515,26 @@ upstream json {
 map \$http_upgrade \$connection_upgrade {
     default upgrade;
     ""      close;
+}
+
+map \$http_cookie \$auth_cookie {
+    default 0;
+    "~*${cookie_name}=${cookie_value}" 1;
+}
+
+map \$arg_${cookie_name} \$set_cookie_header {
+    "${cookie_value}" "${cookie_name}=${cookie_value}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000";
+    default "";
+}
+
+map \$arg_${cookie_name} \$auth_query {
+    default 0;
+    "${cookie_value}" 1;
+}
+
+map "\$auth_cookie\$auth_query" \$authorized {
+    "~1" 1;
+    default 0;
 }
 
 ssl_protocols TLSv1.2 TLSv1.3;
@@ -1491,7 +1554,14 @@ server {
     ssl_certificate_key "/etc/letsencrypt/live/$panel_cert/privkey.pem";
     ssl_trusted_certificate "/etc/letsencrypt/live/$panel_cert/fullchain.pem";
 
+    add_header Set-Cookie \$set_cookie_header;
+
     location / {
+        error_page 418 = @unauthorized;
+        recursive_error_pages on;
+        if (\$authorized = 0) {
+            return 418;
+        }
         proxy_http_version 1.1;
         proxy_pass http://remnawave;
         proxy_set_header Host \$host;
@@ -1504,6 +1574,11 @@ server {
         proxy_set_header X-Forwarded-Port \$server_port;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
+    }
+
+    location @unauthorized {
+        root /var/www/html;
+        index index.html;
     }
 }
 
@@ -1683,6 +1758,18 @@ installation_full() {
     echo
     print_action "Генерация конфигурации..."
 
+    # Генерируем cookie для защиты панели
+    local COOKIE_NAME COOKIE_VALUE
+    COOKIE_NAME=$(generate_cookie_key)
+    COOKIE_VALUE=$(generate_cookie_key)
+
+    # Сохраняем cookie в файл
+    cat > /opt/remnawave/.cookie_auth <<COOKIE_EOF
+COOKIE_NAME=${COOKIE_NAME}
+COOKIE_VALUE=${COOKIE_VALUE}
+COOKIE_EOF
+    chmod 600 /opt/remnawave/.cookie_auth
+
     (
         generate_env_file "$PANEL_DOMAIN" "$SUB_DOMAIN"
     ) &
@@ -1695,7 +1782,8 @@ installation_full() {
 
     (
         generate_nginx_conf_full "$PANEL_DOMAIN" "$SUB_DOMAIN" "$SELFSTEAL_DOMAIN" \
-            "$PANEL_CERT_DOMAIN" "$SUB_CERT_DOMAIN" "$NODE_CERT_DOMAIN"
+            "$PANEL_CERT_DOMAIN" "$SUB_CERT_DOMAIN" "$NODE_CERT_DOMAIN" \
+            "$COOKIE_NAME" "$COOKIE_VALUE"
     ) &
     show_spinner "Создание nginx.conf"
 
@@ -1858,6 +1946,9 @@ installation_full() {
     echo -e "${WHITE}Подписка:${NC}     https://$SUB_DOMAIN"
     echo -e "${WHITE}SelfSteal:${NC}    https://$SELFSTEAL_DOMAIN"
     echo
+    echo -e "${YELLOW}� ССЫЛКА С COOKIE-ДОСТУПОМ К ПАНЕЛИ:${NC}"
+    echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+    echo
     echo -e "${YELLOW}👤 ДАННЫЕ АДМИНИСТРАТОРА:${NC}"
     echo -e "${WHITE}Логин:${NC}        $SUPERADMIN_USERNAME"
     echo -e "${WHITE}Пароль:${NC}        $SUPERADMIN_PASSWORD"
@@ -1865,6 +1956,10 @@ installation_full() {
     echo -e "${GREEN}✅ Нода \"$entity_name\" настроена автоматически${NC}"
     echo -e "${GREEN}✅ API токен для страницы подписки создан${NC}"
     echo -e "${GREEN}✅ REALITY конфиг-профиль создан${NC}"
+    echo -e "${GREEN}✅ Cookie-защита панели активирована${NC}"
+    echo
+    echo -e "${RED}⚠️  СОХРАНИТЕ ЭТИ ДАННЫЕ! Они не будут показаны повторно.${NC}"
+    echo -e "${DARKGRAY}Cookie-ссылку можно посмотреть позже: Доступ к панели (cookie/8443)${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
@@ -1920,13 +2015,25 @@ installation_panel() {
         SUB_CERT_DOMAIN="$SUB_DOMAIN"
     fi
 
+    # Генерируем cookie для защиты панели
+    local COOKIE_NAME COOKIE_VALUE
+    COOKIE_NAME=$(generate_cookie_key)
+    COOKIE_VALUE=$(generate_cookie_key)
+
+    cat > /opt/remnawave/.cookie_auth <<COOKIE_EOF
+COOKIE_NAME=${COOKIE_NAME}
+COOKIE_VALUE=${COOKIE_VALUE}
+COOKIE_EOF
+    chmod 600 /opt/remnawave/.cookie_auth
+
     (generate_env_file "$PANEL_DOMAIN" "$SUB_DOMAIN") &
     show_spinner "Создание .env файла"
 
     (generate_docker_compose_panel "$PANEL_CERT_DOMAIN" "$SUB_CERT_DOMAIN") &
     show_spinner "Создание docker-compose.yml"
 
-    (generate_nginx_conf_panel "$PANEL_DOMAIN" "$SUB_DOMAIN" "$PANEL_CERT_DOMAIN" "$SUB_CERT_DOMAIN") &
+    (generate_nginx_conf_panel "$PANEL_DOMAIN" "$SUB_DOMAIN" "$PANEL_CERT_DOMAIN" "$SUB_CERT_DOMAIN" \
+        "$COOKIE_NAME" "$COOKIE_VALUE") &
     show_spinner "Создание nginx.conf"
 
     echo
@@ -1956,8 +2063,16 @@ installation_panel() {
     echo -e "${WHITE}Панель:${NC}       https://$PANEL_DOMAIN"
     echo -e "${WHITE}Подписка:${NC}     https://$SUB_DOMAIN"
     echo
+    echo -e "${YELLOW}🔐 ССЫЛКА С COOKIE-ДОСТУПОМ К ПАНЕЛИ:${NC}"
+    echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+    echo
     echo -e "${YELLOW}📝 Откройте панель и создайте свой аккаунт администратора${NC}"
     echo -e "${DARKGRAY}   При первом входе Remnawave попросит вас установить логин и пароль${NC}"
+    echo
+    echo -e "${GREEN}✅ Cookie-защита панели активирована${NC}"
+    echo
+    echo -e "${RED}⚠️  СОХРАНИТЕ ЭТИ ДАННЫЕ! Они не будут показаны повторно.${NC}"
+    echo -e "${DARKGRAY}Cookie-ссылку можно посмотреть позже: Доступ к панели (cookie/8443)${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
 }
@@ -2282,6 +2397,208 @@ manage_reinstall() {
         0) installation_full ;;
         1) installation_panel ;;
         2) installation_node ;;
+        3) return ;;
+    esac
+}
+
+# ═══════════════════════════════════════════════════
+# УПРАВЛЕНИЕ ДОСТУПОМ К ПАНЕЛИ ЧЕРЕЗ ПОРТ 8443
+# ═══════════════════════════════════════════════════
+
+open_panel_access() {
+    clear
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${GREEN}   🔓 ОТКРЫТИЕ ДОСТУПА К ПАНЕЛИ (8443)${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo
+
+    # Проверяем, что nginx.conf существует
+    if [ ! -f /opt/remnawave/nginx.conf ]; then
+        print_error "Файл nginx.conf не найден"
+        sleep 2
+        return
+    fi
+
+    # Проверяем, не открыт ли уже порт
+    if grep -q "listen 8443 ssl;" /opt/remnawave/nginx.conf 2>/dev/null; then
+        print_warning "Порт 8443 уже открыт"
+
+        # Показываем ссылку
+        if [ -f /opt/remnawave/.cookie_auth ]; then
+            source /opt/remnawave/.cookie_auth
+            local panel_domain
+            panel_domain=$(grep -oP 'server_name\s+\K[^;]+' /opt/remnawave/nginx.conf | head -1)
+            echo
+            echo -e "${GREEN}🔗 Ссылка на панель:${NC}"
+            echo -e "${WHITE}https://${panel_domain}:8443/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+        fi
+        echo
+        read -e -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения...${NC}")" _
+        return
+    fi
+
+    # Проверяем, не занят ли порт 8443
+    if ss -tlnp | grep -q ':8443 '; then
+        print_error "Порт 8443 уже занят другим процессом"
+        sleep 2
+        return
+    fi
+
+    # Определяем тип конфигурации (full = unix socket, panel = listen 443)
+    local is_full=false
+    if grep -q "unix:/dev/shm/nginx.sock" /opt/remnawave/nginx.conf 2>/dev/null; then
+        is_full=true
+    fi
+
+    # Читаем данные cookie
+    if [ ! -f /opt/remnawave/.cookie_auth ]; then
+        print_error "Файл .cookie_auth не найден. Переустановите Remnawave."
+        sleep 2
+        return
+    fi
+    source /opt/remnawave/.cookie_auth
+
+    # Определяем домен панели
+    local panel_domain
+    panel_domain=$(grep -oP 'server_name\s+\K[^;]+' /opt/remnawave/nginx.conf | head -1)
+
+    # Определяем путь к сертификатам
+    local cert_line
+    cert_line=$(grep -m1 'ssl_certificate "' /opt/remnawave/nginx.conf | head -1)
+
+    # Добавляем listen 8443 после первого server_name в блоке panel
+    if [ "$is_full" = true ]; then
+        # Full-режим: добавляем listen 8443 после listen unix:... строки
+        sed -i '/listen unix:\/dev\/shm\/nginx.sock ssl proxy_protocol;/{
+            n
+            /http2 on;/a\    listen 8443 ssl;\n    listen [::]:8443 ssl;
+        }' /opt/remnawave/nginx.conf
+    else
+        # Panel-режим: добавляем listen 8443 после listen [::]:443
+        sed -i '0,/listen \[::\]:443 ssl http2;/{
+            /listen \[::\]:443 ssl http2;/a\    listen 8443 ssl http2;\n    listen [::]:8443 ssl http2;
+        }' /opt/remnawave/nginx.conf
+    fi
+
+    # Перезапускаем nginx
+    (
+        cd /opt/remnawave
+        docker compose restart nginx >/dev/null 2>&1
+    ) &
+    show_spinner "Перезапуск nginx"
+
+    # Открываем порт в UFW
+    ufw allow 8443/tcp >/dev/null 2>&1
+
+    echo
+    print_success "Порт 8443 открыт"
+    echo
+    echo -e "${GREEN}🔗 Ссылка на панель:${NC}"
+    echo -e "${WHITE}https://${panel_domain}:8443/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+    echo
+    echo -e "${RED}⚠️  Не забудьте закрыть порт после использования!${NC}"
+    echo
+    read -e -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения...${NC}")" _
+}
+
+close_panel_access() {
+    clear
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${RED}   🔒 ЗАКРЫТИЕ ДОСТУПА К ПАНЕЛИ (8443)${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo
+
+    # Проверяем, что nginx.conf существует
+    if [ ! -f /opt/remnawave/nginx.conf ]; then
+        print_error "Файл nginx.conf не найден"
+        sleep 2
+        return
+    fi
+
+    # Проверяем, открыт ли порт
+    if ! grep -q "listen 8443 ssl" /opt/remnawave/nginx.conf 2>/dev/null; then
+        print_warning "Порт 8443 уже закрыт"
+        sleep 2
+        return
+    fi
+
+    # Удаляем строки listen 8443
+    sed -i '/listen 8443 ssl/d' /opt/remnawave/nginx.conf
+    sed -i '/listen \[::\]:8443 ssl/d' /opt/remnawave/nginx.conf
+
+    # Перезапускаем nginx
+    (
+        cd /opt/remnawave
+        docker compose restart nginx >/dev/null 2>&1
+    ) &
+    show_spinner "Перезапуск nginx"
+
+    # Закрываем порт в UFW
+    ufw delete allow 8443/tcp >/dev/null 2>&1
+
+    echo
+    print_success "Порт 8443 закрыт"
+    echo
+    read -e -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения...${NC}")" _
+}
+
+manage_panel_access() {
+    clear
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${GREEN}   🔐 УПРАВЛЕНИЕ ДОСТУПОМ К ПАНЕЛИ${NC}"
+    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo
+
+    # Показываем текущий статус порта 8443
+    if grep -q "listen 8443 ssl" /opt/remnawave/nginx.conf 2>/dev/null; then
+        echo -e "${WHITE}Статус порта 8443:${NC} ${GREEN}открыт${NC}"
+    else
+        echo -e "${WHITE}Статус порта 8443:${NC} ${RED}закрыт${NC}"
+    fi
+
+    # Показываем cookie-ссылку
+    if [ -f /opt/remnawave/.cookie_auth ]; then
+        source /opt/remnawave/.cookie_auth
+        local panel_domain
+        panel_domain=$(grep -oP 'server_name\s+\K[^;]+' /opt/remnawave/nginx.conf | head -1)
+        echo
+        echo -e "${WHITE}🔗 Cookie-ссылка на панель:${NC}"
+        echo -e "${DARKGRAY}https://${panel_domain}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+    fi
+    echo
+
+    show_arrow_menu "ВЫБЕРИТЕ ДЕЙСТВИЕ" \
+        "🔓  Открыть порт 8443" \
+        "🔒  Закрыть порт 8443" \
+        "🔗  Показать cookie-ссылку" \
+        "❌  Назад"
+    local choice=$?
+
+    case $choice in
+        0) open_panel_access ;;
+        1) close_panel_access ;;
+        2)
+            clear
+            if [ -f /opt/remnawave/.cookie_auth ]; then
+                source /opt/remnawave/.cookie_auth
+                local pd
+                pd=$(grep -oP 'server_name\s+\K[^;]+' /opt/remnawave/nginx.conf | head -1)
+                echo
+                echo -e "${GREEN}🔗 Cookie-ссылка на панель (основной порт):${NC}"
+                echo -e "${WHITE}https://${pd}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+                echo
+                if grep -q "listen 8443 ssl" /opt/remnawave/nginx.conf 2>/dev/null; then
+                    echo -e "${GREEN}🔗 Cookie-ссылка на панель (порт 8443):${NC}"
+                    echo -e "${WHITE}https://${pd}:8443/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+                    echo
+                fi
+            else
+                echo
+                print_error "Файл .cookie_auth не найден"
+                echo
+            fi
+            read -e -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения...${NC}")" _
+            ;;
         3) return ;;
     esac
 }
@@ -2627,6 +2944,7 @@ main_menu() {
                 "──────────────────────────────────────" \
                 "🔄  Обновить панель/ноду" \
                 "🔐  Сбросить суперадмина" \
+                "🔓  Доступ к панели (cookie/8443)" \
                 "🎨  Сменить шаблон сайта-заглушки" \
                 "──────────────────────────────────────" \
                 "🔄  Обновить скрипт$update_notice" \
@@ -2673,12 +2991,13 @@ main_menu() {
                 6) continue ;;
                 7) manage_update ;;
                 8) change_credentials ;;
-                9) manage_random_template ;;
-                10) continue ;;
-                11) update_script ;;
-                12) remove_script ;;
-                13) continue ;;
-                14) clear; exit 0 ;;
+                9) manage_panel_access ;;
+                10) manage_random_template ;;
+                11) continue ;;
+                12) update_script ;;
+                13) remove_script ;;
+                14) continue ;;
+                15) clear; exit 0 ;;
             esac
         else
             show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
