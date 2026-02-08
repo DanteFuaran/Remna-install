@@ -818,7 +818,7 @@ create_api_token() {
     fi
 
     sed -i "s|REMNAWAVE_API_TOKEN=.*|REMNAWAVE_API_TOKEN=$api_token|" "$target_dir/docker-compose.yml"
-    print_success "API токен создан и добавлен в docker-compose.yml"
+    print_success "Регистрация API токена"
 }
 
 # ═══════════════════════════════════════════════
@@ -861,7 +861,7 @@ apply_template() {
     
     IFS='|' read -r id name <<< "$template_data"
     
-    echo -e "${BLUE}➜${NC}  Применение шаблона: ${GREEN}${name}${NC}"
+    echo ""
     
     # Очищаем директорию (кроме метаданных)
     find /var/www/html/ -mindepth 1 -not -name '.current_template' -not -name '.template_changed' -delete 2>/dev/null
@@ -1860,7 +1860,7 @@ installation_full() {
     # 2. Получение публичного ключа → SECRET_KEY для ноды
     print_action "Получение публичного ключа панели..."
     get_public_key "$domain_url" "$token" "$target_dir"
-    print_success "Публичный ключ получен и записан в docker-compose"
+    print_success "Установка публичного ключа"
 
     # 3. Генерация ключей x25519 (REALITY)
     print_action "Генерация REALITY ключей..."
@@ -1871,12 +1871,10 @@ installation_full() {
         print_error "Не удалось сгенерировать REALITY ключи"
         return
     fi
-    print_success "REALITY ключи сгенерированы"
 
     # 4. Удаление дефолтного config profile
     print_action "Удаление дефолтного конфиг-профиля..."
     delete_config_profile "$domain_url" "$token"
-    print_success "Дефолтный конфиг-профиль удалён"
 
     # 5. Создание config profile с VLESS REALITY
     print_action "Создание конфиг-профиля ($entity_name)..."
@@ -1891,13 +1889,12 @@ installation_full() {
         print_error "Не удалось создать конфиг-профиль"
         return
     fi
-    print_success "Конфиг-профиль создан"
 
     # 6. Создание ноды
     print_action "Создание ноды ($entity_name)..."
     create_node "$domain_url" "$token" "$config_profile_uuid" "$inbound_uuid" "172.30.0.1" "$entity_name"
     if [ $? -eq 0 ]; then
-        print_success "Нода создана"
+        print_success "Создание ноды"
     else
         print_error "Не удалось создать ноду"
     fi
@@ -1905,7 +1902,7 @@ installation_full() {
     # 7. Создание хоста
     print_action "Создание хоста ($SELFSTEAL_DOMAIN)..."
     create_host "$domain_url" "$token" "$config_profile_uuid" "$inbound_uuid" "$entity_name" "$SELFSTEAL_DOMAIN"
-    print_success "Хост создан"
+    print_success "Регистрация хоста"
 
     # 8. Получение и обновление сквадов
     print_action "Настройка сквадов..."
@@ -1917,7 +1914,7 @@ installation_full() {
             [ -z "$squad_uuid" ] && continue
             update_squad "$domain_url" "$token" "$squad_uuid" "$inbound_uuid"
         done <<< "$squad_uuids"
-        print_success "Сквады обновлены"
+        print_success "Обновление сквадов"
     else
         echo -e "${YELLOW}⚠️  Сквады не найдены (будут настроены при создании пользователей)${NC}"
     fi
@@ -1931,11 +1928,6 @@ installation_full() {
     (
         cd /opt/remnawave
         docker compose down >/dev/null 2>&1
-    ) &
-    show_spinner "Остановка контейнеров"
-
-    (
-        cd /opt/remnawave
         docker compose up -d >/dev/null 2>&1
     ) &
     show_spinner "Запуск контейнеров"
