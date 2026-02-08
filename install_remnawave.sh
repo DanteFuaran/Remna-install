@@ -38,7 +38,7 @@ DARKGRAY='\033[1;30m'
 # ═══════════════════════════════════════════════
 # УТИЛИТЫ ВЫВОДА
 # ═══════════════════════════════════════════════
-print_action()  { printf "${BLUE}➜${NC}  %b\n" "$1"; }
+print_action()  { :; }
 print_error()   { printf "${RED}✖ %b${NC}\n" "$1"; }
 print_success() { printf "${GREEN}✅${NC} %b\n" "$1"; }
 
@@ -70,8 +70,8 @@ show_spinner_timer() {
     tput civis 2>/dev/null || true
     while [ $elapsed -lt $seconds ]; do
         local remaining=$((seconds - elapsed))
-        printf "\r${GREEN}%s${NC}  %s (%d сек)" "${spin[$i]}" "$msg" "$remaining"
         for ((j=0; j<12; j++)); do
+            printf "\r${GREEN}%s${NC}  %s (%d сек)" "${spin[$i]}" "$msg" "$remaining"
             sleep $delay
             i=$(( (i+1) % 10 ))
         done
