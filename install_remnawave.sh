@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.4.6"
+SCRIPT_VERSION="2.4.7"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -1289,6 +1289,8 @@ add_node_to_panel() {
         echo -e "${DARKGRAY}Проверьте подключение ноды в панели Remnawave${NC}"
         echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
+        echo
+        echo
     else
         echo
         print_success "Нода успешно добавлена в панель!"
@@ -2165,10 +2167,27 @@ EOL
 # УСТАНОВКА: ПАНЕЛЬ + НОДА
 # ═══════════════════════════════════════════════
 installation_full() {
+    # Проверяем, не установлено ли уже
+    if [ -f "/opt/remnawave/docker-compose.yml" ]; then
+        clear
+        echo
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
+        echo -e "   ${YELLOW}⚠️  REMNAWAVE УЖЕ УСТАНОВЛЕН${NC}"
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
+        echo
+        echo -e "${WHITE}На этом сервере уже установлен Remnawave.${NC}"
+        echo -e "${WHITE}Используйте опцию ${GREEN}"🔄 Переустановить"${WHITE} в главном меню.${NC}"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
+        echo
+        echo
+        return
+    fi
+
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   📦 УСТАНОВКА ПАНЕЛИ + НОДЫ${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
@@ -2323,9 +2342,9 @@ installation_full() {
         print_error "Настройте ноду вручную через панель: https://$PANEL_DOMAIN"
         randomhtml
         echo
-        echo -e "${BLUE}──────────────────────────────────────${NC}"
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
         echo -e "${GREEN}   ⚠️  УСТАНОВКА ЧАСТИЧНО ЗАВЕРШЕНА${NC}"
-        echo -e "${BLUE}──────────────────────────────────────${NC}"
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
         echo
         echo -e "${WHITE}Панель:${NC}       https://$PANEL_DOMAIN"
         echo -e "${WHITE}Подписка:${NC}     https://$SUB_DOMAIN"
@@ -2339,6 +2358,7 @@ installation_full() {
         echo -e "${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ЭТИ ДАННЫЕ!${NC}"
         echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
+        echo
         return
     fi
     print_success "Администратор зарегистрирован"
@@ -2446,16 +2466,35 @@ installation_full() {
     echo -e "${DARKGRAY}в любое время через главное меню скрипта.${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
+        echo
+    echo
 }
 
 # ═══════════════════════════════════════════════
 # УСТАНОВКА: ТОЛЬКО ПАНЕЛЬ
 # ═══════════════════════════════════════════════
 installation_panel() {
+    # Проверяем, не установлена ли уже панель
+    if [ -f "/opt/remnawave/docker-compose.yml" ]; then
+        clear
+        echo
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
+        echo -e "   ${YELLOW}⚠️  ПАНЕЛЬ УЖЕ УСТАНОВЛЕНА${NC}"
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
+        echo
+        echo -e "${WHITE}На этом сервере уже установлена панель.${NC}"
+        echo -e "${WHITE}Используйте опцию ${GREEN}"🔄 Переустановить"${WHITE} в главном меню.${NC}"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
+        echo
+        echo
+        return
+    fi
+
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   📦 УСТАНОВКА ТОЛЬКО ПАНЕЛИ${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
@@ -2574,6 +2613,7 @@ installation_panel() {
         echo -e "${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ЭТИ ДАННЫЕ!${NC}"
         echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
+        echo
         return
     fi
     print_success "Администратор зарегистрирован"
@@ -2615,16 +2655,35 @@ installation_panel() {
     echo -e "${DARKGRAY}в любое время через главное меню скрипта.${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
+        echo
+    echo
 }
 
 # ═══════════════════════════════════════════════
 # УСТАНОВКА: ТОЛЬКО НОДА
 # ═══════════════════════════════════════════════
 installation_node() {
+    # Проверяем, не установлена ли уже нода
+    if [ -f "/opt/remnawave/docker-compose.yml" ] && grep -q "remnanode" /opt/remnawave/docker-compose.yml; then
+        clear
+        echo
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
+        echo -e "   ${YELLOW}⚠️  НОДА УЖЕ УСТАНОВЛЕНА${NC}"
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
+        echo
+        echo -e "${WHITE}На этом сервере уже установлена нода.${NC}"
+        echo -e "${WHITE}Используйте опцию ${GREEN}"🔄 Переустановить"${WHITE} в главном меню.${NC}"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
+        echo
+        echo
+        return
+    fi
+
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   📦 УСТАНОВКА ТОЛЬКО НОДЫ${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
@@ -2756,9 +2815,9 @@ EOL
     randomhtml
 
     echo
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   🎉 НОДА УСТАНОВЛЕНА!${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
     echo -e "${WHITE}SelfSteal:${NC}    https://$SELFSTEAL_DOMAIN"
     echo -e "${WHITE}IP панели:${NC}    $PANEL_IP"
@@ -2766,6 +2825,7 @@ EOL
     echo -e "${YELLOW}Проверьте подключение ноды в панели Remnawave${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
+        echo
 }
 
 # ═══════════════════════════════════════════════
@@ -2773,9 +2833,9 @@ EOL
 # ═══════════════════════════════════════════════
 change_credentials() {
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   🔐 СБРОС СУПЕРАДМИНА${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
     echo -e "${YELLOW}⚠️  ВНИМАНИЕ!${NC}"
     echo -e "${WHITE}Эта операция удалит текущего суперадмина из базы данных.${NC}"
@@ -2836,13 +2896,14 @@ EOSQL
     echo -e "${WHITE}нового суперадмина с любым логином и паролем.${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
 }
 
 regenerate_cookies() {
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   🍪 СМЕНА COOKIE ДОСТУПА${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
     if [ ! -f /opt/remnawave/nginx.conf ]; then
@@ -2910,6 +2971,7 @@ regenerate_cookies() {
     echo -e "${RED}⚠️  Сохраните эту ссылку! Старая больше не работает.${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
 }
 
 # ═══════════════════════════════════════════════
@@ -2923,6 +2985,7 @@ manage_start() {
     show_spinner "Запуск сервисов"
     print_success "Сервисы запущены"
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
+        echo
 }
 
 manage_stop() {
@@ -2933,13 +2996,14 @@ manage_stop() {
     show_spinner "Остановка сервисов"
     print_success "Сервисы остановлены"
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
+        echo
 }
 
 manage_update() {
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   🔄 ОБНОВЛЕНИЕ КОМПОНЕНТОВ${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
     (
@@ -2961,6 +3025,7 @@ manage_update() {
 
     print_success "Обновление завершено"
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
+        echo
 }
 
 manage_logs() {
@@ -2973,9 +3038,9 @@ manage_logs() {
 
 manage_reinstall() {
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${RED}   🗑️ ПЕРЕУСТАНОВКА${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
     echo -e "${RED}⚠️  Все данные будут удалены!${NC}"
@@ -3029,9 +3094,9 @@ manage_reinstall() {
 
 open_panel_access() {
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   🔓 ОТКРЫТИЕ ДОСТУПА К ПАНЕЛИ (8443)${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
     # Проверяем, что nginx.conf существует
@@ -3125,9 +3190,9 @@ open_panel_access() {
 
 close_panel_access() {
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${RED}   🔒 ЗАКРЫТИЕ ДОСТУПА К ПАНЕЛИ (8443)${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
     # Проверяем, что nginx.conf существует
@@ -3166,9 +3231,9 @@ close_panel_access() {
 
 manage_panel_access() {
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   🔐 УПРАВЛЕНИЕ ДОСТУПОМ К ПАНЕЛИ${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
     # Показываем текущий статус порта 8443
@@ -3229,9 +3294,9 @@ manage_panel_access() {
 
 manage_random_template() {
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   🎨 СМЕНА ШАБЛОНА САЙТА-ЗАГЛУШКИ${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
     # Показываем текущий шаблон
@@ -3261,9 +3326,9 @@ manage_random_template() {
         0)
             # Случайный шаблон
             clear
-            echo -e "${BLUE}──────────────────────────────────────${NC}"
+            echo -e "${BLUE}══════════════════════════════════════${NC}"
             echo -e "${GREEN}   🎲 СЛУЧАЙНЫЙ ШАБЛОН${NC}"
-            echo -e "${BLUE}──────────────────────────────────────${NC}"
+            echo -e "${BLUE}══════════════════════════════════════${NC}"
             echo
             randomhtml
             ;;
@@ -3298,9 +3363,9 @@ manage_random_template() {
             fi
             
             clear
-            echo -e "${BLUE}──────────────────────────────────────${NC}"
+            echo -e "${BLUE}══════════════════════════════════════${NC}"
             echo -e "${GREEN}   🎨 ПРИМЕНЕНИЕ ШАБЛОНА${NC}"
-            echo -e "${BLUE}──────────────────────────────────────${NC}"
+            echo -e "${BLUE}══════════════════════════════════════${NC}"
             echo
             
             # Применяем выбранный шаблон (template_choice + 1)
@@ -3324,6 +3389,7 @@ manage_random_template() {
 
     print_success "Шаблон успешно изменён"
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
+        echo
 }
 
 # ═══════════════════════════════════════════════
@@ -3392,9 +3458,9 @@ show_update_notification() {
 update_script() {
     local force_update="$1"
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   🔄 ОБНОВЛЕНИЕ СКРИПТА${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
     local installed_version
@@ -3413,6 +3479,7 @@ update_script() {
     else
         print_error "Не удалось получить информацию о версии с GitHub"
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
         return 1
     fi
     
@@ -3422,6 +3489,7 @@ update_script() {
     if [ "$force_update" != "force" ] && [ "$installed_version" = "$remote_version" ]; then
         print_success "У вас уже установлена последняя версия"
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
         return 0
     fi
 
@@ -3455,19 +3523,21 @@ update_script() {
         
         print_success "Скрипт успешно обновлён до версии v$new_installed_version"
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для перезапуска${NC}")"
+        echo
         exec /usr/local/bin/dfc-menu
     else
         print_error "Ошибка при обновлении скрипта"
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
         return 1
     fi
 }
 
 remove_script() {
     clear
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${RED}   🗑️ УДАЛЕНИЕ СКРИПТА${NC}"
-    echo -e "${BLUE}──────────────────────────────────────${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
     show_arrow_menu "Выберите действие" \
