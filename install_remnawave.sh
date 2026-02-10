@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.1"
+SCRIPT_VERSION="2.5.2"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -41,6 +41,7 @@ cleanup_uninstalled() {
 
 handle_interrupt() {
     cleanup_terminal
+    echo
     echo
     echo -e "${RED}⚠️  Скрипт был остановлен пользователем${NC}"
     echo
