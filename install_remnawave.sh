@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.14"
+SCRIPT_VERSION="2.5.15"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -685,7 +685,7 @@ get_panel_token() {
             fi
         else
             reading "Введите логин панели: " username
-            reading "Введите пароль панели: " password
+            reading_inline "Введите пароль панели: " password
 
             local login_response
             login_response=$(make_api_request "POST" "$domain_url/api/auth/login" "" \
@@ -1048,7 +1048,7 @@ add_node_to_panel() {
     # Запрашиваем домен ноды с проверкой уникальности
     local SELFSTEAL_DOMAIN
     while true; do
-        reading "Введите selfsteal домен для ноды (например, node.example.com):" SELFSTEAL_DOMAIN
+        reading_inline "Введите selfsteal домен для ноды (например, node.example.com):" SELFSTEAL_DOMAIN
         check_node_domain "$domain_url" "$token" "$SELFSTEAL_DOMAIN"
         if [ $? -eq 0 ]; then
             break
@@ -1078,7 +1078,7 @@ add_node_to_panel() {
     # Запрашиваем имя ноды (имя конфигурационного профиля)
     local entity_name
     while true; do
-        reading "Введите имя для вашей ноды (например, Germany):" entity_name
+        reading_inline "Введите имя для вашей ноды (например, Germany):" entity_name
         if [[ "$entity_name" =~ ^[a-zA-Z0-9-]+$ ]]; then
             if [ ${#entity_name} -ge 3 ] && [ ${#entity_name} -le 20 ]; then
                 local response
@@ -1144,6 +1144,7 @@ add_node_to_panel() {
         esac
 
         reading "Email для Let's Encrypt:" LETSENCRYPT_EMAIL
+        echo
 
         if [ "$CERT_METHOD" -eq 1 ]; then
             if [ ! -f "/etc/letsencrypt/cloudflare.ini" ]; then
@@ -1228,6 +1229,7 @@ add_node_to_panel() {
         print_success "Установка публичного ключа"
     fi
 
+    echo
     # ─── API: регистрация ноды ───
     print_action "Генерация REALITY ключей..."
     local private_key
@@ -1315,6 +1317,7 @@ add_node_to_panel() {
     else
         echo
         print_success "Нода успешно добавлена в панель!"
+        echo
         echo -e "${RED}─────────────────────────────────────────────────${NC}"
         echo -e "${YELLOW}Для установки ноды выполните следующие шаги:${NC}"
         echo -e "${YELLOW}1. Запустите этот скрипт на сервере, где будет установлена нода${NC}"
@@ -2711,14 +2714,15 @@ installation_node() {
 
     local PANEL_IP
     while true; do
-        reading "IP адрес сервера панели:" PANEL_IP
+        reading_inline "IP адрес сервера панели:" PANEL_IP
         if echo "$PANEL_IP" | grep -E '^([0-9]{1,3}\.){3}[0-9]{1,3}$' >/dev/null; then
             break
         fi
         print_error "Некорректный IP адрес"
     done
 
-    echo -e "${YELLOW}Вставьте сертификат (SECRET_KEY) из панели и нажмите Enter дважды:${NC}"
+    echo
+    echo -e "${BLUE}➜${NC}  ${YELLOW}Вставьте сертификат (SECRET_KEY) из панели и нажмите Enter дважды:${NC}"
     local CERTIFICATE=""
     while IFS= read -r line; do
         if [ -z "$line" ] && [ -n "$CERTIFICATE" ]; then
