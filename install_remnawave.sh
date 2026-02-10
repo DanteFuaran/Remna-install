@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.3.7"
+SCRIPT_VERSION="2.3.8"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -3715,9 +3715,12 @@ main_menu() {
                 16) clear; exit 0 ;;
             esac
         else
-            # Для неустановленного состояния — без проверки обновлений
+            # Для неустановленного состояния
             show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
                 "📦  Установить компоненты" \
+                "──────────────────────────────────────" \
+                "🔄  Обновить скрипт" \
+                "🗑️   Удалить скрипт" \
                 "──────────────────────────────────────" \
                 "❌  Выход"
             local choice=$?
@@ -3759,7 +3762,10 @@ main_menu() {
                     esac
                     ;;
                 1) continue ;;
-                2) clear; exit 0 ;;
+                2) update_script ;;
+                3) remove_script ;;
+                4) continue ;;
+                5) clear; exit 0 ;;
             esac
         fi
     done
