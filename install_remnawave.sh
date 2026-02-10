@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.8"
+SCRIPT_VERSION="2.5.9"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -245,6 +245,14 @@ reading() {
     local var_name="$2"
     local input
     echo
+    read -e -p "$(echo -e "${BLUE}➜${NC}  ${YELLOW}$prompt${NC} ")" input
+    eval "$var_name='$input'"
+}
+
+reading_inline() {
+    local prompt="$1"
+    local var_name="$2"
+    local input
     read -e -p "$(echo -e "${BLUE}➜${NC}  ${YELLOW}$prompt${NC} ")" input
     eval "$var_name='$input'"
 }
@@ -2202,10 +2210,10 @@ installation_full() {
     reading "Домен панели (например panel.example.com):" PANEL_DOMAIN
     check_domain "$PANEL_DOMAIN" true || return
 
-    reading "Домен подписки (например sub.example.com):" SUB_DOMAIN
+    reading_inline "Домен подписки (например sub.example.com):" SUB_DOMAIN
     check_domain "$SUB_DOMAIN" true || return
 
-    reading "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN
+    reading_inline "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN
     check_domain "$SELFSTEAL_DOMAIN" true || return
 
     # Автогенерация учётных данных администратора
@@ -2503,7 +2511,7 @@ installation_panel() {
     reading "Домен панели (например panel.example.com):" PANEL_DOMAIN
     check_domain "$PANEL_DOMAIN" true || return
 
-    reading "Домен подписки (например sub.example.com):" SUB_DOMAIN
+    reading_inline "Домен подписки (например sub.example.com):" SUB_DOMAIN
     check_domain "$SUB_DOMAIN" true || return
 
     # Автогенерация учётных данных администратора
