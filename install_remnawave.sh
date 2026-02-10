@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.17"
+SCRIPT_VERSION="2.5.18"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -41,7 +41,6 @@ cleanup_uninstalled() {
 
 handle_interrupt() {
     cleanup_terminal
-    echo
     echo
     echo -e "${RED}⚠️  Скрипт был остановлен пользователем${NC}"
     echo
@@ -451,7 +450,7 @@ check_domain() {
     domain_ip=$(dig +short "$domain" A 2>/dev/null | head -1)
 
     if [ -z "$domain_ip" ]; then
-        print_error "Не удалось определить IP для домена $domain"
+        print_error "IP не соответствует введенному домену, возможно введен не правильный домен."
         return 1
     fi
 
