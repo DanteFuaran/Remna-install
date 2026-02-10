@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.16"
+SCRIPT_VERSION="2.5.17"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -457,16 +457,49 @@ check_domain() {
 
     if [ "$check_ip" = true ] && [ "$domain_ip" != "$server_ip" ]; then
         print_error "Домен $domain ($domain_ip) не указывает на этот сервер ($server_ip)"
+        echo
         echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно (DNS Only, без прокси Cloudflare)${NC}"
-        echo
-        local confirm
-        echo
-        read -e -p "$(echo -e "${BLUE}➜${NC}  ${YELLOW}Продолжить всё равно? [y/N]: ${NC}")" confirm
-        if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-            return 2
-        fi
+        return 1
     fi
     return 0
+}
+
+prompt_domain_with_retry() {
+    local prompt_text="$1"
+    local var_name="$2"
+    local use_inline="${3:-false}"
+
+    local first=true
+    while true; do
+        if [ "$first" = true ]; then
+            if [ "$use_inline" = true ]; then
+                reading_inline "$prompt_text" "$var_name"
+            else
+                reading "$prompt_text" "$var_name"
+            fi
+            first=false
+        else
+            reading "$prompt_text" "$var_name"
+        fi
+
+        if check_domain "${!var_name}" true; then
+            return 0
+        fi
+
+        echo
+        echo -e "${DARKGRAY}Нажмите Enter что бы ввести другой домен, или нажмите Esc для возвращения в главное меню.${NC}"
+
+        local key
+        while true; do
+            read -s -n 1 key
+            if [[ "$key" == $'\x1b' ]]; then
+                echo
+                return 1
+            elif [[ "$key" == "" ]]; then
+                break
+            fi
+        done
+    done
 }
 
 check_node_domain() {
@@ -2217,14 +2250,9 @@ installation_full() {
     mkdir -p /var/www/html
 
     # Домены
-    reading "Домен панели (например panel.example.com):" PANEL_DOMAIN
-    check_domain "$PANEL_DOMAIN" true || return
-
-    reading_inline "Домен подписки (например sub.example.com):" SUB_DOMAIN
-    check_domain "$SUB_DOMAIN" true || return
-
-    reading_inline "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN
-    check_domain "$SELFSTEAL_DOMAIN" true || return
+    prompt_domain_with_retry "Домен панели (например panel.example.com):" PANEL_DOMAIN || return
+    prompt_domain_with_retry "Домен подписки (например sub.example.com):" SUB_DOMAIN true || return
+    prompt_domain_with_retry "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN true || return
 
     # Автогенерация учётных данных администратора
     local SUPERADMIN_USERNAME
@@ -2517,11 +2545,8 @@ installation_panel() {
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
 
-    reading "Домен панели (например panel.example.com):" PANEL_DOMAIN
-    check_domain "$PANEL_DOMAIN" true || return
-
-    reading_inline "Домен подписки (например sub.example.com):" SUB_DOMAIN
-    check_domain "$SUB_DOMAIN" true || return
+    prompt_domain_with_retry "Домен панели (например panel.example.com):" PANEL_DOMAIN || return
+    prompt_domain_with_retry "Домен подписки (например sub.example.com):" SUB_DOMAIN true || return
 
     # Автогенерация учётных данных администратора
     local SUPERADMIN_USERNAME
@@ -2709,8 +2734,7 @@ installation_node() {
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
 
-    reading "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN
-    check_domain "$SELFSTEAL_DOMAIN" true || return
+    prompt_domain_with_retry "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN || return
 
     local PANEL_IP
     while true; do
