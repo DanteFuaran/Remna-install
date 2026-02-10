@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.11"
+SCRIPT_VERSION="2.5.12"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -359,6 +359,14 @@ install_packages() {
     ) &
     echo
     show_spinner "Установка необходимых пакетов"
+}
+
+setup_firewall() {
+    ufw default deny incoming >/dev/null 2>&1 || true
+    ufw default allow outgoing >/dev/null 2>&1 || true
+    ufw allow 22/tcp >/dev/null 2>&1 || true
+    ufw allow 443/tcp >/dev/null 2>&1 || true
+    echo "y" | ufw enable >/dev/null 2>&1 || true
 }
 
 # ═══════════════════════════════════════════════
