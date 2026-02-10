@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.2"
+SCRIPT_VERSION="2.5.3"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -444,7 +444,8 @@ check_domain() {
         echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно (DNS Only, без прокси Cloudflare)${NC}"
         echo
         local confirm
-        read -e -p "$(echo -e "${YELLOW}Продолжить всё равно? [y/N]: ${NC}")" confirm
+        echo
+        read -e -p "$(echo -e "${BLUE}►${NC} ${YELLOW}Продолжить всё равно? [y/N]: ${NC}")" confirm
         if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
             return 2
         fi
@@ -3058,7 +3059,8 @@ manage_reinstall() {
     echo -e "${RED}⚠️  Все данные будут удалены!${NC}"
     echo
     local confirm
-    read -e -p "$(echo -e "${YELLOW}Вы уверены? [y/N]: ${NC}")" confirm
+    echo
+    read -e -p "$(echo -e "${BLUE}►${NC} ${YELLOW}Вы уверены? [y/N]: ${NC}")" confirm
     if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
         return
     fi
@@ -3575,13 +3577,15 @@ remove_script() {
             rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
             cleanup_old_aliases
             print_success "Скрипт удалён"
+            echo
             exit 0
             ;;
         1)
             echo -e "${RED}⚠️  ВСЕ ДАННЫЕ БУДУТ УДАЛЕНЫ!${NC}"
             echo
             local confirm
-            read -e -p "$(echo -e "${YELLOW}Подтвердите: [y/N]: ${NC}")" confirm
+            echo
+            read -e -p "$(echo -e "${BLUE}►${NC} ${YELLOW}Подтвердите: [y/N]: ${NC}")" confirm
             if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
                 (
                     cd "${DIR_PANEL}" 2>/dev/null
@@ -3595,6 +3599,7 @@ remove_script() {
                 rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
                 cleanup_old_aliases
                 print_success "Всё удалено"
+                echo
                 exit 0
             fi
             ;;
