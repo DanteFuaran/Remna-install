@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.4.4"
+SCRIPT_VERSION="2.4.5"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -614,7 +614,6 @@ get_panel_token() {
     # Проверяем сохранённый токен
     if [ -f "$TOKEN_FILE" ]; then
         token=$(cat "$TOKEN_FILE")
-        echo -e "${YELLOW}Используем сохранённый токен...${NC}"
         local test_response
         test_response=$(make_api_request "GET" "$domain_url/api/config-profiles" "$token")
 
