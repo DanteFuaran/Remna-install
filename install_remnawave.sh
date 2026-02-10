@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.4.7"
+SCRIPT_VERSION="2.4.8"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -241,7 +241,8 @@ reading() {
     local prompt="$1"
     local var_name="$2"
     local input
-    read -e -p "$(echo -e "${YELLOW}$prompt${NC} ")" input
+    echo
+    read -e -p "$(echo -e "${BLUE}►${NC} ${YELLOW}$prompt${NC} ")" input
     eval "$var_name='$input'"
 }
 
