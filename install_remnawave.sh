@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.4.9"
+SCRIPT_VERSION="2.5.0"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -1303,6 +1303,7 @@ add_node_to_panel() {
         echo -e "${YELLOW}2. Выберите 'Установить компоненты' → 'Только нода'${NC}"
         echo -e "${RED}─────────────────────────────────────────────────${NC}"
         echo
+    echo
         read -p "Нажмите Enter для возврата в меню..."
     fi
 }
@@ -2827,6 +2828,7 @@ EOL
     echo
     echo -e "${YELLOW}Проверьте подключение ноды в панели Remnawave${NC}"
     echo
+    echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
         echo
 }
@@ -2897,6 +2899,7 @@ EOSQL
     echo
     echo -e "${WHITE}При следующем входе в панель вы сможете создать${NC}"
     echo -e "${WHITE}нового суперадмина с любым логином и паролем.${NC}"
+    echo
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
         echo
@@ -2973,6 +2976,7 @@ regenerate_cookies() {
     echo
     echo -e "${RED}⚠️  Сохраните эту ссылку! Старая больше не работает.${NC}"
     echo
+    echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
         echo
 }
@@ -2987,6 +2991,7 @@ manage_start() {
     ) &
     show_spinner "Запуск сервисов"
     print_success "Сервисы запущены"
+    echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
         echo
 }
@@ -2998,6 +3003,7 @@ manage_stop() {
     ) &
     show_spinner "Остановка сервисов"
     print_success "Сервисы остановлены"
+    echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
         echo
 }
@@ -3027,6 +3033,7 @@ manage_update() {
     show_spinner "Очистка старых образов"
 
     print_success "Обновление завершено"
+    echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
         echo
 }
@@ -3123,6 +3130,7 @@ open_panel_access() {
             echo -e "${WHITE}https://${panel_domain}:8443/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
         fi
         echo
+    echo
         read -e -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения...${NC}")" _
         return
     fi
@@ -3188,6 +3196,7 @@ open_panel_access() {
     echo
     echo -e "${RED}⚠️  Не забудьте закрыть порт после использования!${NC}"
     echo
+    echo
     read -e -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения...${NC}")" _
 }
 
@@ -3228,6 +3237,7 @@ close_panel_access() {
 
     echo
     print_success "Порт 8443 закрыт"
+    echo
     echo
     read -e -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения...${NC}")" _
 }
@@ -3288,6 +3298,7 @@ manage_panel_access() {
                 print_error "Не удалось извлечь cookie из nginx.conf"
                 echo
             fi
+    echo
             read -e -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения...${NC}")" _
             ;;
         3) continue ;;
@@ -3391,6 +3402,7 @@ manage_random_template() {
     fi
 
     print_success "Шаблон успешно изменён"
+    echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
         echo
 }
@@ -3481,6 +3493,7 @@ update_script() {
         echo -e "${WHITE}Доступная версия:${NC}     v$remote_version"
     else
         print_error "Не удалось получить информацию о версии с GitHub"
+    echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
         echo
         return 1
@@ -3491,6 +3504,7 @@ update_script() {
     # Проверяем нужно ли обновление
     if [ "$force_update" != "force" ] && [ "$installed_version" = "$remote_version" ]; then
         print_success "У вас уже установлена последняя версия"
+    echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
         echo
         return 0
@@ -3525,11 +3539,13 @@ update_script() {
         rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
         
         print_success "Скрипт успешно обновлён до версии v$new_installed_version"
+    echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для перезапуска${NC}")"
         echo
         exec /usr/local/bin/dfc-menu
     else
         print_error "Ошибка при обновлении скрипта"
+    echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
         echo
         return 1
