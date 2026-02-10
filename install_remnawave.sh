@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.21"
+SCRIPT_VERSION="2.5.22"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -593,6 +593,20 @@ handle_certificates() {
     done
 
     echo
+}
+
+detect_cert_method() {
+    local domain="$1"
+    local base_domain
+    base_domain=$(extract_domain "$domain")
+
+    if [ -d "/etc/letsencrypt/live/$base_domain" ]; then
+        echo "1"
+    elif [ -d "/etc/letsencrypt/live/$domain" ]; then
+        echo "2"
+    else
+        echo "2"
+    fi
 }
 
 check_if_certificates_needed() {
@@ -2347,6 +2361,7 @@ installation_full() {
 
         handle_certificates domains_to_check "$CERT_METHOD" "$LETSENCRYPT_EMAIL"
     else
+        CERT_METHOD=$(detect_cert_method "$PANEL_DOMAIN")
         echo
         for domain in "${!domains_to_check[@]}"; do
             print_success "Сертификат для $domain уже существует"
@@ -2631,6 +2646,7 @@ installation_panel() {
 
         handle_certificates domains_to_check "$CERT_METHOD" "$LETSENCRYPT_EMAIL"
     else
+        CERT_METHOD=$(detect_cert_method "$PANEL_DOMAIN")
         echo
         for domain in "${!domains_to_check[@]}"; do
             print_success "Сертификат для $domain уже существует"
@@ -2839,6 +2855,7 @@ installation_node() {
 
         handle_certificates domains_to_check "$CERT_METHOD" "$LETSENCRYPT_EMAIL"
     else
+        CERT_METHOD=$(detect_cert_method "$SELFSTEAL_DOMAIN")
         echo
         print_success "Сертификат для $SELFSTEAL_DOMAIN уже существует"
         echo
