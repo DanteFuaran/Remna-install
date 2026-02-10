@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.10"
+SCRIPT_VERSION="2.5.11"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -1808,6 +1808,7 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/html:/var/www/html:ro
     network_mode: host
     depends_on:
       - remnawave
@@ -2509,6 +2510,7 @@ installation_panel() {
     echo -e "${GREEN}   📦 УСТАНОВКА ТОЛЬКО ПАНЕЛИ${NC}"
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
+    mkdir -p /var/www/html
 
     reading "Домен панели (например panel.example.com):" PANEL_DOMAIN
     check_domain "$PANEL_DOMAIN" true || return
@@ -2572,6 +2574,11 @@ installation_panel() {
     (generate_nginx_conf_panel "$PANEL_DOMAIN" "$SUB_DOMAIN" "$PANEL_CERT_DOMAIN" "$SUB_CERT_DOMAIN" \
         "$COOKIE_NAME" "$COOKIE_VALUE") &
     show_spinner "Создание nginx.conf"
+
+    (setup_firewall) &
+    show_spinner "Настройка файрвола"
+
+    randomhtml
 
     echo
     (
