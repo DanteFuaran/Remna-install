@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.18"
+SCRIPT_VERSION="2.5.19"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -566,6 +566,21 @@ handle_certificates() {
     done
 
     echo
+}
+
+check_if_certificates_needed() {
+    local -n domains_ref=$1
+
+    for domain in "${!domains_ref[@]}"; do
+        local base_domain
+        base_domain=$(extract_domain "$domain")
+
+        if [ ! -d "/etc/letsencrypt/live/$domain" ] && [ ! -d "/etc/letsencrypt/live/$base_domain" ]; then
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 get_cert_cloudflare() {
@@ -2275,35 +2290,42 @@ installation_full() {
     done
 
     # Сертификаты
-    echo
-    show_arrow_menu "🔐 МЕТОД ПОЛУЧЕНИЯ СЕРТИФИКАТОВ" \
-        "☁️   Cloudflare DNS-01 (wildcard)" \
-        "🌐  ACME HTTP-01 (Let's Encrypt)" \
-        "──────────────────────────────────────" \
-        "❌  Назад"
-    local cert_choice=$?
-
-    case $cert_choice in
-        0) CERT_METHOD=1 ;;
-        1) CERT_METHOD=2 ;;
-        2) continue ;;
-        3) return ;;
-    esac
-
-    reading "Email для Let's Encrypt:" LETSENCRYPT_EMAIL
-    echo
-
-    if [ "$CERT_METHOD" -eq 1 ]; then
-        setup_cloudflare_credentials || return
-    fi
-
-    # Обработка сертификатов
     declare -A domains_to_check
     domains_to_check["$PANEL_DOMAIN"]=1
     domains_to_check["$SUB_DOMAIN"]=1
     domains_to_check["$SELFSTEAL_DOMAIN"]=1
 
-    handle_certificates domains_to_check "$CERT_METHOD" "$LETSENCRYPT_EMAIL"
+    if check_if_certificates_needed domains_to_check; then
+        echo
+        show_arrow_menu "🔐 МЕТОД ПОЛУЧЕНИЯ СЕРТИФИКАТОВ" \
+            "☁️   Cloudflare DNS-01 (wildcard)" \
+            "🌐  ACME HTTP-01 (Let's Encrypt)" \
+            "──────────────────────────────────────" \
+            "❌  Назад"
+        local cert_choice=$?
+
+        case $cert_choice in
+            0) CERT_METHOD=1 ;;
+            1) CERT_METHOD=2 ;;
+            2) continue ;;
+            3) return ;;
+        esac
+
+        reading "Email для Let's Encrypt:" LETSENCRYPT_EMAIL
+        echo
+
+        if [ "$CERT_METHOD" -eq 1 ]; then
+            setup_cloudflare_credentials || return
+        fi
+
+        handle_certificates domains_to_check "$CERT_METHOD" "$LETSENCRYPT_EMAIL"
+    else
+        echo
+        for domain in "${!domains_to_check[@]}"; do
+            print_success "Сертификат для $domain уже существует"
+        done
+        echo
+    fi
 
     # Определяем домены сертификатов
     local PANEL_CERT_DOMAIN SUB_CERT_DOMAIN NODE_CERT_DOMAIN
@@ -2553,32 +2575,41 @@ installation_panel() {
     SUPERADMIN_USERNAME=$(generate_admin_username)
     SUPERADMIN_PASSWORD=$(generate_admin_password)
 
-    echo
-    show_arrow_menu "🔐 МЕТОД ПОЛУЧЕНИЯ СЕРТИФИКАТОВ" \
-        "☁️   Cloudflare DNS-01 (wildcard)" \
-        "🌐  ACME HTTP-01 (Let's Encrypt)" \
-        "──────────────────────────────────────" \
-        "❌  Назад"
-    local cert_choice=$?
-
-    case $cert_choice in
-        0) CERT_METHOD=1 ;;
-        1) CERT_METHOD=2 ;;
-        2) continue ;;
-        3) return ;;
-    esac
-
-    reading "Email для Let's Encrypt:" LETSENCRYPT_EMAIL
-    echo
-
-    if [ "$CERT_METHOD" -eq 1 ]; then
-        setup_cloudflare_credentials || return
-    fi
-
     declare -A domains_to_check
     domains_to_check["$PANEL_DOMAIN"]=1
     domains_to_check["$SUB_DOMAIN"]=1
-    handle_certificates domains_to_check "$CERT_METHOD" "$LETSENCRYPT_EMAIL"
+
+    if check_if_certificates_needed domains_to_check; then
+        echo
+        show_arrow_menu "🔐 МЕТОД ПОЛУЧЕНИЯ СЕРТИФИКАТОВ" \
+            "☁️   Cloudflare DNS-01 (wildcard)" \
+            "🌐  ACME HTTP-01 (Let's Encrypt)" \
+            "──────────────────────────────────────" \
+            "❌  Назад"
+        local cert_choice=$?
+
+        case $cert_choice in
+            0) CERT_METHOD=1 ;;
+            1) CERT_METHOD=2 ;;
+            2) continue ;;
+            3) return ;;
+        esac
+
+        reading "Email для Let's Encrypt:" LETSENCRYPT_EMAIL
+        echo
+
+        if [ "$CERT_METHOD" -eq 1 ]; then
+            setup_cloudflare_credentials || return
+        fi
+
+        handle_certificates domains_to_check "$CERT_METHOD" "$LETSENCRYPT_EMAIL"
+    else
+        echo
+        for domain in "${!domains_to_check[@]}"; do
+            print_success "Сертификат для $domain уже существует"
+        done
+        echo
+    fi
 
     local PANEL_CERT_DOMAIN SUB_CERT_DOMAIN
     if [ "$CERT_METHOD" -eq 1 ]; then
@@ -2754,30 +2785,37 @@ installation_node() {
         CERTIFICATE="$CERTIFICATE$line\n"
     done
 
-    echo
-    show_arrow_menu "🔐 МЕТОД ПОЛУЧЕНИЯ СЕРТИФИКАТОВ" \
-        "☁️   Cloudflare DNS-01 (wildcard)" \
-        "🌐  ACME HTTP-01 (Let's Encrypt)" \
-        "──────────────────────────────────────" \
-        "❌  Назад"
-    local cert_choice=$?
-
-    case $cert_choice in
-        0) CERT_METHOD=1 ;;
-        1) CERT_METHOD=2 ;;
-        2) continue ;;
-        3) return ;;
-    esac
-
-    reading "Email для Let's Encrypt:" LETSENCRYPT_EMAIL
-
-    if [ "$CERT_METHOD" -eq 1 ]; then
-        setup_cloudflare_credentials || return
-    fi
-
     declare -A domains_to_check
     domains_to_check["$SELFSTEAL_DOMAIN"]=1
-    handle_certificates domains_to_check "$CERT_METHOD" "$LETSENCRYPT_EMAIL"
+
+    if check_if_certificates_needed domains_to_check; then
+        echo
+        show_arrow_menu "🔐 МЕТОД ПОЛУЧЕНИЯ СЕРТИФИКАТОВ" \
+            "☁️   Cloudflare DNS-01 (wildcard)" \
+            "🌐  ACME HTTP-01 (Let's Encrypt)" \
+            "──────────────────────────────────────" \
+            "❌  Назад"
+        local cert_choice=$?
+
+        case $cert_choice in
+            0) CERT_METHOD=1 ;;
+            1) CERT_METHOD=2 ;;
+            2) continue ;;
+            3) return ;;
+        esac
+
+        reading "Email для Let's Encrypt:" LETSENCRYPT_EMAIL
+
+        if [ "$CERT_METHOD" -eq 1 ]; then
+            setup_cloudflare_credentials || return
+        fi
+
+        handle_certificates domains_to_check "$CERT_METHOD" "$LETSENCRYPT_EMAIL"
+    else
+        echo
+        print_success "Сертификат для $SELFSTEAL_DOMAIN уже существует"
+        echo
+    fi
 
     local NODE_CERT_DOMAIN
     if [ "$CERT_METHOD" -eq 1 ]; then
