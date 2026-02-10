@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.15"
+SCRIPT_VERSION="2.5.16"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -174,7 +174,7 @@ show_arrow_menu() {
                 # Разделители без отступа - вровень с рамкой
                 echo -e "${options[$i]}"
             elif [ $i -eq $selected ]; then
-                echo -e "${BLUE}▶${NC} ${GREEN}${options[$i]}${NC}"
+                echo -e "${BLUE}▶${NC} ${YELLOW}${options[$i]}${NC}"
             else
                 echo -e "  ${options[$i]}"
             fi
