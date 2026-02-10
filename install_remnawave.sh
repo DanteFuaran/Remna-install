@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.4.2"
+SCRIPT_VERSION="2.4.3"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -694,28 +694,38 @@ register_remnawave() {
     local domain_url=$1
     local username=$2
     local password=$3
+    local max_attempts=5
+    local attempt=1
 
     local register_data='{"username":"'"$username"'","password":"'"$password"'"}'
-    local response
-    response=$(curl -s -X POST "http://$domain_url/api/auth/register" \
-        -H "Content-Type: application/json" \
-        -H "X-Forwarded-For: 127.0.0.1" \
-        -H "X-Forwarded-Proto: https" \
-        -d "$register_data")
+    local token=""
 
-    local token
-    token=$(echo "$response" | jq -r '.response.accessToken // empty' 2>/dev/null)
-
-    if [ -z "$token" ]; then
-        # Попытка логина если уже зарегистрирован
-        local login_data='{"username":"'"$username"'","password":"'"$password"'"}'
-        response=$(curl -s -X POST "http://$domain_url/api/auth/login" \
+    while [ $attempt -le $max_attempts ] && [ -z "$token" ]; do
+        local response
+        response=$(curl -s -X POST "http://$domain_url/api/auth/register" \
             -H "Content-Type: application/json" \
             -H "X-Forwarded-For: 127.0.0.1" \
             -H "X-Forwarded-Proto: https" \
-            -d "$login_data")
+            -d "$register_data" 2>/dev/null)
+
         token=$(echo "$response" | jq -r '.response.accessToken // empty' 2>/dev/null)
-    fi
+
+        if [ -z "$token" ]; then
+            # Попытка логина если уже зарегистрирован
+            local login_data='{"username":"'"$username"'","password":"'"$password"'"}'
+            response=$(curl -s -X POST "http://$domain_url/api/auth/login" \
+                -H "Content-Type: application/json" \
+                -H "X-Forwarded-For: 127.0.0.1" \
+                -H "X-Forwarded-Proto: https" \
+                -d "$login_data" 2>/dev/null)
+            token=$(echo "$response" | jq -r '.response.accessToken // empty' 2>/dev/null)
+        fi
+
+        if [ -z "$token" ]; then
+            sleep 3
+            ((attempt++))
+        fi
+    done
 
     echo "$token"
 }
@@ -2308,7 +2318,7 @@ installation_full() {
     token=$(register_remnawave "$domain_url" "$SUPERADMIN_USERNAME" "$SUPERADMIN_PASSWORD")
 
     if [ -z "$token" ]; then
-        print_error "Не удалось зарегистрироваться/авторизоваться в панели"
+        print_error "Не удалось получить токен авторизации"
         print_error "Настройте ноду вручную через панель: https://$PANEL_DOMAIN"
         randomhtml
         echo
@@ -2320,9 +2330,14 @@ installation_full() {
         echo -e "${WHITE}Подписка:${NC}     https://$SUB_DOMAIN"
         echo -e "${WHITE}SelfSteal:${NC}    https://$SELFSTEAL_DOMAIN"
         echo
-        echo -e "${YELLOW}Нода не настроена автоматически. Настройте вручную.${NC}"
+        echo -e "${YELLOW}👤 ЛОГИН:${NC}    ${WHITE}$SUPERADMIN_USERNAME${NC}"
+        echo -e "${YELLOW}🔑 ПАРОЛЬ:${NC}   ${WHITE}$SUPERADMIN_PASSWORD${NC}"
         echo
-        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
+        echo -e "${RED}⚠️  Нода не настроена автоматически. Настройте вручную.${NC}"
+        echo
+        echo -e "${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ЭТИ ДАННЫЕ!${NC}"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
         return
     fi
     print_success "Администратор зарегистрирован"
@@ -2539,8 +2554,8 @@ installation_panel() {
     token=$(register_remnawave "$domain_url" "$SUPERADMIN_USERNAME" "$SUPERADMIN_PASSWORD")
 
     if [ -z "$token" ]; then
-        print_error "Не удалось зарегистрироваться/авторизоваться в панели"
-        print_error "Создайте аккаунт вручную через панель: https://$PANEL_DOMAIN"
+        print_error "Не удалось получить токен авторизации"
+        print_error "Создайте API токен вручную через панель: https://$PANEL_DOMAIN"
         clear
         echo
         echo -e "${BLUE}══════════════════════════════════════${NC}"
@@ -2550,7 +2565,12 @@ installation_panel() {
         echo -e "${YELLOW}🔗 ССЫЛКА ВХОДА В ПАНЕЛЬ:${NC}"
         echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
         echo
-        echo -e "${YELLOW}Пользователь не создан автоматически. Создайте вручную.${NC}"
+        echo -e "${YELLOW}👤 ЛОГИН:${NC}    ${WHITE}$SUPERADMIN_USERNAME${NC}"
+        echo -e "${YELLOW}🔑 ПАРОЛЬ:${NC}   ${WHITE}$SUPERADMIN_PASSWORD${NC}"
+        echo
+        echo -e "${RED}⚠️  API токен не создан автоматически. Создайте вручную.${NC}"
+        echo
+        echo -e "${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ЭТИ ДАННЫЕ!${NC}"
         echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
         return
