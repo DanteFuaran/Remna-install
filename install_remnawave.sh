@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.3.6"
+SCRIPT_VERSION="2.3.7"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -3516,14 +3516,39 @@ remove_script() {
         "❌  Назад"
     local choice=$?
 
+    # Функция для удаления алиаса ri из всех возможных мест
+    remove_ri_alias() {
+        # Системные файлы
+        sed -i "/alias ri='remna_install'/d" /etc/bash.bashrc 2>/dev/null
+        sed -i "/alias ri='remna_install'/d" /etc/bashrc 2>/dev/null
+        
+        # Пользовательские файлы (root)
+        sed -i "/alias ri='remna_install'/d" /root/.bashrc 2>/dev/null
+        sed -i "/alias ri='remna_install'/d" /root/.bash_aliases 2>/dev/null
+        
+        # Пользовательские файлы (текущий пользователь если не root)
+        if [ -n "$HOME" ] && [ "$HOME" != "/root" ]; then
+            sed -i "/alias ri='remna_install'/d" "$HOME/.bashrc" 2>/dev/null
+            sed -i "/alias ri='remna_install'/d" "$HOME/.bash_aliases" 2>/dev/null
+        fi
+        
+        # Удалить из profile.d если там есть
+        rm -f /etc/profile.d/remna_install.sh 2>/dev/null
+        
+        # Снять алиас в текущей сессии
+        unalias ri 2>/dev/null || true
+    }
+
     case $choice in
         0)
             rm -f /usr/local/bin/remna_install
             rm -rf "${DIR_REMNAWAVE}"
             rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
-            sed -i "/alias ri='remna_install'/d" /etc/bash.bashrc 2>/dev/null
-            unalias ri 2>/dev/null
+            remove_ri_alias
             print_success "Скрипт удалён"
+            echo
+            echo -e "${YELLOW}Выполните 'exec bash' или перезайдите в терминал${NC}"
+            echo -e "${YELLOW}чтобы команда 'ri' перестала работать.${NC}"
             exit 0
             ;;
         1)
@@ -3542,9 +3567,11 @@ remove_script() {
                 rm -f /usr/local/bin/remna_install
                 rm -rf "${DIR_REMNAWAVE}"
                 rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
-                sed -i "/alias ri='remna_install'/d" /etc/bash.bashrc 2>/dev/null
-                unalias ri 2>/dev/null
+                remove_ri_alias
                 print_success "Всё удалено"
+                echo
+                echo -e "${YELLOW}Выполните 'exec bash' или перезайдите в терминал${NC}"
+                echo -e "${YELLOW}чтобы команда 'ri' перестала работать.${NC}"
                 exit 0
             fi
             ;;
