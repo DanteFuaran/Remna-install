@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.4.1"
+SCRIPT_VERSION="2.4.2"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -13,10 +13,34 @@ cleanup_terminal() {
     tput cnorm 2>/dev/null || true
 }
 
+# Удаление алиаса ri из всех возможных мест
+remove_ri_alias() {
+    sed -i "/alias ri='remna_install'/d" /etc/bash.bashrc 2>/dev/null
+    sed -i "/alias ri='remna_install'/d" /etc/bashrc 2>/dev/null
+    sed -i "/alias ri='remna_install'/d" /root/.bashrc 2>/dev/null
+    sed -i "/alias ri='remna_install'/d" /root/.bash_aliases 2>/dev/null
+    if [ -n "$HOME" ] && [ "$HOME" != "/root" ]; then
+        sed -i "/alias ri='remna_install'/d" "$HOME/.bashrc" 2>/dev/null
+        sed -i "/alias ri='remna_install'/d" "$HOME/.bash_aliases" 2>/dev/null
+    fi
+    rm -f /etc/profile.d/remna_install.sh 2>/dev/null
+    unalias ri 2>/dev/null || true
+}
+
+# Тихая самоочистка если ничего не установлено
+cleanup_uninstalled() {
+    if [ ! -f "/opt/remnawave/docker-compose.yml" ]; then
+        rm -f /usr/local/bin/remna_install
+        rm -rf "${DIR_REMNAWAVE:-/usr/local/remna-install/}"
+        rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
+        remove_ri_alias
+    fi
+}
+
 handle_interrupt() {
     cleanup_terminal
     echo
-    echo -e "${YELLOW}Скрипт прерван пользователем${NC}"
+    cleanup_uninstalled
     exit 130
 }
 
@@ -3432,29 +3456,6 @@ remove_script() {
         "❌  Назад"
     local choice=$?
 
-    # Функция для удаления алиаса ri из всех возможных мест
-    remove_ri_alias() {
-        # Системные файлы
-        sed -i "/alias ri='remna_install'/d" /etc/bash.bashrc 2>/dev/null
-        sed -i "/alias ri='remna_install'/d" /etc/bashrc 2>/dev/null
-        
-        # Пользовательские файлы (root)
-        sed -i "/alias ri='remna_install'/d" /root/.bashrc 2>/dev/null
-        sed -i "/alias ri='remna_install'/d" /root/.bash_aliases 2>/dev/null
-        
-        # Пользовательские файлы (текущий пользователь если не root)
-        if [ -n "$HOME" ] && [ "$HOME" != "/root" ]; then
-            sed -i "/alias ri='remna_install'/d" "$HOME/.bashrc" 2>/dev/null
-            sed -i "/alias ri='remna_install'/d" "$HOME/.bash_aliases" 2>/dev/null
-        fi
-        
-        # Удалить из profile.d если там есть
-        rm -f /etc/profile.d/remna_install.sh 2>/dev/null
-        
-        # Снять алиас в текущей сессии
-        unalias ri 2>/dev/null || true
-    }
-
     case $choice in
         0)
             rm -f /usr/local/bin/remna_install
@@ -3622,20 +3623,8 @@ main_menu() {
             esac
         else
             # Для неустановленного состояния
-            local update_notice=""
-            local menu_title="🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION"
-            if [ -f /tmp/remna_update_available ]; then
-                local new_version
-                new_version=$(cat /tmp/remna_update_available)
-                menu_title="🚀 REMNAWAVE INSTALLER v${SCRIPT_VERSION} ${YELLOW}⬆ v${new_version}${NC}"
-                update_notice=" ${YELLOW}(⬆ v$new_version)${NC}"
-            fi
-
-            show_arrow_menu "$menu_title" \
+            show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
                 "📦  Установить компоненты" \
-                "──────────────────────────────────────" \
-                "🔄  Обновить скрипт$update_notice" \
-                "🗑️   Удалить скрипт" \
                 "──────────────────────────────────────" \
                 "❌  Выход"
             local choice=$?
@@ -3673,10 +3662,7 @@ main_menu() {
                     esac
                     ;;
                 1) continue ;;
-                2) update_script ;;
-                3) remove_script ;;
-                4) continue ;;
-                5) clear; exit 0 ;;
+                2) cleanup_uninstalled; clear; exit 0 ;;
             esac
         fi
     done
@@ -3695,25 +3681,29 @@ if [ "${REMNA_INSTALLED_RUN:-}" != "1" ]; then
     exec /usr/local/bin/remna_install
 fi
 
-# Проверка обновлений скрипта
-UPDATE_CHECK_FILE="/tmp/remna_last_update_check"
-current_time=$(date +%s)
-last_check=0
+# Проверка обновлений только если Remnawave установлен
+if [ -f "/opt/remnawave/docker-compose.yml" ]; then
+    UPDATE_CHECK_FILE="/tmp/remna_last_update_check"
+    current_time=$(date +%s)
+    last_check=0
 
-if [ -f "$UPDATE_CHECK_FILE" ]; then
-    last_check=$(cat "$UPDATE_CHECK_FILE" 2>/dev/null || echo 0)
-fi
-
-# Проверяем раз в час (3600 секунд)
-time_diff=$((current_time - last_check))
-if [ $time_diff -gt 3600 ] || [ ! -f /tmp/remna_update_available ]; then
-    new_version=$(check_for_updates)
-    if [ $? -eq 0 ] && [ -n "$new_version" ]; then
-        echo "$new_version" > /tmp/remna_update_available
-    else
-        rm -f /tmp/remna_update_available 2>/dev/null
+    if [ -f "$UPDATE_CHECK_FILE" ]; then
+        last_check=$(cat "$UPDATE_CHECK_FILE" 2>/dev/null || echo 0)
     fi
-    echo "$current_time" > "$UPDATE_CHECK_FILE"
+
+    # Проверяем раз в час (3600 секунд)
+    time_diff=$((current_time - last_check))
+    if [ $time_diff -gt 3600 ] || [ ! -f /tmp/remna_update_available ]; then
+        new_version=$(check_for_updates)
+        if [ $? -eq 0 ] && [ -n "$new_version" ]; then
+            echo "$new_version" > /tmp/remna_update_available
+        else
+            rm -f /tmp/remna_update_available 2>/dev/null
+        fi
+        echo "$current_time" > "$UPDATE_CHECK_FILE"
+    fi
+else
+    rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
 fi
 
 main_menu
