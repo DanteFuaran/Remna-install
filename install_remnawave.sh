@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.13"
+SCRIPT_VERSION="2.5.14"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -1035,7 +1035,6 @@ add_node_to_panel() {
 
     echo
     echo -e "${GREEN}➕ Добавление ноды в панель${NC}"
-    echo
 
     # Получаем токен
     get_panel_token
@@ -1313,7 +1312,6 @@ add_node_to_panel() {
         echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
         echo
-        echo
     else
         echo
         print_success "Нода успешно добавлена в панель!"
@@ -1323,7 +1321,6 @@ add_node_to_panel() {
         echo -e "${YELLOW}2. Выберите 'Установить компоненты' → 'Только нода'${NC}"
         echo -e "${RED}─────────────────────────────────────────────────${NC}"
         echo
-    echo
         read -p "Нажмите Enter для возврата в меню..."
     fi
 }
@@ -2205,7 +2202,6 @@ installation_full() {
         echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
         echo
-        echo
         return
     fi
 
@@ -2489,7 +2485,6 @@ installation_full() {
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
         echo
-    echo
 }
 
 # ═══════════════════════════════════════════════
@@ -2508,7 +2503,6 @@ installation_panel() {
         echo -e "${WHITE}Используйте опцию ${GREEN}"🔄 Переустановить"${WHITE} в главном меню.${NC}"
         echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
-        echo
         echo
         return
     fi
@@ -2682,7 +2676,6 @@ installation_panel() {
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
         echo
-    echo
 }
 
 # ═══════════════════════════════════════════════
@@ -2701,7 +2694,6 @@ installation_node() {
         echo -e "${WHITE}Используйте опцию ${GREEN}"🔄 Переустановить"${WHITE} в главном меню.${NC}"
         echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
-        echo
         echo
         return
     fi
@@ -2849,7 +2841,6 @@ EOL
     echo
     echo -e "${YELLOW}Проверьте подключение ноды в панели Remnawave${NC}"
     echo
-    echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
         echo
 }
@@ -2919,7 +2910,6 @@ EOSQL
     echo
     echo -e "${WHITE}При следующем входе в панель вы сможете создать${NC}"
     echo -e "${WHITE}нового суперадмина с любым логином и паролем.${NC}"
-    echo
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
         echo
@@ -2994,7 +2984,6 @@ regenerate_cookies() {
     echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
     echo
     echo -e "${RED}⚠️  Сохраните эту ссылку! Старая больше не работает.${NC}"
-    echo
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
         echo
@@ -3150,7 +3139,6 @@ open_panel_access() {
             echo -e "${WHITE}https://${panel_domain}:8443/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
         fi
         echo
-    echo
         read -e -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения...${NC}")" _
         return
     fi
@@ -3216,7 +3204,6 @@ open_panel_access() {
     echo
     echo -e "${RED}⚠️  Не забудьте закрыть порт после использования!${NC}"
     echo
-    echo
     read -e -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения...${NC}")" _
 }
 
@@ -3257,7 +3244,6 @@ close_panel_access() {
 
     echo
     print_success "Порт 8443 закрыт"
-    echo
     echo
     read -e -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения...${NC}")" _
 }
