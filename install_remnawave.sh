@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.7"
+SCRIPT_VERSION="2.5.8"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -245,7 +245,7 @@ reading() {
     local var_name="$2"
     local input
     echo
-    read -e -p "$(echo -e "${BLUE}➜${NC} ${YELLOW}$prompt${NC} ")" input
+    read -e -p "$(echo -e "${BLUE}➜${NC}  ${YELLOW}$prompt${NC} ")" input
     eval "$var_name='$input'"
 }
 
@@ -445,7 +445,7 @@ check_domain() {
         echo
         local confirm
         echo
-        read -e -p "$(echo -e "${BLUE}➜${NC} ${YELLOW}Продолжить всё равно? [y/N]: ${NC}")" confirm
+        read -e -p "$(echo -e "${BLUE}➜${NC}  ${YELLOW}Продолжить всё равно? [y/N]: ${NC}")" confirm
         if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
             return 2
         fi
@@ -567,7 +567,6 @@ get_cert_acme() {
 }
 
 setup_cloudflare_credentials() {
-    echo
     reading "Введите Cloudflare API Token:" CF_TOKEN
 
     # Проверяем токен
@@ -2195,7 +2194,6 @@ installation_full() {
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   📦 УСТАНОВКА ПАНЕЛИ + НОДЫ${NC}"
     echo -e "${BLUE}══════════════════════════════════════${NC}"
-    echo
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
@@ -2217,7 +2215,6 @@ installation_full() {
     SUPERADMIN_PASSWORD=$(generate_admin_password)
 
     # Название ноды
-    echo
     local entity_name=""
     while true; do
         reading "Название ноды (Пример: Germany):" entity_name
@@ -2501,7 +2498,6 @@ installation_panel() {
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   📦 УСТАНОВКА ТОЛЬКО ПАНЕЛИ${NC}"
     echo -e "${BLUE}══════════════════════════════════════${NC}"
-    echo
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
 
     reading "Домен панели (например panel.example.com):" PANEL_DOMAIN
@@ -2689,7 +2685,6 @@ installation_node() {
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   📦 УСТАНОВКА ТОЛЬКО НОДЫ${NC}"
     echo -e "${BLUE}══════════════════════════════════════${NC}"
-    echo
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
@@ -2847,7 +2842,6 @@ change_credentials() {
     echo -e "${WHITE}Эта операция удалит текущего суперадмина из базы данных.${NC}"
     echo -e "${WHITE}При следующем входе в панель вам будет предложено${NC}"
     echo -e "${WHITE}создать нового суперадмина.${NC}"
-    echo
     reading "Вы уверены? (yes/no):" CONFIRM
 
     if [ "$CONFIRM" != "yes" ]; then
@@ -2933,7 +2927,6 @@ regenerate_cookies() {
     echo -e "${WHITE}Текущие cookie будут заменены на новые.${NC}"
     echo -e "${WHITE}Все, кто использовал старую ссылку, потеряют доступ.${NC}"
     echo -e "${WHITE}Вам нужно будет сохранить новую ссылку.${NC}"
-    echo
     reading "Вы уверены? (yes/no):" CONFIRM
 
     if [ "$CONFIRM" != "yes" ]; then
@@ -3058,7 +3051,7 @@ manage_reinstall() {
     echo
     local confirm
     echo
-    read -e -p "$(echo -e "${BLUE}➜${NC} ${YELLOW}Вы уверены? [y/N]: ${NC}")" confirm
+    read -e -p "$(echo -e "${BLUE}➜${NC}  ${YELLOW}Вы уверены? [y/N]: ${NC}")" confirm
     if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
         return
     fi
@@ -3583,7 +3576,7 @@ remove_script() {
             echo -e "${RED}⚠️  ВСЕ ДАННЫЕ БУДУТ УДАЛЕНЫ!${NC}"
             echo
             local confirm
-            read -e -p "$(echo -e "${BLUE}➜${NC} ${YELLOW}Подтвердите: [y/N]: ${NC}")" confirm
+            read -e -p "$(echo -e "${BLUE}➜${NC}  ${YELLOW}Подтвердите: [y/N]: ${NC}")" confirm
             if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
                 echo
                 (
