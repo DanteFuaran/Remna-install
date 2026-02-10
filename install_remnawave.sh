@@ -183,7 +183,6 @@ show_arrow_menu() {
         echo
         echo -e "${BLUE}══════════════════════════════════════${NC}"
         echo -e "${DARKGRAY}Используйте ↑↓ для навигации, Enter для выбора${NC}"
-        echo
 
         local key
         read -rsn1 key 2>/dev/null || key=""
@@ -2211,20 +2210,16 @@ installation_full() {
     check_domain "$SELFSTEAL_DOMAIN" true || return
 
     # Автогенерация учётных данных администратора
-    echo
-    echo -e "${YELLOW}👤 ГЕНЕРАЦИЯ УЧЁТНЫХ ДАННЫХ АДМИНИСТРАТОРА${NC}"
     local SUPERADMIN_USERNAME
     local SUPERADMIN_PASSWORD
     SUPERADMIN_USERNAME=$(generate_admin_username)
     SUPERADMIN_PASSWORD=$(generate_admin_password)
-    
-    echo -e "${DARKGRAY}Логин и пароль будут созданы автоматически и показаны в конце установки${NC}"
 
     # Название ноды
     echo
     local entity_name=""
     while true; do
-        reading "Название ноды (3-20 символов, a-zA-Z0-9-):" entity_name
+        reading "Название ноды (Пример: Germany):" entity_name
         if [[ "$entity_name" =~ ^[a-zA-Z0-9-]+$ ]]; then
             if [ ${#entity_name} -ge 3 ] && [ ${#entity_name} -le 20 ]; then
                 break
@@ -2253,6 +2248,7 @@ installation_full() {
     esac
 
     reading "Email для Let's Encrypt:" LETSENCRYPT_EMAIL
+    echo
 
     if [ "$CERT_METHOD" -eq 1 ]; then
         setup_cloudflare_credentials || return
@@ -2472,6 +2468,8 @@ installation_full() {
     echo -e "${DARKGRAY}Сбросить администратора или сменить cookie можно${NC}"
     echo -e "${DARKGRAY}в любое время через главное меню скрипта.${NC}"
     echo
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
         echo
     echo
@@ -2513,13 +2511,10 @@ installation_panel() {
     check_domain "$SUB_DOMAIN" true || return
 
     # Автогенерация учётных данных администратора
-    echo
-    echo -e "${YELLOW}👤 ГЕНЕРАЦИЯ УЧЁТНЫХ ДАННЫХ АДМИНИСТРАТОРА${NC}"
     local SUPERADMIN_USERNAME
     local SUPERADMIN_PASSWORD
     SUPERADMIN_USERNAME=$(generate_admin_username)
     SUPERADMIN_PASSWORD=$(generate_admin_password)
-    echo -e "${DARKGRAY}Логин и пароль будут созданы автоматически и показаны в конце установки${NC}"
 
     echo
     show_arrow_menu "🔐 МЕТОД ПОЛУЧЕНИЯ СЕРТИФИКАТОВ" \
@@ -2537,6 +2532,7 @@ installation_panel() {
     esac
 
     reading "Email для Let's Encrypt:" LETSENCRYPT_EMAIL
+    echo
 
     if [ "$CERT_METHOD" -eq 1 ]; then
         setup_cloudflare_credentials || return
@@ -2660,6 +2656,8 @@ installation_panel() {
     echo
     echo -e "${DARKGRAY}Сбросить администратора или сменить cookie можно${NC}"
     echo -e "${DARKGRAY}в любое время через главное меню скрипта.${NC}"
+    echo
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
         echo
