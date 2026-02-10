@@ -3058,8 +3058,14 @@ check_for_updates() {
         return 1
     fi
     
-    # Сравниваем текущую запущенную версию с удаленной
-    if [ "$remote_version" != "$SCRIPT_VERSION" ]; then
+    # Сравниваем установленную версию с удаленной
+    local local_version
+    local_version=$(get_installed_version)
+    if [ -z "$local_version" ]; then
+        local_version="$SCRIPT_VERSION"
+    fi
+
+    if [ "$remote_version" != "$local_version" ]; then
         echo "$remote_version"
         return 0
     fi
