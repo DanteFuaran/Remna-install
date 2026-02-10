@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.4"
+SCRIPT_VERSION="2.5.5"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -3579,10 +3579,10 @@ remove_script() {
             exit 0
             ;;
         1)
+            echo
             echo -e "${RED}⚠️  ВСЕ ДАННЫЕ БУДУТ УДАЛЕНЫ!${NC}"
             echo
             local confirm
-            echo
             read -e -p "$(echo -e "${BLUE}►${NC} ${YELLOW}Подтвердите: [y/N]: ${NC}")" confirm
             if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
                 (
