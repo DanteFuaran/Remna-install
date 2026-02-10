@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.9"
+SCRIPT_VERSION="2.5.10"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -524,6 +524,8 @@ handle_certificates() {
                 ;;
         esac
     done
+
+    echo
 }
 
 get_cert_cloudflare() {
