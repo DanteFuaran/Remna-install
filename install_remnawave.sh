@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.3.3"
+SCRIPT_VERSION="2.3.4"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -296,6 +296,14 @@ install_packages() {
         ufw allow 22/tcp >/dev/null 2>&1
         ufw allow 443/tcp >/dev/null 2>&1
         echo "y" | ufw enable >/dev/null 2>&1
+
+        # Bash-completion для UFW
+        if [ ! -f /etc/bash_completion.d/ufw ]; then
+            apt-get install -y -qq bash-completion >/dev/null 2>&1
+            if [ -f /usr/share/bash-completion/completions/ufw ]; then
+                ln -sf /usr/share/bash-completion/completions/ufw /etc/bash_completion.d/ufw 2>/dev/null || true
+            fi
+        fi
 
         # IPv6 disable
         sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1
@@ -2224,6 +2232,15 @@ installation_panel() {
     reading "Домен подписки (например sub.example.com):" SUB_DOMAIN
     check_domain "$SUB_DOMAIN" true || return
 
+    # Автогенерация учётных данных администратора
+    echo
+    echo -e "${YELLOW}👤 ГЕНЕРАЦИЯ УЧЁТНЫХ ДАННЫХ АДМИНИСТРАТОРА${NC}"
+    local SUPERADMIN_USERNAME
+    local SUPERADMIN_PASSWORD
+    SUPERADMIN_USERNAME=$(generate_admin_username)
+    SUPERADMIN_PASSWORD=$(generate_admin_password)
+    echo -e "${DARKGRAY}Логин и пароль будут созданы автоматически и показаны в конце установки${NC}"
+
     echo
     show_arrow_menu "🔐 МЕТОД ПОЛУЧЕНИЯ СЕРТИФИКАТОВ" \
         "☁️   Cloudflare DNS-01 (wildcard)" \
@@ -2284,14 +2301,59 @@ installation_panel() {
     show_spinner_timer 20 "Ожидание запуска Remnawave" "Запуск Remnawave"
 
     local domain_url="127.0.0.1:3000"
+    local target_dir="${DIR_PANEL}"
+
     show_spinner_until_ready "http://$domain_url/api/auth/status" "Проверка доступности API" 120
     if [ $? -ne 0 ]; then
         print_error "API не отвечает"
         return
     fi
 
+    # ═══════════════════════════════════════════
+    # АВТОНАСТРОЙКА: РЕГИСТРАЦИЯ И СОЗДАНИЕ API
+    # ═══════════════════════════════════════════
     echo
-    print_action "Панель готова к использованию"
+    print_action "Автонастройка панели..."
+
+    # 1. Регистрация суперадмина → получение токена
+    print_action "Регистрация администратора..."
+    local token
+    token=$(register_remnawave "$domain_url" "$SUPERADMIN_USERNAME" "$SUPERADMIN_PASSWORD")
+
+    if [ -z "$token" ]; then
+        print_error "Не удалось зарегистрироваться/авторизоваться в панели"
+        print_error "Создайте аккаунт вручную через панель: https://$PANEL_DOMAIN"
+        clear
+        echo
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
+        echo -e "   ${GREEN}⚠️  УСТАНОВКА ЧАСТИЧНО ЗАВЕРШЕНА${NC}"
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
+        echo
+        echo -e "${YELLOW}🔗 ССЫЛКА ВХОДА В ПАНЕЛЬ:${NC}"
+        echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+        echo
+        echo -e "${YELLOW}Пользователь не создан автоматически. Создайте вручную.${NC}"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
+        return
+    fi
+    print_success "Администратор зарегистрирован"
+
+    # 2. Создание API токена для subscription-page
+    print_action "Создание API токена для страницы подписки..."
+    create_api_token "$domain_url" "$token" "$target_dir"
+
+    # 3. Перезапуск Docker Compose (с обновлённым docker-compose.yml)
+    print_action "Перезапуск сервисов с обновлённой конфигурацией..."
+    (
+        cd /opt/remnawave
+        docker compose down >/dev/null 2>&1
+        docker compose up -d >/dev/null 2>&1
+    ) &
+    show_spinner "Запуск контейнеров"
+
+    # Ожидаем готовность после перезапуска
+    show_spinner_timer 10 "Ожидание запуска сервисов" "Запуск сервисов"
 
     clear
     echo
@@ -2302,18 +2364,16 @@ installation_panel() {
     echo -e "${YELLOW}🔗 ССЫЛКА ВХОДА В ПАНЕЛЬ:${NC}"
     echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
     echo
-    echo -e "${GREEN}✅ Cookie-защита панели активирована${NC}"
-    echo
-    echo -e "${YELLOW}📝 Откройте панель по ссылке выше и создайте${NC}"
-    echo -e "${YELLOW}   свой аккаунт администратора.${NC}"
+    echo -e "${YELLOW}👤 ЛОГИН:${NC}    ${WHITE}$SUPERADMIN_USERNAME${NC}"
+    echo -e "${YELLOW}🔑 ПАРОЛЬ:${NC}   ${WHITE}$SUPERADMIN_PASSWORD${NC}"
     echo
     echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
     echo
-    echo -e "${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ССЫЛКУ!${NC}"
-    echo -e "${RED}   Без неё вы не сможете попасть в панель.${NC}"
+    echo -e "${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ЭТИ ДАННЫЕ!${NC}"
+    echo -e "${RED}   Ссылка, логин и пароль не будут показаны повторно.${NC}"
     echo
-    echo -e "${DARKGRAY}Сменить cookie можно в любое время${NC}"
-    echo -e "${DARKGRAY}через главное меню скрипта.${NC}"
+    echo -e "${DARKGRAY}Сбросить администратора или сменить cookie можно${NC}"
+    echo -e "${DARKGRAY}в любое время через главное меню скрипта.${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
 }
