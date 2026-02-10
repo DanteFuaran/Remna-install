@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.4.5"
+SCRIPT_VERSION="2.4.6"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -3562,8 +3562,7 @@ main_menu() {
             if [ -f /tmp/remna_update_available ]; then
                 local new_version
                 new_version=$(cat /tmp/remna_update_available)
-                menu_title="🚀 REMNAWAVE INSTALLER v${SCRIPT_VERSION} ${YELLOW}⬆ v${new_version}${NC}"
-                update_notice=" ${YELLOW}(⬆ v$new_version)${NC}"
+                update_notice=" ${YELLOW}(Доступно обновление до v$new_version)${NC}"
             fi
 
             show_arrow_menu "$menu_title" \
