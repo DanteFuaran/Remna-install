@@ -413,6 +413,36 @@ check_domain() {
     return 0
 }
 
+check_node_domain() {
+    local domain_url="$1"
+    local token="$2"
+    local domain="$3"
+
+    local response
+    response=$(make_api_request "GET" "$domain_url/api/nodes" "$token")
+
+    if [ -z "$response" ]; then
+        print_error "Ошибка при проверке домена"
+        return 1
+    fi
+
+    if echo "$response" | jq -e '.response' >/dev/null 2>&1; then
+        local existing_domain
+        existing_domain=$(echo "$response" | jq -r --arg addr "$domain" \
+            '.response[] | select(.address == $addr) | .address' 2>/dev/null)
+        if [ -n "$existing_domain" ]; then
+            print_error "Домен уже используется: $domain"
+            return 1
+        fi
+        return 0
+    else
+        local error_message
+        error_message=$(echo "$response" | jq -r '.message // "Unknown error"')
+        print_error "Ошибка при проверке домена: $error_message"
+        return 1
+    fi
+}
+
 # ═══════════════════════════════════════════════
 # СЕРТИФИКАТЫ
 # ═══════════════════════════════════════════════
@@ -540,6 +570,92 @@ make_api_request() {
     else
         curl -s -X "$method" "http://$url" "${headers[@]}"
     fi
+}
+
+get_panel_token() {
+    local TOKEN_FILE="${DIR_REMNAWAVE}/token"
+    local domain_url="127.0.0.1:3000"
+    local token=""
+
+    # Проверяем сохранённый токен
+    if [ -f "$TOKEN_FILE" ]; then
+        token=$(cat "$TOKEN_FILE")
+        echo -e "${YELLOW}Используем сохранённый токен...${NC}"
+        local test_response
+        test_response=$(make_api_request "GET" "$domain_url/api/config-profiles" "$token")
+
+        if [ -z "$test_response" ] || ! echo "$test_response" | jq -e '.response.configProfiles' >/dev/null 2>&1; then
+            echo -e "${RED}Сохранённый токен недействителен. Запрашиваем новый...${NC}"
+            token=""
+        fi
+    fi
+
+    if [ -z "$token" ]; then
+        # Проверяем наличие OAuth
+        local auth_status
+        auth_status=$(make_api_request "GET" "$domain_url/api/auth/status" "")
+        local oauth_enabled=false
+
+        if [ -n "$auth_status" ]; then
+            local github_enabled yandex_enabled pocketid_enabled telegram_enabled
+            github_enabled=$(echo "$auth_status" | jq -r '.response.authentication.oauth2.providers.github // false' 2>/dev/null)
+            yandex_enabled=$(echo "$auth_status" | jq -r '.response.authentication.oauth2.providers.yandex // false' 2>/dev/null)
+            pocketid_enabled=$(echo "$auth_status" | jq -r '.response.authentication.oauth2.providers.pocketid // false' 2>/dev/null)
+            telegram_enabled=$(echo "$auth_status" | jq -r '.response.authentication.tgAuth.enabled // false' 2>/dev/null)
+
+            if [ "$github_enabled" = "true" ] || [ "$yandex_enabled" = "true" ] || \
+               [ "$pocketid_enabled" = "true" ] || [ "$telegram_enabled" = "true" ]; then
+                oauth_enabled=true
+            fi
+        fi
+
+        if [ "$oauth_enabled" = true ]; then
+            echo -e "${YELLOW}═════════════════════════════════════════════════${NC}"
+            echo -e "${RED}ВНИМАНИЕ:${NC}"
+            echo -e "${YELLOW}Включена авторизация через OAuth/Telegram.${NC}"
+            echo -e "${YELLOW}Зайдите в панель, перейдите в 'API токены' -> 'Создать новый токен'${NC}"
+            echo -e "${YELLOW}Скопируйте созданный токен и введите его ниже.${NC}"
+            reading "Введите API-токен: " token
+            if [ -z "$token" ]; then
+                print_error "Токен не введён"
+                return 1
+            fi
+
+            local test_response
+            test_response=$(make_api_request "GET" "$domain_url/api/config-profiles" "$token")
+            if [ -z "$test_response" ] || ! echo "$test_response" | jq -e '.response.configProfiles' >/dev/null 2>&1; then
+                print_error "Токен недействителен"
+                return 1
+            fi
+        else
+            reading "Введите логин панели: " username
+            reading "Введите пароль панели: " password
+
+            local login_response
+            login_response=$(make_api_request "POST" "$domain_url/api/auth/login" "" \
+                "{\"username\":\"$username\",\"password\":\"$password\"}")
+            token=$(echo "$login_response" | jq -r '.response.accessToken // empty')
+            if [ -z "$token" ] || [ "$token" = "null" ]; then
+                print_error "Не удалось получить токен: $login_response"
+                return 1
+            fi
+        fi
+
+        echo "$token" > "$TOKEN_FILE"
+        print_success "Токен успешно получен и сохранён"
+    else
+        print_success "Токен успешно использован"
+    fi
+
+    # Финальная проверка
+    local final_test
+    final_test=$(make_api_request "GET" "$domain_url/api/config-profiles" "$token")
+    if [ -z "$final_test" ] || ! echo "$final_test" | jq -e '.response.configProfiles' >/dev/null 2>&1; then
+        print_error "Токен не прошёл проверку"
+        return 1
+    fi
+
+    return 0
 }
 
 register_remnawave() {
@@ -819,6 +935,134 @@ create_api_token() {
 
     sed -i "s|REMNAWAVE_API_TOKEN=.*|REMNAWAVE_API_TOKEN=$api_token|" "$target_dir/docker-compose.yml"
     print_success "Регистрация API токена"
+}
+
+# ═══════════════════════════════════════════════
+# ДОБАВИТЬ НОДУ В ПАНЕЛЬ
+# ═══════════════════════════════════════════════
+add_node_to_panel() {
+    local domain_url="127.0.0.1:3000"
+
+    echo
+    echo -e "${RED}⚠️  ВНИМАНИЕ:${NC}"
+    echo -e "${YELLOW}Добавление ноды должно выполняться только на сервере,${NC}"
+    echo -e "${YELLOW}где установлена панель, а не на сервере ноды.${NC}"
+    echo
+    echo -e "${YELLOW}Вы уверены, что находитесь на сервере с установленной панелью?${NC}"
+    local confirm
+    read -e -p "$(echo -e "${YELLOW}Продолжить? [y/N]: ${NC}")" confirm
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+        echo -e "${YELLOW}Отменено${NC}"
+        return 0
+    fi
+
+    echo
+    echo -e "${GREEN}➕ Добавление ноды в панель${NC}"
+    sleep 1
+
+    # Получаем токен
+    get_panel_token
+    if [ $? -ne 0 ]; then
+        print_error "Не удалось получить токен"
+        return 1
+    fi
+    local token
+    token=$(cat "${DIR_REMNAWAVE}/token")
+
+    # Запрашиваем домен ноды с проверкой уникальности
+    local SELFSTEAL_DOMAIN
+    while true; do
+        reading "Введите selfsteal домен для ноды (например, node.example.com):" SELFSTEAL_DOMAIN
+        check_node_domain "$domain_url" "$token" "$SELFSTEAL_DOMAIN"
+        if [ $? -eq 0 ]; then
+            break
+        fi
+        echo -e "${YELLOW}Пожалуйста, используйте другой домен${NC}"
+    done
+
+    # Запрашиваем имя ноды (имя конфигурационного профиля)
+    local entity_name
+    while true; do
+        reading "Введите имя для вашей ноды (например, Germany):" entity_name
+        if [[ "$entity_name" =~ ^[a-zA-Z0-9-]+$ ]]; then
+            if [ ${#entity_name} -ge 3 ] && [ ${#entity_name} -le 20 ]; then
+                local response
+                response=$(make_api_request "GET" "$domain_url/api/config-profiles" "$token")
+
+                if echo "$response" | jq -e ".response.configProfiles[] | select(.name == \"$entity_name\")" >/dev/null 2>&1; then
+                    print_error "Имя конфигурационного профиля '$entity_name' уже используется. Выберите другое."
+                else
+                    break
+                fi
+            else
+                print_error "Имя должно содержать от 3 до 20 символов"
+            fi
+        else
+            print_error "Имя должно содержать только английские буквы, цифры и дефис"
+        fi
+    done
+
+    # Генерация ключей
+    echo -e "${YELLOW}Генерация ключей x25519...${NC}"
+    local private_key
+    private_key=$(generate_xray_keys "$domain_url" "$token")
+    if [ -z "$private_key" ]; then
+        print_error "Не удалось сгенерировать ключи"
+        return 1
+    fi
+    print_success "Ключи успешно сгенерированы"
+
+    # Создание конфигурационного профиля
+    echo -e "${YELLOW}Создаём конфигурационный профиль...${NC}"
+    local config_result config_profile_uuid inbound_uuid
+    config_result=$(create_config_profile "$domain_url" "$token" "$entity_name" "$SELFSTEAL_DOMAIN" "$private_key" "$entity_name")
+    if [ $? -ne 0 ]; then
+        print_error "Не удалось создать конфигурационный профиль"
+        return 1
+    fi
+    read config_profile_uuid inbound_uuid <<< "$config_result"
+    print_success "Конфигурационный профиль создан: $entity_name"
+
+    # Создание ноды
+    echo -e "${YELLOW}Создаём ноду для $SELFSTEAL_DOMAIN...${NC}"
+    create_node "$domain_url" "$token" "$config_profile_uuid" "$inbound_uuid" "$SELFSTEAL_DOMAIN" "$entity_name"
+    if [ $? -ne 0 ]; then
+        print_error "Не удалось создать ноду"
+        return 1
+    fi
+    print_success "Нода успешно создана"
+
+    # Создание хоста
+    echo -e "${YELLOW}Создаём хост...${NC}"
+    create_host "$domain_url" "$token" "$config_profile_uuid" "$inbound_uuid" "$entity_name" "$SELFSTEAL_DOMAIN"
+    if [ $? -ne 0 ]; then
+        print_error "Не удалось создать хост"
+        return 1
+    fi
+
+    # Обновление сквадов
+    echo -e "${YELLOW}Обновляем сквады...${NC}"
+    local squad_uuids
+    squad_uuids=$(get_default_squad "$domain_url" "$token")
+    if [ -z "$squad_uuids" ]; then
+        echo -e "${YELLOW}Нет сквадов для обновления${NC}"
+    else
+        while IFS= read -r squad_uuid; do
+            [ -z "$squad_uuid" ] && continue
+            update_squad "$domain_url" "$token" "$squad_uuid" "$inbound_uuid"
+            print_success "Сквад обновлён: $squad_uuid"
+        done <<< "$squad_uuids"
+    fi
+
+    echo
+    print_success "Нода успешно добавлена!"
+    echo -e "${RED}─────────────────────────────────────────────────${NC}"
+    echo -e "${YELLOW}Для установки ноды выполните следующие шаги:${NC}"
+    echo -e "${YELLOW}1. Запустите этот скрипт на сервере, где будет установлена нода${NC}"
+    echo -e "${YELLOW}2. Выберите 'Установить компоненты' → 'Только нода'${NC}"
+    echo -e "${RED}─────────────────────────────────────────────────${NC}"
+    echo
+    read -p "Нажмите Enter для возврата в меню..."
 }
 
 # ═══════════════════════════════════════════════
@@ -3045,6 +3289,7 @@ main_menu() {
                         "📦  Панель + Нода (один сервер)" \
                         "──────────────────────────────────────" \
                         "🖥️   Только панель" \
+                        "➕  Добавить ноду в панель" \
                         "🌐  Только нода" \
                         "──────────────────────────────────────" \
                         "❌  Назад"
@@ -3064,13 +3309,16 @@ main_menu() {
                             installation_panel
                             ;;
                         3)
+                            add_node_to_panel
+                            ;;
+                        4)
                             if [ ! -f "${DIR_REMNAWAVE}install_packages" ] || ! command -v docker >/dev/null 2>&1; then
                                 install_packages
                             fi
                             installation_node
                             ;;
-                        4) continue ;;
                         5) continue ;;
+                        6) continue ;;
                     esac
                     ;;
                 1) manage_reinstall ;;
@@ -3103,6 +3351,7 @@ main_menu() {
                         "📦  Панель + Нода (один сервер)" \
                         "──────────────────────────────────────" \
                         "🖥️   Только панель" \
+                        "➕  Добавить ноду в панель" \
                         "🌐  Только нода" \
                         "──────────────────────────────────────" \
                         "❌  Назад"
@@ -3118,11 +3367,14 @@ main_menu() {
                             installation_panel
                             ;;
                         3)
+                            add_node_to_panel
+                            ;;
+                        4)
                             install_packages
                             installation_node
                             ;;
-                        4) continue ;;
                         5) continue ;;
+                        6) continue ;;
                     esac
                     ;;
                 1) continue ;;
