@@ -3217,10 +3217,14 @@ remove_script() {
 # УСТАНОВКА СКРИПТА
 # ═══════════════════════════════════════════════
 install_script() {
-    # Всегда скачиваем свежую копию
     mkdir -p "${DIR_REMNAWAVE}"
 
-    # Получаем SHA последнего коммита для обхода CDN-кеша
+    # Если скрипт уже установлен — не перезаписываем, используем установленную копию
+    if [ -f "/usr/local/bin/remna_install" ]; then
+        return
+    fi
+
+    # Первая установка — получаем SHA последнего коммита для обхода CDN-кеша
     local download_url="$SCRIPT_URL"
     local latest_sha
     latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/main" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
@@ -3254,22 +3258,17 @@ main_menu() {
         fi
 
         if [ "$is_installed" = true ]; then
-            # Получаем информацию о доступной версии (только если установлено)
+            # Формируем заголовок с версией и уведомлением об обновлении
             local update_notice=""
-            local installed_ver
-            installed_ver=$(get_installed_version)
+            local menu_title="🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION"
             if [ -f /tmp/remna_update_available ]; then
                 local new_version
                 new_version=$(cat /tmp/remna_update_available)
-                update_notice=" ${YELLOW}(Обновление до v$new_version)${NC}"
-                # Показываем уведомление об обновлении перед меню
-                clear
-                show_update_notification "$new_version"
-            elif [ -n "$installed_ver" ] && [ "$installed_ver" != "$SCRIPT_VERSION" ]; then
-                update_notice=" ${YELLOW}(Установлена v$installed_ver)${NC}"
+                menu_title="🚀 REMNAWAVE INSTALLER v${SCRIPT_VERSION} ${YELLOW}⬆ v${new_version}${NC}"
+                update_notice=" ${YELLOW}(⬆ v$new_version)${NC}"
             fi
 
-            show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
+            show_arrow_menu "$menu_title" \
                 "📦  Установить компоненты" \
                 "🔄  Переустановить" \
                 "──────────────────────────────────────" \
@@ -3345,6 +3344,7 @@ main_menu() {
                 16) clear; exit 0 ;;
             esac
         else
+            # Для неустановленного состояния — без проверки обновлений
             show_arrow_menu "🚀 REMNAWAVE INSTALLER v$SCRIPT_VERSION" \
                 "📦  Установить компоненты" \
                 "──────────────────────────────────────" \
