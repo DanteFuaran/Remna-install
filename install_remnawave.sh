@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.19"
+SCRIPT_VERSION="2.5.20"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -254,6 +254,33 @@ reading_inline() {
     local input
     read -e -p "$(echo -e "${BLUE}➜${NC}  ${YELLOW}$prompt${NC} ")" input
     eval "$var_name='$input'"
+}
+
+confirm_action() {
+    echo
+    echo -e "${DARKGRAY}Нажмите Enter для подтверждения, или Esc для отмены.${NC}"
+
+    local key
+    while true; do
+        read -s -n 1 key
+        if [[ "$key" == $'\x1b' ]]; then
+            return 1
+        elif [[ "$key" == "" ]]; then
+            break
+        fi
+    done
+
+    echo -e "${RED}⚠️  Вы уверены? Это действие нельзя отменить.${NC}"
+    echo -e "${DARKGRAY}Нажмите Enter для подтверждения, или Esc для отмены.${NC}"
+
+    while true; do
+        read -s -n 1 key
+        if [[ "$key" == $'\x1b' ]]; then
+            return 1
+        elif [[ "$key" == "" ]]; then
+            return 0
+        fi
+    done
 }
 
 # ═══════════════════════════════════════════════
@@ -2923,9 +2950,8 @@ change_credentials() {
     echo -e "${WHITE}Эта операция удалит текущего суперадмина из базы данных.${NC}"
     echo -e "${WHITE}При следующем входе в панель вам будет предложено${NC}"
     echo -e "${WHITE}создать нового суперадмина.${NC}"
-    reading "Вы уверены? (yes/no):" CONFIRM
 
-    if [ "$CONFIRM" != "yes" ]; then
+    if ! confirm_action; then
         print_error "Операция отменена"
         sleep 2
         return
@@ -3007,9 +3033,8 @@ regenerate_cookies() {
     echo -e "${WHITE}Текущие cookie будут заменены на новые.${NC}"
     echo -e "${WHITE}Все, кто использовал старую ссылку, потеряют доступ.${NC}"
     echo -e "${WHITE}Вам нужно будет сохранить новую ссылку.${NC}"
-    reading "Вы уверены? (yes/no):" CONFIRM
 
-    if [ "$CONFIRM" != "yes" ]; then
+    if ! confirm_action; then
         print_error "Операция отменена"
         sleep 2
         return
@@ -3127,11 +3152,8 @@ manage_reinstall() {
     echo
 
     echo -e "${RED}⚠️  Все данные будут удалены!${NC}"
-    echo
-    local confirm
-    echo
-    read -e -p "$(echo -e "${BLUE}➜${NC}  ${YELLOW}Вы уверены? [y/N]: ${NC}")" confirm
-    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+
+    if ! confirm_action; then
         return
     fi
 
@@ -3650,10 +3672,8 @@ remove_script() {
         1)
             echo
             echo -e "${RED}⚠️  ВСЕ ДАННЫЕ БУДУТ УДАЛЕНЫ!${NC}"
-            echo
-            local confirm
-            read -e -p "$(echo -e "${BLUE}➜${NC}  ${YELLOW}Подтвердите: [y/N]: ${NC}")" confirm
-            if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+
+            if confirm_action; then
                 echo
                 (
                     cd "${DIR_PANEL}" 2>/dev/null
