@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.3.8"
+SCRIPT_VERSION="2.3.9"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -3546,9 +3546,6 @@ remove_script() {
             rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
             remove_ri_alias
             print_success "Скрипт удалён"
-            echo
-            echo -e "${YELLOW}Выполните 'exec bash' или перезайдите в терминал${NC}"
-            echo -e "${YELLOW}чтобы команда 'ri' перестала работать.${NC}"
             exit 0
             ;;
         1)
@@ -3569,9 +3566,6 @@ remove_script() {
                 rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
                 remove_ri_alias
                 print_success "Всё удалено"
-                echo
-                echo -e "${YELLOW}Выполните 'exec bash' или перезайдите в терминал${NC}"
-                echo -e "${YELLOW}чтобы команда 'ri' перестала работать.${NC}"
                 exit 0
             fi
             ;;
