@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.20"
+SCRIPT_VERSION="2.5.21"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -258,7 +258,7 @@ reading_inline() {
 
 confirm_action() {
     echo
-    echo -e "${DARKGRAY}Нажмите Enter для подтверждения, или Esc для отмены.${NC}"
+    echo -e "${YELLOW}⚠️  Нажмите Enter для подтверждения, или Esc для отмены.${NC}"
 
     local key
     while true; do
@@ -271,7 +271,7 @@ confirm_action() {
     done
 
     echo -e "${RED}⚠️  Вы уверены? Это действие нельзя отменить.${NC}"
-    echo -e "${DARKGRAY}Нажмите Enter для подтверждения, или Esc для отмены.${NC}"
+    echo -e "${YELLOW}⚠️  Нажмите Enter для подтверждения, или Esc для отмены.${NC}"
 
     while true; do
         read -s -n 1 key
