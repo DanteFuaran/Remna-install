@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.5"
+SCRIPT_VERSION="2.5.6"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -3585,6 +3585,7 @@ remove_script() {
             local confirm
             read -e -p "$(echo -e "${BLUE}►${NC} ${YELLOW}Подтвердите: [y/N]: ${NC}")" confirm
             if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+                echo
                 (
                     cd "${DIR_PANEL}" 2>/dev/null
                     docker compose down -v --rmi all >/dev/null 2>&1 || true
