@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.6"
+SCRIPT_VERSION="2.5.7"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -245,7 +245,7 @@ reading() {
     local var_name="$2"
     local input
     echo
-    read -e -p "$(echo -e "${BLUE}►${NC} ${YELLOW}$prompt${NC} ")" input
+    read -e -p "$(echo -e "${BLUE}➜${NC} ${YELLOW}$prompt${NC} ")" input
     eval "$var_name='$input'"
 }
 
@@ -349,6 +349,7 @@ install_packages() {
 
         touch "${DIR_REMNAWAVE}install_packages"
     ) &
+    echo
     show_spinner "Установка необходимых пакетов"
 }
 
@@ -444,7 +445,7 @@ check_domain() {
         echo
         local confirm
         echo
-        read -e -p "$(echo -e "${BLUE}►${NC} ${YELLOW}Продолжить всё равно? [y/N]: ${NC}")" confirm
+        read -e -p "$(echo -e "${BLUE}➜${NC} ${YELLOW}Продолжить всё равно? [y/N]: ${NC}")" confirm
         if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
             return 2
         fi
@@ -2501,7 +2502,6 @@ installation_panel() {
     echo -e "${GREEN}   📦 УСТАНОВКА ТОЛЬКО ПАНЕЛИ${NC}"
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
-
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
 
     reading "Домен панели (например panel.example.com):" PANEL_DOMAIN
@@ -3058,7 +3058,7 @@ manage_reinstall() {
     echo
     local confirm
     echo
-    read -e -p "$(echo -e "${BLUE}►${NC} ${YELLOW}Вы уверены? [y/N]: ${NC}")" confirm
+    read -e -p "$(echo -e "${BLUE}➜${NC} ${YELLOW}Вы уверены? [y/N]: ${NC}")" confirm
     if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
         return
     fi
@@ -3583,7 +3583,7 @@ remove_script() {
             echo -e "${RED}⚠️  ВСЕ ДАННЫЕ БУДУТ УДАЛЕНЫ!${NC}"
             echo
             local confirm
-            read -e -p "$(echo -e "${BLUE}►${NC} ${YELLOW}Подтвердите: [y/N]: ${NC}")" confirm
+            read -e -p "$(echo -e "${BLUE}➜${NC} ${YELLOW}Подтвердите: [y/N]: ${NC}")" confirm
             if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
                 echo
                 (
