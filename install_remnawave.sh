@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.4.3"
+SCRIPT_VERSION="2.4.4"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -13,8 +13,9 @@ cleanup_terminal() {
     tput cnorm 2>/dev/null || true
 }
 
-# Удаление алиаса ri из всех возможных мест
-remove_ri_alias() {
+# Удаление старых алиасов и команд
+cleanup_old_aliases() {
+    # Удаляем старый алиас ri
     sed -i "/alias ri='remna_install'/d" /etc/bash.bashrc 2>/dev/null
     sed -i "/alias ri='remna_install'/d" /etc/bashrc 2>/dev/null
     sed -i "/alias ri='remna_install'/d" /root/.bashrc 2>/dev/null
@@ -24,16 +25,17 @@ remove_ri_alias() {
         sed -i "/alias ri='remna_install'/d" "$HOME/.bash_aliases" 2>/dev/null
     fi
     rm -f /etc/profile.d/remna_install.sh 2>/dev/null
+    rm -f /usr/local/bin/remna_install 2>/dev/null
     unalias ri 2>/dev/null || true
 }
 
 # Тихая самоочистка если ничего не установлено
 cleanup_uninstalled() {
     if [ ! -f "/opt/remnawave/docker-compose.yml" ]; then
-        rm -f /usr/local/bin/remna_install
+        rm -f /usr/local/bin/dfc-menu
         rm -rf "${DIR_REMNAWAVE:-/usr/local/remna-install/}"
         rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
-        remove_ri_alias
+        cleanup_old_aliases
     fi
 }
 
@@ -3329,8 +3331,8 @@ manage_random_template() {
 # ПРОВЕРКА ВЕРСИИ И ОБНОВЛЕНИЕ СКРИПТА
 # ═══════════════════════════════════════════════
 get_installed_version() {
-    if [ -f "/usr/local/bin/remna_install" ]; then
-        cat /usr/local/bin/remna_install 2>/dev/null | grep -m 1 'SCRIPT_VERSION=' | cut -d'"' -f2
+    if [ -f "/usr/local/bin/dfc-menu" ]; then
+        cat /usr/local/bin/dfc-menu 2>/dev/null | grep -m 1 'SCRIPT_VERSION=' | cut -d'"' -f2
     else
         echo ""
     fi
@@ -3438,9 +3440,9 @@ update_script() {
         fi
         
         # Скачиваем с обходом кеша
-        wget -q --no-cache -O "${DIR_REMNAWAVE}remna_install" "$download_url" 2>/dev/null
-        chmod +x "${DIR_REMNAWAVE}remna_install"
-        ln -sf "${DIR_REMNAWAVE}remna_install" /usr/local/bin/remna_install
+        wget -q --no-cache -O "${DIR_REMNAWAVE}dfc-menu" "$download_url" 2>/dev/null
+        chmod +x "${DIR_REMNAWAVE}dfc-menu"
+        ln -sf "${DIR_REMNAWAVE}dfc-menu" /usr/local/bin/dfc-menu
     ) &
     show_spinner "Загрузка обновлений"
 
@@ -3454,7 +3456,7 @@ update_script() {
         
         print_success "Скрипт успешно обновлён до версии v$new_installed_version"
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для перезапуска${NC}")"
-        exec /usr/local/bin/remna_install
+        exec /usr/local/bin/dfc-menu
     else
         print_error "Ошибка при обновлении скрипта"
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
@@ -3478,10 +3480,10 @@ remove_script() {
 
     case $choice in
         0)
-            rm -f /usr/local/bin/remna_install
+            rm -f /usr/local/bin/dfc-menu
             rm -rf "${DIR_REMNAWAVE}"
             rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
-            remove_ri_alias
+            cleanup_old_aliases
             print_success "Скрипт удалён"
             exit 0
             ;;
@@ -3498,10 +3500,10 @@ remove_script() {
                 ) &
                 show_spinner "Удаление контейнеров"
                 rm -rf "${DIR_PANEL}"
-                rm -f /usr/local/bin/remna_install
+                rm -f /usr/local/bin/dfc-menu
                 rm -rf "${DIR_REMNAWAVE}"
                 rm -f /tmp/remna_update_available /tmp/remna_last_update_check 2>/dev/null
-                remove_ri_alias
+                cleanup_old_aliases
                 print_success "Всё удалено"
                 exit 0
             fi
@@ -3518,9 +3520,14 @@ install_script() {
     mkdir -p "${DIR_REMNAWAVE}"
 
     # Если скрипт уже установлен — не перезаписываем, используем установленную копию
-    if [ -f "/usr/local/bin/remna_install" ]; then
+    if [ -f "/usr/local/bin/dfc-menu" ]; then
+        # Чистим старые артефакты при первом запуске новой версии
+        cleanup_old_aliases
         return
     fi
+
+    # Чистим старые артефакты (remna_install, alias ri)
+    cleanup_old_aliases
 
     # Первая установка — получаем SHA последнего коммита для обхода CDN-кеша
     local download_url="$SCRIPT_URL"
@@ -3530,19 +3537,13 @@ install_script() {
         download_url="https://raw.githubusercontent.com/DanteFuaran/Remna-install/$latest_sha/install_remnawave.sh"
     fi
 
-    if ! wget -O "${DIR_REMNAWAVE}remna_install" "$download_url" >/dev/null 2>&1; then
+    if ! wget -O "${DIR_REMNAWAVE}dfc-menu" "$download_url" >/dev/null 2>&1; then
         echo -e "${RED}✖ Не удалось скачать скрипт${NC}"
         exit 1
     fi
     
-    chmod +x "${DIR_REMNAWAVE}remna_install"
-    ln -sf "${DIR_REMNAWAVE}remna_install" /usr/local/bin/remna_install
-
-    local bashrc_file="/etc/bash.bashrc"
-    local alias_line="alias ri='remna_install'"
-    if [ -f "$bashrc_file" ] && ! grep -q "$alias_line" "$bashrc_file"; then
-        echo "$alias_line" >> "$bashrc_file"
-    fi
+    chmod +x "${DIR_REMNAWAVE}dfc-menu"
+    ln -sf "${DIR_REMNAWAVE}dfc-menu" /usr/local/bin/dfc-menu
 }
 
 # ═══════════════════════════════════════════════
@@ -3698,7 +3699,7 @@ check_os
 if [ "${REMNA_INSTALLED_RUN:-}" != "1" ]; then
     install_script
     export REMNA_INSTALLED_RUN=1
-    exec /usr/local/bin/remna_install
+    exec /usr/local/bin/dfc-menu
 fi
 
 # Проверка обновлений только если Remnawave установлен
