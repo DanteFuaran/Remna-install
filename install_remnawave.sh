@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.28"
+SCRIPT_VERSION="2.5.29"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -378,7 +378,22 @@ install_packages() {
 
         # Bash-completion для UFW
         apt-get install -y bash-completion >/dev/null 2>&1
-        source /etc/profile.d/bash_completion.sh 2>/dev/null || source /etc/bash_completion 2>/dev/null
+        
+        # Настройка автодополнения UFW для всех пользователей
+        if [ -f /usr/share/bash-completion/completions/ufw ]; then
+            # Добавляем sourcing bash-completion в /etc/bash.bashrc для всех пользователей
+            if ! grep -q "bash_completion" /etc/bash.bashrc 2>/dev/null; then
+                echo "" >> /etc/bash.bashrc
+                echo "# Enable bash completion" >> /etc/bash.bashrc
+                echo "if [ -f /etc/profile.d/bash_completion.sh ]; then" >> /etc/bash.bashrc
+                echo "    . /etc/profile.d/bash_completion.sh" >> /etc/bash.bashrc
+                echo "elif [ -f /etc/bash_completion ]; then" >> /etc/bash.bashrc
+                echo "    . /etc/bash_completion" >> /etc/bash.bashrc
+                echo "fi" >> /etc/bash.bashrc
+            fi
+            # Активируем для текущей сессии
+            source /etc/profile.d/bash_completion.sh 2>/dev/null || source /etc/bash_completion 2>/dev/null || true
+        fi
 
         # IPv6 disable
         sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1
@@ -519,8 +534,7 @@ check_domain() {
     server_ip=$(get_server_ip)
 
     if [ -z "$domain_ip" ]; then
-        print_error "✖ Домен $domain не соответствует IP вашего сервера ${YELLOW}$server_ip${NC}"
-        echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно.${NC}"
+        print_error "Домен ${YELLOW}$domain${NC} не соответствует IP вашего сервера ${YELLOW}$server_ip${NC} Убедитесь что DNS записи настроены правильно."
         return 1
     fi
 
@@ -2403,9 +2417,6 @@ installation_full() {
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
 
-    # Установка необходимых пакетов и обновление системы
-    install_packages
-
     # Домены
     prompt_domain_with_retry "Домен панели (например panel.example.com):" PANEL_DOMAIN || return
     prompt_domain_with_retry "Домен подписки (например sub.example.com):" SUB_DOMAIN true || return
@@ -2710,9 +2721,6 @@ installation_panel() {
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
 
-    # Установка необходимых пакетов и обновление системы
-    install_packages
-
     prompt_domain_with_retry "Домен панели (например panel.example.com):" PANEL_DOMAIN || return
     prompt_domain_with_retry "Домен подписки (например sub.example.com):" SUB_DOMAIN true || return
 
@@ -2911,9 +2919,6 @@ installation_node() {
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
-
-    # Установка необходимых пакетов и обновление системы
-    install_packages
 
     prompt_domain_with_retry "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN || return
 
