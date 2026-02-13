@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.38"
+SCRIPT_VERSION="2.5.39"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -373,6 +373,12 @@ install_packages() {
         ufw default deny incoming >/dev/null 2>&1
         ufw default allow outgoing >/dev/null 2>&1
         ufw allow 22/tcp >/dev/null 2>&1
+        # Добавляем кастомный SSH-порт из sshd_config (если отличается от 22)
+        local sshd_port
+        sshd_port=$(grep -E "^Port " /etc/ssh/sshd_config 2>/dev/null | awk '{print $2}')
+        if [ -n "$sshd_port" ] && [ "$sshd_port" != "22" ]; then
+            ufw allow "${sshd_port}/tcp" >/dev/null 2>&1
+        fi
         ufw allow 443/tcp >/dev/null 2>&1
         echo "y" | ufw enable >/dev/null 2>&1
 
@@ -454,6 +460,12 @@ setup_firewall() {
     ufw default deny incoming >/dev/null 2>&1 || true
     ufw default allow outgoing >/dev/null 2>&1 || true
     ufw allow 22/tcp >/dev/null 2>&1 || true
+    # Добавляем кастомный SSH-порт из sshd_config (если отличается от 22)
+    local sshd_port
+    sshd_port=$(grep -E "^Port " /etc/ssh/sshd_config 2>/dev/null | awk '{print $2}')
+    if [ -n "$sshd_port" ] && [ "$sshd_port" != "22" ]; then
+        ufw allow "${sshd_port}/tcp" >/dev/null 2>&1 || true
+    fi
     ufw allow 443/tcp >/dev/null 2>&1 || true
     echo "y" | ufw enable >/dev/null 2>&1 || true
 }
@@ -4046,7 +4058,7 @@ main_menu() {
                 13) update_script ;;
                 14) remove_script ;;
                 15) continue ;;
-                16) clear; exit 0 ;;
+                16) clear; exec bash ;;
             esac
         else
             # Для неустановленного состояния
@@ -4089,7 +4101,7 @@ main_menu() {
                     esac
                     ;;
                 1) continue ;;
-                2) cleanup_uninstalled; clear; exit 0 ;;
+                2) cleanup_uninstalled; clear; exec bash ;;
             esac
         fi
     done
