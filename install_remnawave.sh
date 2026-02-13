@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.32"
+SCRIPT_VERSION="2.5.33"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -379,21 +379,12 @@ install_packages() {
         # Bash-completion для UFW
         apt-get install -y bash-completion >/dev/null 2>&1
         
-        # Настройка автодополнения UFW для всех пользователей
-        if [ -f /usr/share/bash-completion/completions/ufw ]; then
-            # Добавляем sourcing bash-completion в /etc/bash.bashrc для всех пользователей
-            if ! grep -q "bash_completion" /etc/bash.bashrc 2>/dev/null; then
-                echo "" >> /etc/bash.bashrc
-                echo "# Enable bash completion" >> /etc/bash.bashrc
-                echo "if [ -f /etc/profile.d/bash_completion.sh ]; then" >> /etc/bash.bashrc
-                echo "    . /etc/profile.d/bash_completion.sh" >> /etc/bash.bashrc
-                echo "elif [ -f /etc/bash_completion ]; then" >> /etc/bash.bashrc
-                echo "    . /etc/bash_completion" >> /etc/bash.bashrc
-                echo "fi" >> /etc/bash.bashrc
-            fi
-            # Активируем для текущей сессии
-            source /etc/profile.d/bash_completion.sh 2>/dev/null || source /etc/bash_completion 2>/dev/null || true
+        # Раскомментируем bash-completion в /etc/bash.bashrc (по умолчанию закомментировано)
+        if [ -f /etc/bash.bashrc ]; then
+            sed -i '/^#.*bash_completion/s/^#//' /etc/bash.bashrc 2>/dev/null || true
         fi
+        # Активируем для текущей сессии
+        source /etc/profile.d/bash_completion.sh 2>/dev/null || source /etc/bash_completion 2>/dev/null || true
 
         # IPv6 disable
         sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1
@@ -2428,7 +2419,7 @@ installation_full() {
 
     # Устанавливаем trap для удаления при прерывании (только для первичной установки)
     if [ "$is_fresh_install" = true ]; then
-        trap 'echo -e "\n${YELLOW}Установка прервана. Очистка...${NC}"; rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; exit 1' INT TERM
+        trap 'echo; echo -e "${YELLOW}Установка прервана. Очистка...${NC}"; echo; rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; exit 1' INT TERM
     fi
 
     # Домены
@@ -2748,7 +2739,7 @@ installation_panel() {
 
     # Устанавливаем trap для удаления при прерывании (только для первичной установки)
     if [ "$is_fresh_install" = true ]; then
-        trap 'echo -e "\n${YELLOW}Установка прервана. Очистка...${NC}"; rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; exit 1' INT TERM
+        trap 'echo; echo -e "${YELLOW}Установка прервана. Очистка...${NC}"; echo; rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; exit 1' INT TERM
     fi
 
     prompt_domain_with_retry "Домен панели (например panel.example.com):" PANEL_DOMAIN || return
@@ -2963,7 +2954,7 @@ installation_node() {
 
     # Устанавливаем trap для удаления при прерывании (только для первичной установки)
     if [ "$is_fresh_install" = true ]; then
-        trap 'echo -e "\n${YELLOW}Установка прервана. Очистка...${NC}"; rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; exit 1' INT TERM
+        trap 'echo; echo -e "${YELLOW}Установка прервана. Очистка...${NC}"; echo; rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; exit 1' INT TERM
     fi
     mkdir -p /var/www/html
 
