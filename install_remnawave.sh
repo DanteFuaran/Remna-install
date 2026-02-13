@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.22"
+SCRIPT_VERSION="2.5.23"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -338,7 +338,9 @@ check_os() {
 install_packages() {
     (
         export DEBIAN_FRONTEND=noninteractive
+        # Обновление системы перед установкой
         apt-get update -qq >/dev/null 2>&1
+        apt-get upgrade -y -qq >/dev/null 2>&1
         apt-get install -y -qq ca-certificates curl jq ufw wget gnupg unzip nano dialog git \
             certbot python3-certbot-dns-cloudflare unattended-upgrades locales dnsutils \
             coreutils grep gawk >/dev/null 2>&1
@@ -374,11 +376,14 @@ install_packages() {
         echo "y" | ufw enable >/dev/null 2>&1
 
         # Bash-completion для UFW
-        if [ ! -f /etc/bash_completion.d/ufw ]; then
-            apt-get install -y -qq bash-completion >/dev/null 2>&1
-            if [ -f /usr/share/bash-completion/completions/ufw ]; then
-                ln -sf /usr/share/bash-completion/completions/ufw /etc/bash_completion.d/ufw 2>/dev/null || true
-            fi
+        apt-get install -y -qq bash-completion >/dev/null 2>&1
+        if [ -f /usr/share/bash-completion/completions/ufw ]; then
+            cp /usr/share/bash-completion/completions/ufw /etc/bash_completion.d/ufw 2>/dev/null || true
+            chmod 644 /etc/bash_completion.d/ufw 2>/dev/null || true
+        fi
+        # Загружаем bash completion в текущий shell
+        if [ -f /usr/share/bash-completion/bash_completion ]; then
+            . /usr/share/bash-completion/bash_completion 2>/dev/null || true
         fi
 
         # IPv6 disable
@@ -553,10 +558,7 @@ check_domain() {
     # ═══════════════════════════════════════════════════════════
     
     if [ "$ip_match" = false ]; then
-        print_error "Домен $domain указывает на IP: $domain_ip"
-        echo
-        echo -e "${DARKGRAY}IP сервера: ${YELLOW}$server_ip${NC}"
-        echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно (DNS Only, без прокси Cloudflare)${NC}"
+        print_error "Домен $domain не указывает на ваш сервер $server_ip."
         return 1
     fi
     
