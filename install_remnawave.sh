@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.51"
+SCRIPT_VERSION="2.5.52"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3919,15 +3919,16 @@ remove_script() {
 install_script() {
     mkdir -p "${DIR_REMNAWAVE}"
 
-    # Если скрипт уже установлен - не перезаписываем, используем установленную копию
-    if [ -f "/usr/local/bin/dfc-remna-install" ]; then
-        # Чистим старые артефакты при первом запуске новой версии
-        cleanup_old_aliases
-        return
-    fi
-
     # Чистим старые артефакты (remna_install, alias ri)
     cleanup_old_aliases
+
+    # Если скрипт уже установлен и файл существует - обновляем симлинки и выходим
+    if [ -f "${DIR_REMNAWAVE}dfc-remna-install" ]; then
+        chmod +x "${DIR_REMNAWAVE}dfc-remna-install"
+        ln -sf "${DIR_REMNAWAVE}dfc-remna-install" /usr/local/bin/dfc-remna-install
+        ln -sf /usr/local/bin/dfc-remna-install /usr/local/bin/dri
+        return
+    fi
 
     # Первая установка - получаем SHA последнего коммита для обхода CDN-кеша
     local download_url="$SCRIPT_URL"
@@ -4043,7 +4044,7 @@ main_menu() {
                 13) update_script ;;
                 14) remove_script ;;
                 15) continue ;;
-                16) clear; cd /opt 2>/dev/null; history -s dfc-remna-install 2>/dev/null; history -a 2>/dev/null; exec bash -l ;;
+                16) clear; exit 0 ;;
             esac
         else
             # Для неустановленного состояния
@@ -4086,7 +4087,7 @@ main_menu() {
                     esac
                     ;;
                 1) continue ;;
-                2) cleanup_uninstalled; clear; cd /opt 2>/dev/null; history -s dfc-remna-install 2>/dev/null; history -a 2>/dev/null; exec bash -l ;;
+                2) cleanup_uninstalled; clear; exit 0 ;;
             esac
         fi
     done
