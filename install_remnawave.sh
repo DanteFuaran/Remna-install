@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.31"
+SCRIPT_VERSION="2.5.32"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -536,8 +536,9 @@ check_domain() {
     server_ip=$(get_server_ip)
 
     if [ -z "$domain_ip" ]; then
+        echo
         echo -e "${RED}✖ Домен ${YELLOW}$domain${RED} не соответствует IP вашего сервера ${YELLOW}$server_ip${NC}"
-        echo -e "${RED}⚠️  Убедитесь что DNS записи настроены правильно.${NC}"
+        echo -e "${RED}⚠️ Убедитесь что DNS записи настроены правильно.${NC}"
         return 1
     fi
 
@@ -595,8 +596,9 @@ check_domain() {
     # ═══════════════════════════════════════════════════════════
     
     if [ "$ip_match" = false ]; then
+        echo
         echo -e "${RED}✖ Домен ${YELLOW}$domain${RED} не соответствует IP вашего сервера ${YELLOW}$server_ip${NC}"
-        echo -e "${RED}⚠️  Убедитесь что DNS записи настроены правильно.${NC}"
+        echo -e "${RED}⚠️ Убедитесь что DNS записи настроены правильно.${NC}"
         echo
         return 1
     fi
@@ -2426,13 +2428,13 @@ installation_full() {
 
     # Устанавливаем trap для удаления при прерывании (только для первичной установки)
     if [ "$is_fresh_install" = true ]; then
-        trap 'echo -e "\n${YELLOW}Установка прервана. Очистка...${NC}"; rm -rf "${DIR_PANEL}" 2>/dev/null; exit 1' INT TERM EXIT
+        trap 'echo -e "\n${YELLOW}Установка прервана. Очистка...${NC}"; rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; exit 1' INT TERM
     fi
 
     # Домены
-    prompt_domain_with_retry "Домен панели (например panel.example.com):" PANEL_DOMAIN || return
-    prompt_domain_with_retry "Домен подписки (например sub.example.com):" SUB_DOMAIN true || return
-    prompt_domain_with_retry "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN true || return
+    prompt_domain_with_retry "Домен панели (например panel.example.com):" PANEL_DOMAIN || { [ "$is_fresh_install" = true ] && rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; return; }
+    prompt_domain_with_retry "Домен подписки (например sub.example.com):" SUB_DOMAIN true || { [ "$is_fresh_install" = true ] && rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; return; }
+    prompt_domain_with_retry "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN true || { [ "$is_fresh_install" = true ] && rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; return; }
 
     # Автогенерация учётных данных администратора
     local SUPERADMIN_USERNAME
@@ -2681,7 +2683,7 @@ installation_full() {
 
     # Удаляем trap при успешном завершении
     if [ "$is_fresh_install" = true ]; then
-        trap - INT TERM EXIT
+        trap - INT TERM
     fi
 
     # Итог
@@ -2746,7 +2748,7 @@ installation_panel() {
 
     # Устанавливаем trap для удаления при прерывании (только для первичной установки)
     if [ "$is_fresh_install" = true ]; then
-        trap 'echo -e "\n${YELLOW}Установка прервана. Очистка...${NC}"; rm -rf "${DIR_PANEL}" 2>/dev/null; exit 1' INT TERM EXIT
+        trap 'echo -e "\n${YELLOW}Установка прервана. Очистка...${NC}"; rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; exit 1' INT TERM
     fi
 
     prompt_domain_with_retry "Домен панели (например panel.example.com):" PANEL_DOMAIN || return
@@ -2896,7 +2898,7 @@ installation_panel() {
 
     # Удаляем trap при успешном завершении
     if [ "$is_fresh_install" = true ]; then
-        trap - INT TERM EXIT
+        trap - INT TERM
     fi
 
     clear
@@ -2961,11 +2963,11 @@ installation_node() {
 
     # Устанавливаем trap для удаления при прерывании (только для первичной установки)
     if [ "$is_fresh_install" = true ]; then
-        trap 'echo -e "\n${YELLOW}Установка прервана. Очистка...${NC}"; rm -rf "${DIR_PANEL}" 2>/dev/null; exit 1' INT TERM EXIT
+        trap 'echo -e "\n${YELLOW}Установка прервана. Очистка...${NC}"; rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; exit 1' INT TERM
     fi
     mkdir -p /var/www/html
 
-    prompt_domain_with_retry "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN || return
+    prompt_domain_with_retry "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN || { [ "$is_fresh_install" = true ] && rm -rf "${DIR_PANEL}" "${DIR_REMNAWAVE}" 2>/dev/null; return; }
 
     local PANEL_IP
     while true; do
@@ -3100,7 +3102,7 @@ EOL
 
     # Удаляем trap при успешном завершении
     if [ "$is_fresh_install" = true ]; then
-        trap - INT TERM EXIT
+        trap - INT TERM
     fi
 
     echo
