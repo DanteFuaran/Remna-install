@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.39"
+SCRIPT_VERSION="2.5.40"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -382,54 +382,14 @@ install_packages() {
         ufw allow 443/tcp >/dev/null 2>&1
         echo "y" | ufw enable >/dev/null 2>&1
 
-        # Bash-completion для UFW (проверенный рабочий вариант)
-        apt-get install -y bash-completion >/dev/null 2>&1
-        
-        # Создаём симлинк (принудительно)
-        mkdir -p /etc/bash_completion.d 2>/dev/null || true
+        # Автодополнение команд UFW
+        apt-get install --reinstall -y -qq bash-completion ufw >/dev/null 2>&1
         ln -sf /usr/share/bash-completion/completions/ufw /etc/bash_completion.d/ufw 2>/dev/null || true
-        
-        # Добавляем в /root/.bashrc
         if ! grep -q "bash_completion" /root/.bashrc 2>/dev/null; then
-            cat >> /root/.bashrc << 'EOF'
-
-if [ -f /usr/share/bash-completion/bash_completion ]; then
-    . /usr/share/bash-completion/bash_completion
-elif [ -f /etc/bash_completion ]; then
-    . /etc/bash_completion
-fi
-EOF
+            printf 'if [ -f /usr/share/bash-completion/bash_completion ]; then\n    . /usr/share/bash-completion/bash_completion\nfi\n' >> /root/.bashrc
         fi
-        
-        # Добавляем в /etc/bash.bashrc
-        if ! grep -q "bash_completion" /etc/bash.bashrc 2>/dev/null; then
-            echo '[ -f /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion' >> /etc/bash.bashrc 2>/dev/null || true
-        fi
-        
-        # Добавляем complete -cf sudo
-        if ! grep -q "complete -cf sudo" /root/.bashrc 2>/dev/null; then
-            echo "complete -cf sudo" >> /root/.bashrc
-        fi
-        
-        # Добавляем в /etc/skel/.bashrc для новых пользователей
-        if [ -f /etc/skel/.bashrc ]; then
-            if ! grep -q "bash_completion" /etc/skel/.bashrc 2>/dev/null; then
-                cat >> /etc/skel/.bashrc << 'EOF'
-
-if [ -f /usr/share/bash-completion/bash_completion ]; then
-    . /usr/share/bash-completion/bash_completion
-elif [ -f /etc/bash_completion ]; then
-    . /etc/bash_completion
-fi
-complete -cf sudo
-EOF
-            fi
-        fi
-        
-        # Активируем для текущей сессии внутри subshell
-        source /usr/share/bash-completion/bash_completion 2>/dev/null || source /etc/bash_completion 2>/dev/null || true
+        source /usr/share/bash-completion/bash_completion 2>/dev/null || true
         source /usr/share/bash-completion/completions/ufw 2>/dev/null || true
-        complete -cf sudo 2>/dev/null || true
 
         # IPv6 disable
         sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1
@@ -450,10 +410,9 @@ EOF
     echo
     show_spinner "Установка необходимых пакетов"
     
-    # Активация bash-completion для текущей shell сессии (проверенный рабочий вариант)
-    source /usr/share/bash-completion/bash_completion 2>/dev/null || source /etc/bash_completion 2>/dev/null || true
+    # Активация автодополнения для текущей shell сессии
+    source /usr/share/bash-completion/bash_completion 2>/dev/null || true
     source /usr/share/bash-completion/completions/ufw 2>/dev/null || true
-    complete -cf sudo 2>/dev/null || true
 }
 
 setup_firewall() {
