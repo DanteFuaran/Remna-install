@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.26"
+SCRIPT_VERSION="2.5.27"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -379,12 +379,17 @@ install_packages() {
         # Bash-completion для UFW
         apt-get install -y -qq bash-completion >/dev/null 2>&1
         if [ -f /usr/share/bash-completion/completions/ufw ]; then
+            mkdir -p /etc/bash_completion.d || true
             cp /usr/share/bash-completion/completions/ufw /etc/bash_completion.d/ufw 2>/dev/null || true
             chmod 644 /etc/bash_completion.d/ufw 2>/dev/null || true
         fi
-        # Загружаем bash completion в текущий shell
+        # Активируем bash completion для всех interactive shells
         if [ -f /usr/share/bash-completion/bash_completion ]; then
             . /usr/share/bash-completion/bash_completion 2>/dev/null || true
+        fi
+        # Очищаем кеш bash completion и перезагружаем
+        if [ -f /usr/share/bash-completion/bash_completion ]; then
+            _completion_loader 2>/dev/null || true
         fi
 
         # IPv6 disable
@@ -528,7 +533,8 @@ check_domain() {
     if [ -z "$domain_ip" ]; then
         print_error "Не удалось получить IP адрес для домена: $domain"
         echo
-        echo -e "${DARKGRAY}IP сервера: ${YELLOW}$server_ip${NC}"
+        echo -e "${DARKGRAY}IP вашего сервера: ${YELLOW}$server_ip${NC}"
+        echo -e "${DARKGRAY}IP домена: ${YELLOW}не определён${NC}"
         echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно и домен разрешается правильно${NC}"
         return 1
     fi
@@ -587,7 +593,10 @@ check_domain() {
     # ═══════════════════════════════════════════════════════════
     
     if [ "$ip_match" = false ]; then
-        print_error "Домен $domain не соответствует IP вашего сервера $server_ip"
+        print_error "Домен $domain не соответствует IP вашего сервера"
+        echo
+        echo -e "${DARKGRAY}IP домена ${YELLOW}$domain${DARKGRAY}: ${YELLOW}$domain_ip${NC}"
+        echo -e "${DARKGRAY}IP вашего сервера: ${YELLOW}$server_ip${NC}"
         echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно.${NC}"
         return 1
     fi
@@ -2409,6 +2418,9 @@ installation_full() {
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
 
+    # Установка необходимых пакетов и обновление системы
+    install_packages
+
     # Домены
     prompt_domain_with_retry "Домен панели (например panel.example.com):" PANEL_DOMAIN || return
     prompt_domain_with_retry "Домен подписки (например sub.example.com):" SUB_DOMAIN true || return
@@ -2713,6 +2725,9 @@ installation_panel() {
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
 
+    # Установка необходимых пакетов и обновление системы
+    install_packages
+
     prompt_domain_with_retry "Домен панели (например panel.example.com):" PANEL_DOMAIN || return
     prompt_domain_with_retry "Домен подписки (например sub.example.com):" SUB_DOMAIN true || return
 
@@ -2911,6 +2926,9 @@ installation_node() {
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
+
+    # Установка необходимых пакетов и обновление системы
+    install_packages
 
     prompt_domain_with_retry "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN || return
 
@@ -3636,7 +3654,7 @@ get_installed_version() {
 get_remote_version() {
     # Получаем SHA последнего коммита для обхода кеша CDN
     local latest_sha
-    latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/main" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
+    latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/dev" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
     
     if [ -n "$latest_sha" ]; then
         # Используем конкретный SHA для получения актуальной версии
@@ -3732,7 +3750,7 @@ update_script() {
         # Получаем SHA для скачивания точной версии
         local download_url="$SCRIPT_URL"
         local latest_sha
-        latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/main" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
+        latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/dev" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
         
         if [ -n "$latest_sha" ]; then
             download_url="https://raw.githubusercontent.com/DanteFuaran/Remna-install/$latest_sha/install_remnawave.sh"
@@ -3840,7 +3858,7 @@ install_script() {
     # Первая установка - получаем SHA последнего коммита для обхода CDN-кеша
     local download_url="$SCRIPT_URL"
     local latest_sha
-    latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/main" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
+    latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/dev" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
     if [ -n "$latest_sha" ]; then
         download_url="https://raw.githubusercontent.com/DanteFuaran/Remna-install/$latest_sha/install_remnawave.sh"
     fi
