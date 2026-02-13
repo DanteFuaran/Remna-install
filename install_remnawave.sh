@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.55"
+SCRIPT_VERSION="2.5.56"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3246,8 +3246,8 @@ regenerate_cookies() {
     local OLD_NAME="$COOKIE_NAME"
     local OLD_VALUE="$COOKIE_VALUE"
 
-    echo -e "${YELLOW}⚠️  ВНИМАНИЕ!${NC}"
-    echo -e "${WHITE}Текущие cookie будут заменены на новые.${NC}"
+    echo -e "${YELLOW}⚠️  Текущие cookie будут заменены на новые.${NC}"
+    echo
 
     if ! confirm_action; then
         print_error "Операция отменена"
@@ -3267,7 +3267,7 @@ regenerate_cookies() {
     # Заменяем cookie в nginx.conf
     sed -i "s|~\*${OLD_NAME}=${OLD_VALUE}|~*${NEW_NAME}=${NEW_VALUE}|g" /opt/remnawave/nginx.conf
     sed -i "s|\$arg_${OLD_NAME}|\$arg_${NEW_NAME}|g" /opt/remnawave/nginx.conf
-    sed -i "s|${OLD_NAME}=${OLD_VALUE}; Path=|${NEW_NAME}=${NEW_VALUE}; Path=|g" /opt/remnawave/nginx.conf
+    sed -i "s|\"${OLD_VALUE}\" \"${OLD_NAME}=${OLD_VALUE}|\"${NEW_VALUE}\" \"${NEW_NAME}=${NEW_VALUE}|g" /opt/remnawave/nginx.conf
     sed -i "s|\"${OLD_VALUE}\" 1|\"${NEW_VALUE}\" 1|g" /opt/remnawave/nginx.conf
 
     print_success "Cookie успешно обновлены!"
@@ -3291,7 +3291,7 @@ regenerate_cookies() {
     echo -e "${WHITE}https://${panel_domain}/auth/login?${NEW_NAME}=${NEW_VALUE}${NC}"
     echo
     echo -e "${BLUE}══════════════════════════════════════${NC}"
-    read -s -n 1 -p "$(echo -e "Нажмите Enter для возврата")"
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
         echo
     tput cnorm 2>/dev/null
 }
