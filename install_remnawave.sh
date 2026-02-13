@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.42"
+SCRIPT_VERSION="2.5.43"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -388,7 +388,7 @@ install_packages() {
         # Автодополнение команд UFW
         apt-get install --reinstall -y -qq bash-completion ufw >/dev/null 2>&1
         ln -sf /usr/share/bash-completion/completions/ufw /etc/bash_completion.d/ufw 2>/dev/null || true
-        if ! grep -q "bash_completion" /root/.bashrc 2>/dev/null; then
+        if ! grep -q "/usr/share/bash-completion/bash_completion" /root/.bashrc 2>/dev/null; then
             printf 'if [ -f /usr/share/bash-completion/bash_completion ]; then\n    . /usr/share/bash-completion/bash_completion\nfi\n' >> /root/.bashrc
         fi
         source /usr/share/bash-completion/bash_completion 2>/dev/null || true
@@ -2690,6 +2690,15 @@ installation_full() {
     # Ожидаем готовность после перезапуска
     show_spinner_timer 10 "Ожидание запуска сервисов" "Запуск сервисов"
 
+    # 12. Сброс суперадмина — при первом входе пользователь задаст свои данные
+    print_action "Сброс суперадмина для первого входа..."
+    docker exec -i remnawave-db psql -U postgres -d postgres -c "DELETE FROM admin;" >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        print_success "Суперадмин сброшен"
+    else
+        print_error "Не удалось сбросить суперадмина"
+    fi
+
     # Удаляем trap при успешном завершении
     if [ "$is_fresh_install" = true ]; then
         trap - INT TERM
@@ -2702,19 +2711,14 @@ installation_full() {
     echo -e "   ${GREEN}🎉 УСТАНОВКА ЗАВЕРШЕНА!${NC}"
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
-    echo -e "${YELLOW}🔗 ССЫЛКА ВХОДА В ПАНЕЛЬ:${NC}"
+    echo -e "${YELLOW}🔗 Ссылка для первого входа в панель:${NC}"
     echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
-    echo
-    echo -e "${YELLOW}👤 ЛОГИН:${NC}    ${WHITE}$SUPERADMIN_USERNAME${NC}"
-    echo -e "${YELLOW}🔑 ПАРОЛЬ:${NC}   ${WHITE}$SUPERADMIN_PASSWORD${NC}"
     echo
     echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
     echo
-    echo -e "${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ЭТИ ДАННЫЕ!${NC}"
-    echo -e "${RED}   Ссылка, логин и пароль не будут показаны повторно.${NC}"
+    echo -e "${YELLOW}⚠️ При первом входе в панель произойдет создание администратора.${NC}"
     echo
-    echo -e "${DARKGRAY}Сбросить администратора или сменить cookie можно${NC}"
-    echo -e "${DARKGRAY}в любое время через главное меню скрипта.${NC}"
+    echo -e "${YELLOW}Сбросить данные администратора и куки для входа можно в любое время через главное меню скрипта.${NC}"
     echo
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
@@ -2905,6 +2909,15 @@ installation_panel() {
     # Ожидаем готовность после перезапуска
     show_spinner_timer 10 "Ожидание запуска сервисов" "Запуск сервисов"
 
+    # 4. Сброс суперадмина — при первом входе пользователь задаст свои данные
+    print_action "Сброс суперадмина для первого входа..."
+    docker exec -i remnawave-db psql -U postgres -d postgres -c "DELETE FROM admin;" >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        print_success "Суперадмин сброшен"
+    else
+        print_error "Не удалось сбросить суперадмина"
+    fi
+
     # Удаляем trap при успешном завершении
     if [ "$is_fresh_install" = true ]; then
         trap - INT TERM
@@ -2916,19 +2929,14 @@ installation_panel() {
     echo -e "   ${GREEN}🎉 ПАНЕЛЬ УСТАНОВЛЕНА!${NC}"
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
-    echo -e "${YELLOW}🔗 ССЫЛКА ВХОДА В ПАНЕЛЬ:${NC}"
+    echo -e "${YELLOW}🔗 Ссылка для первого входа в панель:${NC}"
     echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
-    echo
-    echo -e "${YELLOW}👤 ЛОГИН:${NC}    ${WHITE}$SUPERADMIN_USERNAME${NC}"
-    echo -e "${YELLOW}🔑 ПАРОЛЬ:${NC}   ${WHITE}$SUPERADMIN_PASSWORD${NC}"
     echo
     echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
     echo
-    echo -e "${RED}⚠️  ОБЯЗАТЕЛЬНО СКОПИРУЙТЕ И СОХРАНИТЕ ЭТИ ДАННЫЕ!${NC}"
-    echo -e "${RED}   Ссылка, логин и пароль не будут показаны повторно.${NC}"
+    echo -e "${YELLOW}⚠️ При первом входе в панель произойдет создание администратора.${NC}"
     echo
-    echo -e "${DARKGRAY}Сбросить администратора или сменить cookie можно${NC}"
-    echo -e "${DARKGRAY}в любое время через главное меню скрипта.${NC}"
+    echo -e "${YELLOW}Сбросить данные администратора и куки для входа можно в любое время через главное меню скрипта.${NC}"
     echo
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
@@ -4020,7 +4028,7 @@ main_menu() {
                 13) update_script ;;
                 14) remove_script ;;
                 15) continue ;;
-                16) clear; exec bash ;;
+                16) clear; exec bash -l ;;
             esac
         else
             # Для неустановленного состояния
@@ -4063,7 +4071,7 @@ main_menu() {
                     esac
                     ;;
                 1) continue ;;
-                2) cleanup_uninstalled; clear; exec bash ;;
+                2) cleanup_uninstalled; clear; exec bash -l ;;
             esac
         fi
     done
