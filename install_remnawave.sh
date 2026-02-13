@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.25"
+SCRIPT_VERSION="2.5.26"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -559,10 +559,8 @@ check_domain() {
     # ═══════════════════════════════════════════════════════════
     
     if [ "$ip_match" = false ]; then
-        print_error "Домен $domain указывает на IP: $domain_ip"
-        echo
-        echo -e "${DARKGRAY}IP сервера: ${YELLOW}$server_ip${NC}"
-        echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно (DNS Only, без прокси Cloudflare)${NC}"
+        print_error "Домен $domain не соответствует IP вашего сервера $server_ip"
+        echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно.${NC}"
         return 1
     fi
     
