@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.35"
+SCRIPT_VERSION="2.5.36"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -379,6 +379,12 @@ install_packages() {
         # Bash-completion для UFW
         apt-get install -y bash-completion >/dev/null 2>&1
         
+        # Создаём симлинк для UFW completion в bash_completion.d
+        if [ -f /usr/share/bash-completion/completions/ufw ] && [ ! -e /etc/bash_completion.d/ufw ]; then
+            mkdir -p /etc/bash_completion.d 2>/dev/null || true
+            ln -s /usr/share/bash-completion/completions/ufw /etc/bash_completion.d/ufw 2>/dev/null || true
+        fi
+        
         # Раскомментируем bash-completion в /etc/bash.bashrc (по умолчанию закомментировано)
         if [ -f /etc/bash.bashrc ]; then
             sed -i '/^#.*bash_completion/s/^#//' /etc/bash.bashrc 2>/dev/null || true
@@ -450,6 +456,12 @@ EOF
     ) &
     echo
     show_spinner "Установка необходимых пакетов"
+    
+    # Создаём симлинк для UFW completion (если ещё не создан)
+    if [ -f /usr/share/bash-completion/completions/ufw ] && [ ! -e /etc/bash_completion.d/ufw ]; then
+        mkdir -p /etc/bash_completion.d 2>/dev/null || true
+        ln -s /usr/share/bash-completion/completions/ufw /etc/bash_completion.d/ufw 2>/dev/null || true
+    fi
     
     # Активируем bash-completion для текущей shell сессии (после установки пакетов)
     if [ -f /usr/share/bash-completion/bash_completion ]; then
