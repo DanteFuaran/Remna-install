@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.44"
+SCRIPT_VERSION="2.5.45"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -2406,7 +2406,7 @@ EOL
 # ═══════════════════════════════════════════════
 installation_full() {
     # Гарантируем валидную рабочую директорию перед началом
-    cd /root 2>/dev/null || cd ~ 2>/dev/null || cd / 2>/dev/null
+    cd /opt 2>/dev/null || cd / 2>/dev/null
 
     # Проверяем, не установлено ли уже
     if [ -f "/opt/remnawave/docker-compose.yml" ]; then
@@ -2734,7 +2734,7 @@ installation_full() {
 # ═══════════════════════════════════════════════
 installation_panel() {
     # Гарантируем валидную рабочую директорию перед началом
-    cd /root 2>/dev/null || cd ~ 2>/dev/null || cd / 2>/dev/null
+    cd /opt 2>/dev/null || cd / 2>/dev/null
 
     # Проверяем, не установлена ли уже панель
     if [ -f "/opt/remnawave/docker-compose.yml" ]; then
@@ -2955,7 +2955,7 @@ installation_panel() {
 # ═══════════════════════════════════════════════
 installation_node() {
     # Гарантируем валидную рабочую директорию перед началом
-    cd /root 2>/dev/null || cd ~ 2>/dev/null || cd / 2>/dev/null
+    cd /opt 2>/dev/null || cd / 2>/dev/null
 
     # Проверяем, не установлена ли уже нода
     if [ -f "/opt/remnawave/docker-compose.yml" ] && grep -q "remnanode" /opt/remnawave/docker-compose.yml; then
