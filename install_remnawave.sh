@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.37"
+SCRIPT_VERSION="2.5.38"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -376,72 +376,53 @@ install_packages() {
         ufw allow 443/tcp >/dev/null 2>&1
         echo "y" | ufw enable >/dev/null 2>&1
 
-        # Bash-completion для UFW
+        # Bash-completion для UFW (проверенный рабочий вариант)
         apt-get install -y bash-completion >/dev/null 2>&1
         
-        # Создаём симлинк для UFW completion в bash_completion.d
-        if [ -f /usr/share/bash-completion/completions/ufw ] && [ ! -e /etc/bash_completion.d/ufw ]; then
-            mkdir -p /etc/bash_completion.d 2>/dev/null || true
-            ln -s /usr/share/bash-completion/completions/ufw /etc/bash_completion.d/ufw 2>/dev/null || true
-        fi
+        # Создаём симлинк (принудительно)
+        mkdir -p /etc/bash_completion.d 2>/dev/null || true
+        ln -sf /usr/share/bash-completion/completions/ufw /etc/bash_completion.d/ufw 2>/dev/null || true
         
-        # Раскомментируем bash-completion в /etc/bash.bashrc (по умолчанию закомментировано)
-        if [ -f /etc/bash.bashrc ]; then
-            sed -i '/^#.*bash_completion/s/^#//' /etc/bash.bashrc 2>/dev/null || true
-        fi
-        
-        # Добавляем в ~/.bashrc для root
-        if [ -f /root/.bashrc ]; then
-            if ! grep -q "bash-completion/bash_completion" /root/.bashrc 2>/dev/null; then
-                cat >> /root/.bashrc << 'EOF'
+        # Добавляем в /root/.bashrc
+        if ! grep -q "bash_completion" /root/.bashrc 2>/dev/null; then
+            cat >> /root/.bashrc << 'EOF'
 
-# Enable bash completion in interactive shells
-if ! shopt -oq posix; then
-  if [ -f /usr/share/bash-completion/bash_completion ]; then
+if [ -f /usr/share/bash-completion/bash_completion ]; then
     . /usr/share/bash-completion/bash_completion
-  elif [ -f /etc/bash_completion ]; then
+elif [ -f /etc/bash_completion ]; then
     . /etc/bash_completion
-  fi
 fi
-
-# Enable completion for sudo
-complete -cf sudo
 EOF
-            fi
+        fi
+        
+        # Добавляем в /etc/bash.bashrc
+        if ! grep -q "bash_completion" /etc/bash.bashrc 2>/dev/null; then
+            echo '[ -f /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion' >> /etc/bash.bashrc 2>/dev/null || true
+        fi
+        
+        # Добавляем complete -cf sudo
+        if ! grep -q "complete -cf sudo" /root/.bashrc 2>/dev/null; then
+            echo "complete -cf sudo" >> /root/.bashrc
         fi
         
         # Добавляем в /etc/skel/.bashrc для новых пользователей
         if [ -f /etc/skel/.bashrc ]; then
-            if ! grep -q "bash-completion/bash_completion" /etc/skel/.bashrc 2>/dev/null; then
+            if ! grep -q "bash_completion" /etc/skel/.bashrc 2>/dev/null; then
                 cat >> /etc/skel/.bashrc << 'EOF'
 
-# Enable bash completion in interactive shells
-if ! shopt -oq posix; then
-  if [ -f /usr/share/bash-completion/bash_completion ]; then
+if [ -f /usr/share/bash-completion/bash_completion ]; then
     . /usr/share/bash-completion/bash_completion
-  elif [ -f /etc/bash_completion ]; then
+elif [ -f /etc/bash_completion ]; then
     . /etc/bash_completion
-  fi
 fi
-
-# Enable completion for sudo
 complete -cf sudo
 EOF
             fi
         fi
         
-        # Активируем для текущей сессии
-        if [ -f /usr/share/bash-completion/bash_completion ]; then
-            source /usr/share/bash-completion/bash_completion 2>/dev/null || true
-        elif [ -f /etc/bash_completion ]; then
-            source /etc/bash_completion 2>/dev/null || true
-        fi
-        
-        # ЯВНО загружаем UFW completion (bash-completion использует lazy loading)
-        if [ -f /usr/share/bash-completion/completions/ufw ]; then
-            source /usr/share/bash-completion/completions/ufw 2>/dev/null || true
-        fi
-        
+        # Активируем для текущей сессии внутри subshell
+        source /usr/share/bash-completion/bash_completion 2>/dev/null || source /etc/bash_completion 2>/dev/null || true
+        source /usr/share/bash-completion/completions/ufw 2>/dev/null || true
         complete -cf sudo 2>/dev/null || true
 
         # IPv6 disable
@@ -463,24 +444,9 @@ EOF
     echo
     show_spinner "Установка необходимых пакетов"
     
-    # Создаём симлинк для UFW completion (если ещё не создан)
-    if [ -f /usr/share/bash-completion/completions/ufw ] && [ ! -e /etc/bash_completion.d/ufw ]; then
-        mkdir -p /etc/bash_completion.d 2>/dev/null || true
-        ln -s /usr/share/bash-completion/completions/ufw /etc/bash_completion.d/ufw 2>/dev/null || true
-    fi
-    
-    # Активируем bash-completion для текущей shell сессии (после установки пакетов)
-    if [ -f /usr/share/bash-completion/bash_completion ]; then
-        source /usr/share/bash-completion/bash_completion 2>/dev/null || true
-    elif [ -f /etc/bash_completion ]; then
-        source /etc/bash_completion 2>/dev/null || true
-    fi
-    
-    # ЯВНО загружаем UFW completion (bash-completion использует lazy loading)
-    if [ -f /usr/share/bash-completion/completions/ufw ]; then
-        source /usr/share/bash-completion/completions/ufw 2>/dev/null || true
-    fi
-    
+    # Активация bash-completion для текущей shell сессии (проверенный рабочий вариант)
+    source /usr/share/bash-completion/bash_completion 2>/dev/null || source /etc/bash_completion 2>/dev/null || true
+    source /usr/share/bash-completion/completions/ufw 2>/dev/null || true
     complete -cf sudo 2>/dev/null || true
 }
 
