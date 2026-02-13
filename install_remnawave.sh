@@ -9,8 +9,14 @@ SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/hea
 # ВОССТАНОВЛЕНИЕ ТЕРМИНАЛА И ОБРАБОТКА ПРЕРЫВАНИЙ
 # ═══════════════════════════════════════════════
 cleanup_terminal() {
+    # Полное восстановление терминала
     stty sane 2>/dev/null || true
+    stty echo icannon 2>/dev/null || true
     tput cnorm 2>/dev/null || true
+    tput rmso 2>/dev/null || true
+    tput rmab 2>/dev/null || true
+    tput sgr0 2>/dev/null || true
+    printf "\033[0m\033[?25h" 2>/dev/null || true
 }
 
 # Удаление старых алиасов и команд
@@ -160,6 +166,9 @@ show_arrow_menu() {
     # Отключаем canonical mode и echo, включаем чтение отдельных символов
     stty -icanon -echo min 1 time 0 2>/dev/null || true
 
+    # Обработчик ошибок для этой функции
+    trap "stty '$original_stty' 2>/dev/null || true; tput cnorm 2>/dev/null || true; stty sane 2>/dev/null || true" RETURN
+
     while true; do
         clear
         echo -e "${BLUE}══════════════════════════════════════${NC}"
@@ -230,8 +239,11 @@ show_arrow_menu() {
             fi
 
             if [ "$key_code" -eq 10 ] || [ "$key_code" -eq 13 ]; then
+                # Восстанавливаем состояние терминала перед выходом
                 stty "$original_stty" 2>/dev/null || true
                 tput cnorm 2>/dev/null || true
+                stty echo icannon 2>/dev/null || true
+                printf "\033[0m\033[?25h" 2>/dev/null || true
                 return $selected
             fi
         fi
@@ -475,8 +487,15 @@ check_domain() {
     local domain_ip
     domain_ip=$(dig +short "$domain" A 2>/dev/null | head -1)
 
+    # Получаем IP сервера для сообщений об ошибках
+    local server_ip
+    server_ip=$(get_server_ip)
+
     if [ -z "$domain_ip" ]; then
-        print_error "IP не соответствует введенному домену, возможно введен не правильный домен."
+        print_error "Не удалось получить IP адрес для домена: $domain"
+        echo
+        echo -e "${DARKGRAY}IP сервера: ${YELLOW}$server_ip${NC}"
+        echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно и домен разрешается правильно${NC}"
         return 1
     fi
 
@@ -487,9 +506,6 @@ check_domain() {
     # ═══════════════════════════════════════════════════════════
     # УЛУЧШЕННАЯ ПРОВЕРКА IP С ПОДДЕРЖКОЙ NAT/DOCKER/ПРОКСИ
     # ═══════════════════════════════════════════════════════════
-    
-    local server_ip
-    server_ip=$(get_server_ip)
     
     local ip_match=false
     
@@ -537,8 +553,9 @@ check_domain() {
     # ═══════════════════════════════════════════════════════════
     
     if [ "$ip_match" = false ]; then
-        print_error "Домен $domain ($domain_ip) не указывает на этот сервер ($server_ip)"
+        print_error "Домен $domain указывает на IP: $domain_ip"
         echo
+        echo -e "${DARKGRAY}IP сервера: ${YELLOW}$server_ip${NC}"
         echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно (DNS Only, без прокси Cloudflare)${NC}"
         return 1
     fi
