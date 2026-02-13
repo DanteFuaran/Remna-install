@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.34"
+SCRIPT_VERSION="2.5.35"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -450,6 +450,14 @@ EOF
     ) &
     echo
     show_spinner "Установка необходимых пакетов"
+    
+    # Активируем bash-completion для текущей shell сессии (после установки пакетов)
+    if [ -f /usr/share/bash-completion/bash_completion ]; then
+        source /usr/share/bash-completion/bash_completion 2>/dev/null || true
+    elif [ -f /etc/bash_completion ]; then
+        source /etc/bash_completion 2>/dev/null || true
+    fi
+    complete -cf sudo 2>/dev/null || true
 }
 
 setup_firewall() {
