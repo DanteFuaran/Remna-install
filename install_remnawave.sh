@@ -470,9 +470,8 @@ get_server_ip() {
 check_domain() {
     local domain="$1"
     local check_ip="${2:-true}"
-    local server_ip
-    server_ip=$(get_server_ip)
-
+    
+    # Получаем IP домена
     local domain_ip
     domain_ip=$(dig +short "$domain" A 2>/dev/null | head -1)
 
@@ -481,12 +480,69 @@ check_domain() {
         return 1
     fi
 
-    if [ "$check_ip" = true ] && [ "$domain_ip" != "$server_ip" ]; then
+    if [ "$check_ip" = false ]; then
+        return 0
+    fi
+
+    # ═══════════════════════════════════════════════════════════
+    # УЛУЧШЕННАЯ ПРОВЕРКА IP С ПОДДЕРЖКОЙ NAT/DOCKER/ПРОКСИ
+    # ═══════════════════════════════════════════════════════════
+    
+    local server_ip
+    server_ip=$(get_server_ip)
+    
+    local ip_match=false
+    
+    # 1. Проверяем прямое совпадение с внешним IP
+    if [ "$domain_ip" = "$server_ip" ]; then
+        ip_match=true
+    else
+        # 2. Проверяем локальные IP интерфейсов (для Docker/NAT)
+        local local_ips
+        local_ips=$(ip -4 addr show 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1')
+        
+        if [ -n "$local_ips" ]; then
+            while IFS= read -r local_ip; do
+                if [ "$domain_ip" = "$local_ip" ]; then
+                    ip_match=true
+                    break
+                fi
+            done <<< "$local_ips"
+        fi
+    fi
+    
+    # 3. HTTP fallback проверка (если IP не совпал)
+    if [ "$ip_match" = false ]; then
+        # Создаём временный токен для проверки
+        local test_token
+        test_token=$(openssl rand -hex 16)
+        mkdir -p /var/www/html
+        echo "$test_token" > "/var/www/html/.test_${test_token}.txt" 2>/dev/null
+        
+        # Пытаемся получить файл через домен
+        local test_response
+        test_response=$(curl -s -m 5 "http://${domain}/.test_${test_token}.txt" 2>/dev/null || echo "")
+        
+        # Удаляем тестовый файл
+        rm -f "/var/www/html/.test_${test_token}.txt" 2>/dev/null
+        
+        # Если получили правильный ответ - домен указывает на этот сервер
+        if [ "$test_response" = "$test_token" ]; then
+            ip_match=true
+        fi
+    fi
+    
+    # ═══════════════════════════════════════════════════════════
+    # ФИНАЛЬНАЯ ПРОВЕРКА
+    # ═══════════════════════════════════════════════════════════
+    
+    if [ "$ip_match" = false ]; then
         print_error "Домен $domain ($domain_ip) не указывает на этот сервер ($server_ip)"
         echo
         echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно (DNS Only, без прокси Cloudflare)${NC}"
         return 1
     fi
+    
     return 0
 }
 
