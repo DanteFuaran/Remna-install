@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.49"
+SCRIPT_VERSION="2.5.50"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -630,7 +630,7 @@ prompt_domain_with_retry() {
             fi
             first=false
         else
-            reading "$prompt_text" "$var_name"
+            reading_inline "$prompt_text" "$var_name"
         fi
 
         if check_domain "${!var_name}" true; then
@@ -647,7 +647,14 @@ prompt_domain_with_retry() {
                 echo
                 return 1
             elif [[ "$key" == "" ]]; then
-                echo
+                # Очищаем всё после ввода домена и показываем промпт заново
+                # Поднимаемся на нужное кол-во строк и очищаем
+                # Строки: ввод домена(1) + \n(1) + ошибка(2-3) + \n(1) + подсказка(1) + \n(1)
+                local lines_up=7
+                for ((l=0; l<lines_up; l++)); do
+                    tput cuu1 2>/dev/null
+                    tput el 2>/dev/null
+                done
                 break
             fi
         done
@@ -2720,8 +2727,8 @@ installation_full() {
     echo -e "${DARKGRAY}───────────────────────────────────────────────────────────${NC}"
     echo
     echo -e "${YELLOW}⚠️  При первом входе в панель произойдет создание администратора.${NC}"
-    echo -e "${YELLOW}    Сбросить данные администратора и куки для входа можно в любое${NC}"
-    echo -e "${YELLOW}    время через главное меню скрипта.${NC}"
+    echo -e "${YELLOW}   Сбросить данные администратора и куки для входа можно в любое${NC}"
+    echo -e "${YELLOW}   время через главное меню скрипта.${NC}"
     echo
     echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
     echo
@@ -2940,8 +2947,8 @@ installation_panel() {
     echo -e "${DARKGRAY}───────────────────────────────────────────────────────────${NC}"
     echo
     echo -e "${YELLOW}⚠️  При первом входе в панель произойдет создание администратора.${NC}"
-    echo -e "${YELLOW}    Сбросить данные администратора и куки для входа можно в любое${NC}"
-    echo -e "${YELLOW}    время через главное меню скрипта.${NC}"
+    echo -e "${YELLOW}   Сбросить данные администратора и куки для входа можно в любое${NC}"
+    echo -e "${YELLOW}   время через главное меню скрипта.${NC}"
     echo
     echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
     echo
@@ -4036,7 +4043,7 @@ main_menu() {
                 13) update_script ;;
                 14) remove_script ;;
                 15) continue ;;
-                16) clear; exec bash -l ;;
+                16) clear; cd /opt 2>/dev/null; history -s dfc-remna-install 2>/dev/null; history -a 2>/dev/null; exec bash -l ;;
             esac
         else
             # Для неустановленного состояния
@@ -4079,7 +4086,7 @@ main_menu() {
                     esac
                     ;;
                 1) continue ;;
-                2) cleanup_uninstalled; clear; exec bash -l ;;
+                2) cleanup_uninstalled; clear; cd /opt 2>/dev/null; history -s dfc-remna-install 2>/dev/null; history -a 2>/dev/null; exec bash -l ;;
             esac
         fi
     done
