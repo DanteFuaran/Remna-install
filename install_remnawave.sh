@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.52"
+SCRIPT_VERSION="2.5.53"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3718,8 +3718,8 @@ manage_random_template() {
 # ПРОВЕРКА ВЕРСИИ И ОБНОВЛЕНИЕ СКРИПТА
 # ═══════════════════════════════════════════════
 get_installed_version() {
-    if [ -f "/usr/local/bin/dfc-remna-install" ]; then
-        cat /usr/local/bin/dfc-remna-install 2>/dev/null | grep -m 1 'SCRIPT_VERSION=' | cut -d'"' -f2
+    if [ -f "${DIR_REMNAWAVE}dfc-remna-install" ]; then
+        grep -m 1 'SCRIPT_VERSION=' "${DIR_REMNAWAVE}dfc-remna-install" 2>/dev/null | cut -d'"' -f2
     else
         echo ""
     fi
@@ -4100,8 +4100,8 @@ check_root
 check_os
 
 # Если запущены НЕ из установленной копии - скачиваем свежую и переключаемся
+install_script
 if [ "${REMNA_INSTALLED_RUN:-}" != "1" ]; then
-    install_script
     export REMNA_INSTALLED_RUN=1
     exec /usr/local/bin/dfc-remna-install
 fi
