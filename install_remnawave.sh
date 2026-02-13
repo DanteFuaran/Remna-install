@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.41"
+SCRIPT_VERSION="2.5.42"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -337,36 +337,34 @@ check_os() {
 # УСТАНОВКА ПАКЕТОВ
 # ═══════════════════════════════════════════════
 install_packages() {
-    echo
-    echo -e "${YELLOW}📦 Обновление системы и установка пакетов...${NC}"
-    echo
-
-    # Обновление и установка — в основном процессе, чтобы пользователь видел вопросы apt
-    apt-get update -qq
-    apt-get upgrade -y
-    apt-get install -y ca-certificates curl jq ufw wget gnupg unzip nano dialog git \
-        certbot python3-certbot-dns-cloudflare unattended-upgrades locales dnsutils \
-        coreutils grep gawk
-
-    # Cron
-    if ! dpkg -l | grep -q '^ii.*cron '; then
-        apt-get install -y cron
-    fi
-    systemctl start cron 2>/dev/null || true
-    systemctl enable cron 2>/dev/null || true
-
-    # Docker
-    if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
-        echo -e "${YELLOW}🐳 Установка Docker...${NC}"
-        curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-        sh /tmp/get-docker.sh
-        rm -f /tmp/get-docker.sh
-    fi
-    systemctl start docker 2>/dev/null || true
-    systemctl enable docker 2>/dev/null || true
-
-    # Остальная настройка — без интерактива, в фоне со спиннером
     (
+        export DEBIAN_FRONTEND=noninteractive
+        # Автоответ на вопросы dpkg: сохранить текущий конфиг пользователя
+        local DPKG_OPTS='-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold'
+
+        # Обновление и установка пакетов
+        apt-get update -qq >/dev/null 2>&1
+        apt-get upgrade -y -qq $DPKG_OPTS >/dev/null 2>&1
+        apt-get install -y -qq $DPKG_OPTS ca-certificates curl jq ufw wget gnupg unzip nano dialog git \
+            certbot python3-certbot-dns-cloudflare unattended-upgrades locales dnsutils \
+            coreutils grep gawk >/dev/null 2>&1
+
+        # Cron
+        if ! dpkg -l | grep -q '^ii.*cron '; then
+            apt-get install -y -qq $DPKG_OPTS cron >/dev/null 2>&1
+        fi
+        systemctl start cron 2>/dev/null || true
+        systemctl enable cron 2>/dev/null || true
+
+        # Docker
+        if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
+            curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+            sh /tmp/get-docker.sh >/dev/null 2>&1
+            rm -f /tmp/get-docker.sh
+        fi
+        systemctl start docker 2>/dev/null || true
+        systemctl enable docker 2>/dev/null || true
+
         # BBR
         if ! sysctl net.ipv4.tcp_congestion_control 2>/dev/null | grep -q bbr; then
             echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
@@ -412,7 +410,8 @@ install_packages() {
         mkdir -p "${DIR_REMNAWAVE}" 2>/dev/null || true
         touch "${DIR_REMNAWAVE}install_packages"
     ) &
-    show_spinner "Настройка системы"
+    echo
+    show_spinner "Установка необходимых пакетов"
     
     # Активация автодополнения для текущей shell сессии
     source /usr/share/bash-completion/bash_completion 2>/dev/null || true
