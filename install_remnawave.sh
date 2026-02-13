@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.29"
+SCRIPT_VERSION="2.5.30"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -534,7 +534,8 @@ check_domain() {
     server_ip=$(get_server_ip)
 
     if [ -z "$domain_ip" ]; then
-        print_error "Домен ${YELLOW}$domain${NC} не соответствует IP вашего сервера ${YELLOW}$server_ip${NC} Убедитесь что DNS записи настроены правильно."
+        print_error "Домен ${YELLOW}$domain${NC} не соответствует IP вашего сервера ${YELLOW}$server_ip${NC}"
+        echo -e "${RED} ⚠️ Убедитесь что DNS записи настроены правильно.${NC}"
         return 1
     fi
 
@@ -592,11 +593,11 @@ check_domain() {
     # ═══════════════════════════════════════════════════════════
     
     if [ "$ip_match" = false ]; then
-        print_error "Домен $domain не соответствует IP вашего сервера"
+        print_error "Домен ${YELLOW}$domain${NC} не соответствует IP вашего сервера ${YELLOW}$server_ip${NC}"
+        echo -e "${RED} ⚠️ Убедитесь что DNS записи настроены правильно.${NC}"
         echo
         echo -e "${DARKGRAY}IP домена ${YELLOW}$domain${DARKGRAY}: ${YELLOW}$domain_ip${NC}"
         echo -e "${DARKGRAY}IP вашего сервера: ${YELLOW}$server_ip${NC}"
-        echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно.${NC}"
         return 1
     fi
     
@@ -2409,6 +2410,12 @@ installation_full() {
         return
     fi
 
+    # Проверяем, это первичная установка?
+    local is_fresh_install=false
+    if [ ! -d "${DIR_PANEL}" ] || [ -z "$(ls -A "${DIR_PANEL}" 2>/dev/null)" ]; then
+        is_fresh_install=true
+    fi
+
     clear
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   📦 УСТАНОВКА ПАНЕЛИ + НОДЫ${NC}"
@@ -2416,6 +2423,11 @@ installation_full() {
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
+
+    # Устанавливаем trap для удаления при прерывании (только для первичной установки)
+    if [ "$is_fresh_install" = true ]; then
+        trap 'echo -e "\n${YELLOW}Установка прервана. Очистка...${NC}"; rm -rf "${DIR_PANEL}" 2>/dev/null; exit 1' INT TERM EXIT
+    fi
 
     # Домены
     prompt_domain_with_retry "Домен панели (например panel.example.com):" PANEL_DOMAIN || return
@@ -2667,6 +2679,11 @@ installation_full() {
     # Ожидаем готовность после перезапуска
     show_spinner_timer 10 "Ожидание запуска сервисов" "Запуск сервисов"
 
+    # Удаляем trap при успешном завершении
+    if [ "$is_fresh_install" = true ]; then
+        trap - INT TERM EXIT
+    fi
+
     # Итог
     clear
     echo
@@ -2714,12 +2731,23 @@ installation_panel() {
         return
     fi
 
+    # Проверяем, это первичная установка?
+    local is_fresh_install=false
+    if [ ! -d "${DIR_PANEL}" ] || [ -z "$(ls -A "${DIR_PANEL}" 2>/dev/null)" ]; then
+        is_fresh_install=true
+    fi
+
     clear
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   📦 УСТАНОВКА ТОЛЬКО ПАНЕЛИ${NC}"
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
+
+    # Устанавливаем trap для удаления при прерывании (только для первичной установки)
+    if [ "$is_fresh_install" = true ]; then
+        trap 'echo -e "\n${YELLOW}Установка прервана. Очистка...${NC}"; rm -rf "${DIR_PANEL}" 2>/dev/null; exit 1' INT TERM EXIT
+    fi
 
     prompt_domain_with_retry "Домен панели (например panel.example.com):" PANEL_DOMAIN || return
     prompt_domain_with_retry "Домен подписки (например sub.example.com):" SUB_DOMAIN true || return
@@ -2866,6 +2894,11 @@ installation_panel() {
     # Ожидаем готовность после перезапуска
     show_spinner_timer 10 "Ожидание запуска сервисов" "Запуск сервисов"
 
+    # Удаляем trap при успешном завершении
+    if [ "$is_fresh_install" = true ]; then
+        trap - INT TERM EXIT
+    fi
+
     clear
     echo
     echo -e "${BLUE}══════════════════════════════════════${NC}"
@@ -2912,12 +2945,24 @@ installation_node() {
         return
     fi
 
+    # Проверяем, это первичная установка?
+    local is_fresh_install=false
+    if [ ! -d "${DIR_PANEL}" ] || [ -z "$(ls -A "${DIR_PANEL}" 2>/dev/null)" ]; then
+        is_fresh_install=true
+    fi
+
     clear
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   📦 УСТАНОВКА ТОЛЬКО НОДЫ${NC}"
     echo -e "${BLUE}══════════════════════════════════════${NC}"
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
+    mkdir -p /var/www/html
+
+    # Устанавливаем trap для удаления при прерывании (только для первичной установки)
+    if [ "$is_fresh_install" = true ]; then
+        trap 'echo -e "\n${YELLOW}Установка прервана. Очистка...${NC}"; rm -rf "${DIR_PANEL}" 2>/dev/null; exit 1' INT TERM EXIT
+    fi
     mkdir -p /var/www/html
 
     prompt_domain_with_retry "Домен selfsteal/ноды (например node.example.com):" SELFSTEAL_DOMAIN || return
@@ -3052,6 +3097,11 @@ EOL
     show_spinner_timer 5 "Ожидание запуска ноды" "Запуск ноды"
 
     randomhtml
+
+    # Удаляем trap при успешном завершении
+    if [ "$is_fresh_install" = true ]; then
+        trap - INT TERM EXIT
+    fi
 
     echo
     echo -e "${BLUE}══════════════════════════════════════${NC}"
