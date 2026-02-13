@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.36"
+SCRIPT_VERSION="2.5.37"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -436,6 +436,12 @@ EOF
         elif [ -f /etc/bash_completion ]; then
             source /etc/bash_completion 2>/dev/null || true
         fi
+        
+        # ЯВНО загружаем UFW completion (bash-completion использует lazy loading)
+        if [ -f /usr/share/bash-completion/completions/ufw ]; then
+            source /usr/share/bash-completion/completions/ufw 2>/dev/null || true
+        fi
+        
         complete -cf sudo 2>/dev/null || true
 
         # IPv6 disable
@@ -469,6 +475,12 @@ EOF
     elif [ -f /etc/bash_completion ]; then
         source /etc/bash_completion 2>/dev/null || true
     fi
+    
+    # ЯВНО загружаем UFW completion (bash-completion использует lazy loading)
+    if [ -f /usr/share/bash-completion/completions/ufw ]; then
+        source /usr/share/bash-completion/completions/ufw 2>/dev/null || true
+    fi
+    
     complete -cf sudo 2>/dev/null || true
 }
 
