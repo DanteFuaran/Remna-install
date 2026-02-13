@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.27"
+SCRIPT_VERSION="2.5.28"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -377,20 +377,8 @@ install_packages() {
         echo "y" | ufw enable >/dev/null 2>&1
 
         # Bash-completion для UFW
-        apt-get install -y -qq bash-completion >/dev/null 2>&1
-        if [ -f /usr/share/bash-completion/completions/ufw ]; then
-            mkdir -p /etc/bash_completion.d || true
-            cp /usr/share/bash-completion/completions/ufw /etc/bash_completion.d/ufw 2>/dev/null || true
-            chmod 644 /etc/bash_completion.d/ufw 2>/dev/null || true
-        fi
-        # Активируем bash completion для всех interactive shells
-        if [ -f /usr/share/bash-completion/bash_completion ]; then
-            . /usr/share/bash-completion/bash_completion 2>/dev/null || true
-        fi
-        # Очищаем кеш bash completion и перезагружаем
-        if [ -f /usr/share/bash-completion/bash_completion ]; then
-            _completion_loader 2>/dev/null || true
-        fi
+        apt-get install -y bash-completion >/dev/null 2>&1
+        source /etc/profile.d/bash_completion.sh 2>/dev/null || source /etc/bash_completion 2>/dev/null
 
         # IPv6 disable
         sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1
@@ -531,11 +519,8 @@ check_domain() {
     server_ip=$(get_server_ip)
 
     if [ -z "$domain_ip" ]; then
-        print_error "Не удалось получить IP адрес для домена: $domain"
-        echo
-        echo -e "${DARKGRAY}IP вашего сервера: ${YELLOW}$server_ip${NC}"
-        echo -e "${DARKGRAY}IP домена: ${YELLOW}не определён${NC}"
-        echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно и домен разрешается правильно${NC}"
+        print_error "✖ Домен $domain не соответствует IP вашего сервера ${YELLOW}$server_ip${NC}"
+        echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно.${NC}"
         return 1
     fi
 
