@@ -538,7 +538,7 @@ check_domain() {
     if [ -z "$domain_ip" ]; then
         echo
         echo -e "${RED}✖ Домен ${YELLOW}$domain${RED} не соответствует IP вашего сервера ${YELLOW}$server_ip${NC}"
-        echo -e "${RED}❗ Убедитесь что DNS записи настроены правильно.${NC}"
+        echo -e "${RED}❗Убедитесь что DNS записи настроены правильно.${NC}"
         return 1
     fi
 
