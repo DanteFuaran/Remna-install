@@ -16,10 +16,10 @@
 ## ⚡ Установка
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh)
 ```
 
-После установки скрипт доступен командой `remna_install` или `ri`.
+После установки скрипт доступен командой `dfc-remna-install` или `dri`.
 
 ---
 
@@ -29,6 +29,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs
 |----------|----------|
 | **ОС** | Ubuntu 22.04 / 24.04 · Debian 11 / 12 |
 | **DNS** | A-записи доменов → IP сервера |
+| **Версия** | 2.5.24+ |
 
 > **3 домена (или поддомена):** панель, подписка, selfsteal/нода
 
