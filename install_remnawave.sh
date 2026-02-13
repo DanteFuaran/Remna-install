@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.54"
+SCRIPT_VERSION="2.5.55"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3222,6 +3222,7 @@ EOSQL
 
 regenerate_cookies() {
     clear
+    tput civis 2>/dev/null
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo -e "${GREEN}   🍪 СМЕНА COOKIE ДОСТУПА${NC}"
     echo -e "${BLUE}══════════════════════════════════════${NC}"
@@ -3230,6 +3231,7 @@ regenerate_cookies() {
     if [ ! -f /opt/remnawave/nginx.conf ]; then
         print_error "Файл nginx.conf не найден"
         sleep 2
+        tput cnorm 2>/dev/null
         return
     fi
 
@@ -3238,6 +3240,7 @@ regenerate_cookies() {
     if ! get_cookie_from_nginx; then
         print_error "Не удалось извлечь cookie из nginx.conf"
         sleep 2
+        tput cnorm 2>/dev/null
         return
     fi
     local OLD_NAME="$COOKIE_NAME"
@@ -3245,12 +3248,11 @@ regenerate_cookies() {
 
     echo -e "${YELLOW}⚠️  ВНИМАНИЕ!${NC}"
     echo -e "${WHITE}Текущие cookie будут заменены на новые.${NC}"
-    echo -e "${WHITE}Все, кто использовал старую ссылку, потеряют доступ.${NC}"
-    echo -e "${WHITE}Вам нужно будет сохранить новую ссылку.${NC}"
 
     if ! confirm_action; then
         print_error "Операция отменена"
         sleep 2
+        tput cnorm 2>/dev/null
         return
     fi
 
@@ -3268,10 +3270,13 @@ regenerate_cookies() {
     sed -i "s|${OLD_NAME}=${OLD_VALUE}; Path=|${NEW_NAME}=${NEW_VALUE}; Path=|g" /opt/remnawave/nginx.conf
     sed -i "s|\"${OLD_VALUE}\" 1|\"${NEW_VALUE}\" 1|g" /opt/remnawave/nginx.conf
 
-    # Перезапускаем nginx
+    print_success "Cookie успешно обновлены!"
+
+    # Перезапускаем контейнеры для применения изменений
     (
         cd /opt/remnawave
-        docker compose restart nginx >/dev/null 2>&1
+        docker compose down >/dev/null 2>&1
+        docker compose up -d >/dev/null 2>&1
     ) &
     show_spinner "Перезапуск nginx"
 
@@ -3280,17 +3285,15 @@ regenerate_cookies() {
     panel_domain=$(grep -oP 'server_name\s+\K[^;]+' /opt/remnawave/nginx.conf | head -1)
 
     echo
-    echo -e "${GREEN}✅ Cookie успешно обновлены!${NC}"
+    echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
     echo
     echo -e "${YELLOW}🔐 НОВАЯ ССЫЛКА ДОСТУПА К ПАНЕЛИ:${NC}"
     echo -e "${WHITE}https://${panel_domain}/auth/login?${NEW_NAME}=${NEW_VALUE}${NC}"
     echo
-    echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
-    echo
-    echo -e "${RED}⚠️  Сохраните эту ссылку! Старая больше не работает.${NC}"
-    echo
-    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    read -s -n 1 -p "$(echo -e "Нажмите Enter для возврата")"
         echo
+    tput cnorm 2>/dev/null
 }
 
 # ═══════════════════════════════════════════════
