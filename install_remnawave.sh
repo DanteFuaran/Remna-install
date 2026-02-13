@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.50"
+SCRIPT_VERSION="2.5.51"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -649,8 +649,8 @@ prompt_domain_with_retry() {
             elif [[ "$key" == "" ]]; then
                 # Очищаем всё после ввода домена и показываем промпт заново
                 # Поднимаемся на нужное кол-во строк и очищаем
-                # Строки: ввод домена(1) + \n(1) + ошибка(2-3) + \n(1) + подсказка(1) + \n(1)
-                local lines_up=7
+                # Строки: пустая + ошибка(2) + [опц. пустая] + пустая + подсказка = 5-6 строк
+                local lines_up=6
                 for ((l=0; l<lines_up; l++)); do
                     tput cuu1 2>/dev/null
                     tput el 2>/dev/null
