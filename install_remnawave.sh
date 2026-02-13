@@ -482,7 +482,35 @@ extract_domain() {
 }
 
 get_server_ip() {
-    curl -s4 ifconfig.me 2>/dev/null || curl -s4 icanhazip.com 2>/dev/null || echo ""
+    local ip=""
+    
+    # Пробуем несколько сервисов для получения IP адреса
+    ip=$(curl -s4 --max-time 5 ifconfig.me 2>/dev/null)
+    if [ -n "$ip" ] && [[ "$ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+        echo "$ip"
+        return 0
+    fi
+    
+    ip=$(curl -s4 --max-time 5 icanhazip.com 2>/dev/null)
+    if [ -n "$ip" ] && [[ "$ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+        echo "$ip"
+        return 0
+    fi
+    
+    ip=$(curl -s4 --max-time 5 ident.me 2>/dev/null)
+    if [ -n "$ip" ] && [[ "$ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+        echo "$ip"
+        return 0
+    fi
+    
+    # Фоллбек на локальный IP если нет доступа в интернет
+    ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+    if [ -n "$ip" ] && [[ "$ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+        echo "$ip"
+        return 0
+    fi
+    
+    echo "unknown"
 }
 
 check_domain() {
