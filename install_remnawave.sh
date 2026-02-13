@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.48"
+SCRIPT_VERSION="2.5.49"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -125,7 +125,7 @@ show_spinner_until_ready() {
     local i=0 elapsed=0 delay=0.08 loop_count=0
     tput civis 2>/dev/null || true
     while [ $elapsed -lt $timeout ]; do
-        printf "\r${DARKGRAY}%s  %s (%d/%d сек)${NC}" "${spin[$i]}" "$msg" "$elapsed" "$timeout"
+        printf "\r${DARKGRAY}%s  %s${NC}" "${spin[$i]}" "$msg"
         i=$(( (i+1) % 10 ))
         sleep $delay
         ((loop_count++))
@@ -2719,7 +2719,7 @@ installation_full() {
     echo
     echo -e "${DARKGRAY}───────────────────────────────────────────────────────────${NC}"
     echo
-    echo -e "${YELLOW}⚠️   При первом входе в панель произойдет создание администратора.${NC}"
+    echo -e "${YELLOW}⚠️  При первом входе в панель произойдет создание администратора.${NC}"
     echo -e "${YELLOW}    Сбросить данные администратора и куки для входа можно в любое${NC}"
     echo -e "${YELLOW}    время через главное меню скрипта.${NC}"
     echo
@@ -2930,20 +2930,20 @@ installation_panel() {
 
     clear
     echo
-    echo -e "${BLUE}═════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
     echo -e "                   ${GREEN}🎉 ПАНЕЛЬ УСТАНОВЛЕНА!${NC}"
-    echo -e "${BLUE}═════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
     echo
     echo -e "${YELLOW}🔗 Ссылка для первого входа в панель:${NC}"
     echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
     echo
-    echo -e "${DARKGRAY}─────────────────────────────────────────────────${NC}"
+    echo -e "${DARKGRAY}───────────────────────────────────────────────────────────${NC}"
     echo
-    echo -e "${YELLOW}⚠️   При первом входе в панель произойдет создание администратора.${NC}"
-    echo -e "${YELLOW}        Сбросить данные администратора и куки для входа можно в любое${NC}"
-    echo -e "${YELLOW}        время через главное меню скрипта.${NC}"
+    echo -e "${YELLOW}⚠️  При первом входе в панель произойдет создание администратора.${NC}"
+    echo -e "${YELLOW}    Сбросить данные администратора и куки для входа можно в любое${NC}"
+    echo -e "${YELLOW}    время через главное меню скрипта.${NC}"
     echo
-    echo -e "${BLUE}═════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
         echo
