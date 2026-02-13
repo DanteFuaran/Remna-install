@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.45"
+SCRIPT_VERSION="2.5.46"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -107,7 +107,7 @@ show_spinner_timer() {
     while [ $elapsed -lt $seconds ]; do
         local remaining=$((seconds - elapsed))
         for ((j=0; j<12; j++)); do
-            printf "\r\033[K${GREEN}%s${NC}  %s (%d сек)" "${spin[$i]}" "$msg" "$remaining"
+            printf "\r\033[K${DARKGRAY}%s  %s (%d сек)${NC}" "${spin[$i]}" "$msg" "$remaining"
             sleep $delay
             i=$(( (i+1) % 10 ))
         done
@@ -125,7 +125,7 @@ show_spinner_until_ready() {
     local i=0 elapsed=0 delay=0.08 loop_count=0
     tput civis 2>/dev/null || true
     while [ $elapsed -lt $timeout ]; do
-        printf "\r${GREEN}%s${NC}  %s (%d/%d сек)" "${spin[$i]}" "$msg" "$elapsed" "$timeout"
+        printf "\r${DARKGRAY}%s  %s (%d/%d сек)${NC}" "${spin[$i]}" "$msg" "$elapsed" "$timeout"
         i=$(( (i+1) % 10 ))
         sleep $delay
         ((loop_count++))
@@ -2610,7 +2610,6 @@ installation_full() {
         echo
         return
     fi
-    print_success "Администратор зарегистрирован"
 
     # 2. Получение публичного ключа → SECRET_KEY для ноды
     print_action "Получение публичного ключа панели..."
@@ -2710,20 +2709,20 @@ installation_full() {
     # Итог
     clear
     echo
-    echo -e "${BLUE}══════════════════════════════════════${NC}"
-    echo -e "   ${GREEN}🎉 УСТАНОВКА ЗАВЕРШЕНА!${NC}"
-    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "${BLUE}═════════════════════════════════════════════════${NC}"
+    echo -e "                   ${GREEN}🎉 УСТАНОВКА ЗАВЕРШЕНА!${NC}"
+    echo -e "${BLUE}═════════════════════════════════════════════════${NC}"
     echo
     echo -e "${YELLOW}🔗 Ссылка для первого входа в панель:${NC}"
     echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
     echo
-    echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
+    echo -e "${DARKGRAY}─────────────────────────────────────────────────${NC}"
     echo
-    echo -e "${YELLOW}⚠️ При первом входе в панель произойдет создание администратора.${NC}"
+    echo -e "${YELLOW}⚠️   При первом входе в панель произойдет создание администратора.${NC}"
+    echo -e "${YELLOW}        Сбросить данные администратора и куки для входа можно в любое${NC}"
+    echo -e "${YELLOW}        время через главное меню скрипта.${NC}"
     echo
-    echo -e "${YELLOW}Сбросить данные администратора и куки для входа можно в любое время через главное меню скрипта.${NC}"
-    echo
-    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "${BLUE}═════════════════════════════════════════════════${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
         echo
@@ -2897,7 +2896,6 @@ installation_panel() {
         echo
         return
     fi
-    print_success "Администратор зарегистрирован"
 
     # 2. Создание API токена для subscription-page
     print_action "Создание API токена для страницы подписки..."
@@ -2931,20 +2929,20 @@ installation_panel() {
 
     clear
     echo
-    echo -e "${BLUE}══════════════════════════════════════${NC}"
-    echo -e "   ${GREEN}🎉 ПАНЕЛЬ УСТАНОВЛЕНА!${NC}"
-    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "${BLUE}═════════════════════════════════════════════════${NC}"
+    echo -e "                   ${GREEN}🎉 ПАНЕЛЬ УСТАНОВЛЕНА!${NC}"
+    echo -e "${BLUE}═════════════════════════════════════════════════${NC}"
     echo
     echo -e "${YELLOW}🔗 Ссылка для первого входа в панель:${NC}"
     echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
     echo
-    echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
+    echo -e "${DARKGRAY}─────────────────────────────────────────────────${NC}"
     echo
-    echo -e "${YELLOW}⚠️ При первом входе в панель произойдет создание администратора.${NC}"
+    echo -e "${YELLOW}⚠️   При первом входе в панель произойдет создание администратора.${NC}"
+    echo -e "${YELLOW}        Сбросить данные администратора и куки для входа можно в любое${NC}"
+    echo -e "${YELLOW}        время через главное меню скрипта.${NC}"
     echo
-    echo -e "${YELLOW}Сбросить данные администратора и куки для входа можно в любое время через главное меню скрипта.${NC}"
-    echo
-    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "${BLUE}═════════════════════════════════════════════════${NC}"
     echo
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите любую клавишу для продолжения...${NC}")"
         echo
