@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.33"
+SCRIPT_VERSION="2.5.34"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -383,8 +383,54 @@ install_packages() {
         if [ -f /etc/bash.bashrc ]; then
             sed -i '/^#.*bash_completion/s/^#//' /etc/bash.bashrc 2>/dev/null || true
         fi
+        
+        # Добавляем в ~/.bashrc для root
+        if [ -f /root/.bashrc ]; then
+            if ! grep -q "bash-completion/bash_completion" /root/.bashrc 2>/dev/null; then
+                cat >> /root/.bashrc << 'EOF'
+
+# Enable bash completion in interactive shells
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+# Enable completion for sudo
+complete -cf sudo
+EOF
+            fi
+        fi
+        
+        # Добавляем в /etc/skel/.bashrc для новых пользователей
+        if [ -f /etc/skel/.bashrc ]; then
+            if ! grep -q "bash-completion/bash_completion" /etc/skel/.bashrc 2>/dev/null; then
+                cat >> /etc/skel/.bashrc << 'EOF'
+
+# Enable bash completion in interactive shells
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+# Enable completion for sudo
+complete -cf sudo
+EOF
+            fi
+        fi
+        
         # Активируем для текущей сессии
-        source /etc/profile.d/bash_completion.sh 2>/dev/null || source /etc/bash_completion 2>/dev/null || true
+        if [ -f /usr/share/bash-completion/bash_completion ]; then
+            source /usr/share/bash-completion/bash_completion 2>/dev/null || true
+        elif [ -f /etc/bash_completion ]; then
+            source /etc/bash_completion 2>/dev/null || true
+        fi
+        complete -cf sudo 2>/dev/null || true
 
         # IPv6 disable
         sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1
