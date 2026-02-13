@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.30"
+SCRIPT_VERSION="2.5.31"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -407,6 +407,8 @@ install_packages() {
         sed -i '/^#.*en_US.UTF-8/s/^#//' /etc/locale.gen 2>/dev/null || true
         locale-gen >/dev/null 2>&1 || true
 
+        # Создаём директорию для флага, если её нет
+        mkdir -p "${DIR_REMNAWAVE}" 2>/dev/null || true
         touch "${DIR_REMNAWAVE}install_packages"
     ) &
     echo
@@ -534,8 +536,8 @@ check_domain() {
     server_ip=$(get_server_ip)
 
     if [ -z "$domain_ip" ]; then
-        print_error "Домен ${YELLOW}$domain${NC} не соответствует IP вашего сервера ${YELLOW}$server_ip${NC}"
-        echo -e "${RED} ⚠️ Убедитесь что DNS записи настроены правильно.${NC}"
+        echo -e "${RED}✖ Домен ${YELLOW}$domain${RED} не соответствует IP вашего сервера ${YELLOW}$server_ip${NC}"
+        echo -e "${RED}⚠️  Убедитесь что DNS записи настроены правильно.${NC}"
         return 1
     fi
 
@@ -593,11 +595,9 @@ check_domain() {
     # ═══════════════════════════════════════════════════════════
     
     if [ "$ip_match" = false ]; then
-        print_error "Домен ${YELLOW}$domain${NC} не соответствует IP вашего сервера ${YELLOW}$server_ip${NC}"
-        echo -e "${RED} ⚠️ Убедитесь что DNS записи настроены правильно.${NC}"
+        echo -e "${RED}✖ Домен ${YELLOW}$domain${RED} не соответствует IP вашего сервера ${YELLOW}$server_ip${NC}"
+        echo -e "${RED}⚠️  Убедитесь что DNS записи настроены правильно.${NC}"
         echo
-        echo -e "${DARKGRAY}IP домена ${YELLOW}$domain${DARKGRAY}: ${YELLOW}$domain_ip${NC}"
-        echo -e "${DARKGRAY}IP вашего сервера: ${YELLOW}$server_ip${NC}"
         return 1
     fi
     
