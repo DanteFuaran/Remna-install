@@ -559,7 +559,10 @@ check_domain() {
     # ═══════════════════════════════════════════════════════════
     
     if [ "$ip_match" = false ]; then
-        print_error "Домен $domain не указывает на ваш сервер $server_ip."
+        print_error "Домен $domain указывает на IP: $domain_ip"
+        echo
+        echo -e "${DARKGRAY}IP сервера: ${YELLOW}$server_ip${NC}"
+        echo -e "${YELLOW}Убедитесь что DNS записи настроены правильно (DNS Only, без прокси Cloudflare)${NC}"
         return 1
     fi
     
