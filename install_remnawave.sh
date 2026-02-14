@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="3.0.0"
+SCRIPT_VERSION="3.0.1"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3487,11 +3487,8 @@ db_restore() {
     echo
     echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
     echo -e "${YELLOW}⚠️  ВНИМАНИЕ!${NC}"
-    echo -e "${WHITE}Все текущие данные панели будут заменены${NC}"
-    echo -e "${WHITE}данными из бэкапа.${NC}"
-    echo
-    echo -e "${RED}Данные суперадмина будут сброшены.${NC}"
-    echo -e "${WHITE}При первом входе в панель создайте нового суперадмина.${NC}"
+    echo -e "${WHITE}Все текущие данные панели будут потеряны.${NC}"
+    echo -e "${WHITE}Логин и пароль для входа в панель будут сброшены.${NC}"
 
     if ! confirm_action; then
         print_error "Операция отменена"
@@ -3535,9 +3532,6 @@ db_restore() {
 
     echo
     print_success "База данных успешно загружена!"
-    echo
-    echo -e "${YELLOW}⚠️  Данные суперадмина были сброшены.${NC}"
-    echo -e "${WHITE}При первом входе в панель создайте нового суперадмина.${NC}"
     echo
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
