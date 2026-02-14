@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.5.57"
+SCRIPT_VERSION="2.6.0"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3297,6 +3297,729 @@ regenerate_cookies() {
 }
 
 # ═══════════════════════════════════════════════
+# БАЗА ДАННЫХ: ОПРЕДЕЛЕНИЕ ПУТИ К REMNAWAVE
+# ═══════════════════════════════════════════════
+detect_remnawave_path() {
+    local panel_dir="/opt/remnawave"
+
+    if [ -f "${panel_dir}/docker-compose.yml" ]; then
+        echo "$panel_dir"
+        return 0
+    fi
+
+    echo
+    echo -e "${YELLOW}⚠️  Remnawave не найдена по стандартному пути ${WHITE}/opt/remnawave${NC}"
+    echo
+    reading "Укажите путь к директории Remnawave:" custom_path
+
+    if [ -z "$custom_path" ]; then
+        print_error "Путь не указан"
+        return 1
+    fi
+
+    custom_path="${custom_path%/}"
+
+    if [ ! -f "${custom_path}/docker-compose.yml" ]; then
+        print_error "Файл docker-compose.yml не найден в ${custom_path}"
+        return 1
+    fi
+
+    echo "$custom_path"
+    return 0
+}
+
+# ═══════════════════════════════════════════════
+# БАЗА ДАННЫХ: СОХРАНЕНИЕ ДАМПА
+# ═══════════════════════════════════════════════
+db_backup() {
+    clear
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "${GREEN}   💾 СОХРАНЕНИЕ БАЗЫ ДАННЫХ${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo
+
+    local panel_dir
+    panel_dir=$(detect_remnawave_path)
+    if [ $? -ne 0 ]; then
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
+    fi
+
+    # Проверяем что контейнер БД запущен
+    if ! docker ps --filter "name=remnawave-db" --format "{{.Names}}" 2>/dev/null | grep -q "remnawave-db"; then
+        print_error "Контейнер remnawave-db не запущен"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
+    fi
+
+    local backup_dir="${panel_dir}/backups"
+    mkdir -p "$backup_dir"
+
+    local timestamp
+    timestamp=$(date +%Y-%m-%d_%H-%M-%S)
+    local dump_file="${backup_dir}/remnawave_dump_${timestamp}.sql.gz"
+
+    echo -e "${WHITE}Директория бэкапа:${NC} ${DARKGRAY}${backup_dir}${NC}"
+    echo
+
+    (
+        docker exec remnawave-db pg_dumpall -U postgres 2>/dev/null | gzip > "$dump_file"
+    ) &
+    show_spinner "Создание дампа базы данных"
+
+    if [ -f "$dump_file" ] && [ -s "$dump_file" ]; then
+        local file_size
+        file_size=$(du -h "$dump_file" | cut -f1)
+        echo
+        print_success "Дамп успешно сохранён"
+        echo
+        echo -e "${WHITE}Файл:${NC}    ${DARKGRAY}${dump_file}${NC}"
+        echo -e "${WHITE}Размер:${NC}  ${DARKGRAY}${file_size}${NC}"
+    else
+        print_error "Не удалось создать дамп базы данных"
+        rm -f "$dump_file" 2>/dev/null
+    fi
+
+    echo
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+    echo
+}
+
+# ═══════════════════════════════════════════════
+# БАЗА ДАННЫХ: ЗАГРУЗКА ДАМПА
+# ═══════════════════════════════════════════════
+db_restore() {
+    clear
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "${GREEN}   📥 ЗАГРУЗКА БАЗЫ ДАННЫХ${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo
+
+    local panel_dir
+    panel_dir=$(detect_remnawave_path)
+    if [ $? -ne 0 ]; then
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
+    fi
+
+    # Проверяем что контейнер БД запущен
+    if ! docker ps --filter "name=remnawave-db" --format "{{.Names}}" 2>/dev/null | grep -q "remnawave-db"; then
+        print_error "Контейнер remnawave-db не запущен"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
+    fi
+
+    local backup_dir="${panel_dir}/backups"
+
+    # Ищем дампы в папке backups
+    if [ ! -d "$backup_dir" ] || ! compgen -G "$backup_dir/remnawave_dump_*.sql.gz" > /dev/null 2>&1; then
+        echo -e "${YELLOW}⚠️  Дампы не найдены в ${WHITE}${backup_dir}${NC}"
+        echo
+        echo -e "${WHITE}Поместите файл дампа (.sql.gz) в эту папку${NC}"
+        echo -e "${WHITE}или укажите путь к файлу вручную.${NC}"
+        echo
+
+        reading "Путь к файлу дампа (или Enter для отмены):" custom_dump_path
+
+        if [ -z "$custom_dump_path" ]; then
+            return 0
+        fi
+
+        if [ ! -f "$custom_dump_path" ]; then
+            print_error "Файл не найден: ${custom_dump_path}"
+            echo
+            read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+            echo
+            return 1
+        fi
+
+        # Копируем файл в папку бэкапов
+        mkdir -p "$backup_dir"
+        cp "$custom_dump_path" "$backup_dir/"
+    fi
+
+    # Собираем список дампов
+    local dump_files=()
+    local menu_items=()
+    while IFS= read -r file; do
+        dump_files+=("$file")
+        local fname
+        fname=$(basename "$file")
+        local fsize
+        fsize=$(du -h "$file" | cut -f1)
+        menu_items+=("📄  ${fname} (${fsize})")
+    done < <(find "$backup_dir" -maxdepth 1 -name "remnawave_dump_*.sql.gz" -o -name "dump_*.sql.gz" | sort -r)
+
+    if [ ${#dump_files[@]} -eq 0 ]; then
+        print_error "Файлы дампов не найдены"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
+    fi
+
+    menu_items+=("──────────────────────────────────────")
+    menu_items+=("❌  Назад")
+
+    show_arrow_menu "ВЫБЕРИТЕ ДАМП ДЛЯ ЗАГРУЗКИ" "${menu_items[@]}"
+    local choice=$?
+
+    # Проверка — выбран ли разделитель или "Назад"
+    if [ $choice -ge ${#dump_files[@]} ]; then
+        return 0
+    fi
+
+    local selected_dump="${dump_files[$choice]}"
+    local selected_name
+    selected_name=$(basename "$selected_dump")
+
+    clear
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "${GREEN}   📥 ЗАГРУЗКА БАЗЫ ДАННЫХ${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo
+    echo -e "${WHITE}Файл:${NC} ${DARKGRAY}${selected_name}${NC}"
+    echo
+    echo -e "${YELLOW}⚠️  ВНИМАНИЕ!${NC}"
+    echo -e "${WHITE}Все текущие данные панели (пользователи, ноды,${NC}"
+    echo -e "${WHITE}хосты, настройки) будут заменены данными из дампа.${NC}"
+    echo
+    echo -e "${GREEN}Что НЕ будет изменено:${NC}"
+    echo -e "${WHITE}  • Логин и пароль администратора${NC}"
+    echo -e "${WHITE}  • Домен панели и страницы подписки${NC}"
+
+    if ! confirm_action; then
+        print_error "Операция отменена"
+        sleep 2
+        return 0
+    fi
+
+    echo
+
+    # Сохраняем текущие данные администратора
+    print_action "Сохранение данных администратора..."
+    local admin_backup
+    admin_backup=$(docker exec remnawave-db psql -U postgres -d postgres -t -A -c \
+        "SELECT row_to_json(t) FROM (SELECT * FROM admin LIMIT 1) t;" 2>/dev/null)
+
+    # Сохраняем текущий SUB_PUBLIC_DOMAIN и FRONT_END_DOMAIN из .env
+    local current_sub_domain=""
+    local current_panel_domain=""
+    if [ -f "${panel_dir}/.env" ]; then
+        current_sub_domain=$(grep -oP '^SUB_PUBLIC_DOMAIN=\K.*' "${panel_dir}/.env" 2>/dev/null)
+        current_panel_domain=$(grep -oP '^FRONT_END_DOMAIN=\K.*' "${panel_dir}/.env" 2>/dev/null)
+    fi
+
+    # Останавливаем приложение
+    (
+        cd "$panel_dir"
+        docker compose stop remnawave >/dev/null 2>&1
+    ) &
+    show_spinner "Остановка панели"
+
+    # Восстанавливаем дамп
+    (
+        zcat "$selected_dump" | docker exec -i remnawave-db psql -U postgres -d postgres >/dev/null 2>&1
+    ) &
+    show_spinner "Загрузка данных из дампа"
+
+    # Восстанавливаем администратора
+    if [ -n "$admin_backup" ]; then
+        (
+            # Удаляем импортированных админов и вставляем обратно сохранённого
+            docker exec remnawave-db psql -U postgres -d postgres -c "DELETE FROM admin;" >/dev/null 2>&1
+
+            # Восстанавливаем из JSON
+            local uuid username password role token_hash created_at updated_at
+            uuid=$(echo "$admin_backup" | jq -r '.uuid // empty' 2>/dev/null)
+            username=$(echo "$admin_backup" | jq -r '.username // empty' 2>/dev/null)
+            password=$(echo "$admin_backup" | jq -r '.password // empty' 2>/dev/null)
+            role=$(echo "$admin_backup" | jq -r '.role // "SUPERADMIN"' 2>/dev/null)
+            token_hash=$(echo "$admin_backup" | jq -r '.tokenHash // .token_hash // empty' 2>/dev/null)
+            created_at=$(echo "$admin_backup" | jq -r '.createdAt // .created_at // empty' 2>/dev/null)
+            updated_at=$(echo "$admin_backup" | jq -r '.updatedAt // .updated_at // empty' 2>/dev/null)
+
+            if [ -n "$uuid" ] && [ -n "$username" ] && [ -n "$password" ]; then
+                docker exec remnawave-db psql -U postgres -d postgres -c \
+                    "INSERT INTO admin (uuid, username, password, role, \"tokenHash\", \"createdAt\", \"updatedAt\")
+                     VALUES ('${uuid}', '${username}', '${password}', '${role}',
+                     $([ -n "$token_hash" ] && echo "'${token_hash}'" || echo "NULL"),
+                     '${created_at}', '${updated_at}')
+                     ON CONFLICT (uuid) DO NOTHING;" >/dev/null 2>&1
+            fi
+        ) &
+        show_spinner "Восстановление администратора"
+    fi
+
+    # Запускаем приложение обратно
+    (
+        cd "$panel_dir"
+        docker compose start remnawave >/dev/null 2>&1
+    ) &
+    show_spinner "Запуск панели"
+
+    # Ждём готовности
+    show_spinner_timer 10 "Ожидание запуска панели" "Запуск панели"
+
+    echo
+    print_success "База данных успешно загружена!"
+    echo
+    echo -e "${WHITE}Данные из дампа восстановлены.${NC}"
+    echo -e "${WHITE}Логин/пароль администратора сохранены.${NC}"
+    if [ -n "$current_panel_domain" ]; then
+        echo -e "${WHITE}Домен панели: ${DARKGRAY}${current_panel_domain}${NC}"
+    fi
+    if [ -n "$current_sub_domain" ]; then
+        echo -e "${WHITE}Домен подписки: ${DARKGRAY}${current_sub_domain}${NC}"
+    fi
+    echo
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+    echo
+}
+
+# ═══════════════════════════════════════════════
+# БАЗА ДАННЫХ: РЕДАКТИРОВАНИЕ ДОМЕНОВ
+# ═══════════════════════════════════════════════
+change_panel_domain() {
+    clear
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "${GREEN}   🌐 СМЕНА ДОМЕНА ПАНЕЛИ${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo
+
+    local panel_dir
+    panel_dir=$(detect_remnawave_path)
+    if [ $? -ne 0 ]; then
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
+    fi
+
+    # Показываем текущий домен
+    local current_domain
+    current_domain=$(grep -oP 'server_name\s+\K[^;]+' "${panel_dir}/nginx.conf" | head -1)
+    echo -e "${WHITE}Текущий домен панели:${NC} ${YELLOW}${current_domain}${NC}"
+    echo
+
+    reading "Введите новый домен панели:" new_domain
+
+    if [ -z "$new_domain" ]; then
+        print_error "Домен не указан"
+        sleep 2
+        return 1
+    fi
+
+    # Убираем протокол если вставили с ним
+    new_domain=$(echo "$new_domain" | sed 's|https\?://||;s|/.*||')
+
+    echo
+    echo -e "${WHITE}Текущий домен:${NC} ${YELLOW}${current_domain}${NC}"
+    echo -e "${WHITE}Новый домен:${NC}   ${GREEN}${new_domain}${NC}"
+
+    if ! confirm_action; then
+        print_error "Операция отменена"
+        sleep 2
+        return 0
+    fi
+
+    echo
+
+    # Получаем сертификат для нового домена
+    local new_cert_domain
+    local parts
+    parts=$(echo "$new_domain" | tr '.' '\n' | wc -l)
+    if [ "$parts" -gt 2 ]; then
+        new_cert_domain=$(extract_domain "$new_domain")
+    else
+        new_cert_domain="$new_domain"
+    fi
+
+    # Проверяем наличие сертификата
+    if [ ! -d "/etc/letsencrypt/live/${new_cert_domain}" ]; then
+        print_action "Получение SSL-сертификата..."
+        certbot certonly --standalone -d "$new_domain" --agree-tos --register-unsafely-without-email --non-interactive >/dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            # Пробуем wildcard с dns
+            echo
+            print_error "Не удалось получить сертификат автоматически"
+            echo -e "${WHITE}Убедитесь что DNS-записи для ${YELLOW}${new_domain}${WHITE} настроены правильно.${NC}"
+            echo
+            read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+            echo
+            return 1
+        fi
+        print_success "SSL-сертификат получен"
+    fi
+
+    # Определяем старый cert_domain
+    local old_cert_domain
+    old_cert_domain=$(grep -oP 'ssl_certificate\s+"/etc/letsencrypt/live/\K[^/]+' "${panel_dir}/nginx.conf" | head -1)
+
+    # Заменяем в nginx.conf
+    (
+        sed -i "s|server_name ${current_domain}|server_name ${new_domain}|g" "${panel_dir}/nginx.conf"
+        if [ "$old_cert_domain" != "$new_cert_domain" ]; then
+            # Заменяем только первый блок сертификатов (панели), не трогая подписку
+            sed -i "0,|/etc/letsencrypt/live/${old_cert_domain}/|s|/etc/letsencrypt/live/${old_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
+        fi
+    ) &
+    show_spinner "Обновление nginx.conf"
+
+    # Заменяем в .env
+    (
+        if [ -f "${panel_dir}/.env" ]; then
+            sed -i "s|^FRONT_END_DOMAIN=.*|FRONT_END_DOMAIN=${new_domain}|" "${panel_dir}/.env"
+        fi
+    ) &
+    show_spinner "Обновление .env"
+
+    # Перезапуск сервисов
+    (
+        cd "$panel_dir"
+        docker compose down >/dev/null 2>&1
+        docker compose up -d >/dev/null 2>&1
+    ) &
+    show_spinner "Перезапуск сервисов"
+
+    echo
+    print_success "Домен панели изменён на ${new_domain}"
+
+    # Показываем cookie-ссылку
+    local COOKIE_NAME COOKIE_VALUE
+    if get_cookie_from_nginx; then
+        echo
+        echo -e "${GREEN}🔗 Ссылка на панель:${NC}"
+        echo -e "${WHITE}https://${new_domain}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+    fi
+
+    echo
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+    echo
+}
+
+change_sub_domain() {
+    clear
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "${GREEN}   🌐 СМЕНА ДОМЕНА СТРАНИЦЫ ПОДПИСКИ${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo
+
+    local panel_dir
+    panel_dir=$(detect_remnawave_path)
+    if [ $? -ne 0 ]; then
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
+    fi
+
+    # Показываем текущий домен подписки
+    local current_sub_domain
+    current_sub_domain=$(grep -oP '^SUB_PUBLIC_DOMAIN=\K.*' "${panel_dir}/.env" 2>/dev/null)
+    if [ -z "$current_sub_domain" ]; then
+        # Пробуем из nginx.conf (второй server_name)
+        current_sub_domain=$(grep -oP 'server_name\s+\K[^;]+' "${panel_dir}/nginx.conf" | sed -n '2p')
+    fi
+    echo -e "${WHITE}Текущий домен подписки:${NC} ${YELLOW}${current_sub_domain}${NC}"
+    echo
+
+    reading "Введите новый домен страницы подписки:" new_domain
+
+    if [ -z "$new_domain" ]; then
+        print_error "Домен не указан"
+        sleep 2
+        return 1
+    fi
+
+    new_domain=$(echo "$new_domain" | sed 's|https\?://||;s|/.*||')
+
+    echo
+    echo -e "${WHITE}Текущий домен:${NC} ${YELLOW}${current_sub_domain}${NC}"
+    echo -e "${WHITE}Новый домен:${NC}   ${GREEN}${new_domain}${NC}"
+
+    if ! confirm_action; then
+        print_error "Операция отменена"
+        sleep 2
+        return 0
+    fi
+
+    echo
+
+    # Получаем cert domain
+    local new_cert_domain
+    local parts
+    parts=$(echo "$new_domain" | tr '.' '\n' | wc -l)
+    if [ "$parts" -gt 2 ]; then
+        new_cert_domain=$(extract_domain "$new_domain")
+    else
+        new_cert_domain="$new_domain"
+    fi
+
+    # Проверяем наличие сертификата
+    if [ ! -d "/etc/letsencrypt/live/${new_cert_domain}" ]; then
+        print_action "Получение SSL-сертификата..."
+        certbot certonly --standalone -d "$new_domain" --agree-tos --register-unsafely-without-email --non-interactive >/dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo
+            print_error "Не удалось получить сертификат автоматически"
+            echo -e "${WHITE}Убедитесь что DNS-записи для ${YELLOW}${new_domain}${WHITE} настроены правильно.${NC}"
+            echo
+            read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+            echo
+            return 1
+        fi
+        print_success "SSL-сертификат получен"
+    fi
+
+    # Определяем старый cert_domain подписки
+    local old_sub_cert_domain
+    old_sub_cert_domain=$(grep -A5 "server_name.*${current_sub_domain}" "${panel_dir}/nginx.conf" 2>/dev/null | grep -oP '/etc/letsencrypt/live/\K[^/]+' | head -1)
+
+    # Заменяем в nginx.conf
+    (
+        sed -i "s|server_name ${current_sub_domain}|server_name ${new_domain}|g" "${panel_dir}/nginx.conf"
+        if [ -n "$old_sub_cert_domain" ] && [ "$old_sub_cert_domain" != "$new_cert_domain" ]; then
+            sed -i "s|/etc/letsencrypt/live/${old_sub_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
+        fi
+    ) &
+    show_spinner "Обновление nginx.conf"
+
+    # Заменяем в .env
+    (
+        if [ -f "${panel_dir}/.env" ]; then
+            sed -i "s|^SUB_PUBLIC_DOMAIN=.*|SUB_PUBLIC_DOMAIN=${new_domain}|" "${panel_dir}/.env"
+        fi
+    ) &
+    show_spinner "Обновление .env"
+
+    # Перезапуск сервисов
+    (
+        cd "$panel_dir"
+        docker compose down >/dev/null 2>&1
+        docker compose up -d >/dev/null 2>&1
+    ) &
+    show_spinner "Перезапуск сервисов"
+
+    echo
+    print_success "Домен страницы подписки изменён на ${new_domain}"
+    echo
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+    echo
+}
+
+change_node_domain() {
+    clear
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "${GREEN}   🌐 СМЕНА ДОМЕНА НОДЫ${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo
+
+    local panel_dir
+    panel_dir=$(detect_remnawave_path)
+    if [ $? -ne 0 ]; then
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
+    fi
+
+    # Проверяем наличие ноды в nginx (третий server блок с реальным доменом)
+    local current_node_domain
+    current_node_domain=$(grep -oP 'server_name\s+\K[^;]+' "${panel_dir}/nginx.conf" | grep -v '^_$' | sed -n '3p')
+
+    if [ -z "$current_node_domain" ]; then
+        echo -e "${YELLOW}⚠️  Нода не обнаружена в конфигурации nginx.${NC}"
+        echo -e "${WHITE}Смена домена ноды доступна только при установке${NC}"
+        echo -e "${WHITE}типа \"Панель + Нода\" на одном сервере.${NC}"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
+    fi
+
+    echo -e "${WHITE}Текущий домен ноды:${NC} ${YELLOW}${current_node_domain}${NC}"
+    echo
+
+    reading "Введите новый домен ноды:" new_domain
+
+    if [ -z "$new_domain" ]; then
+        print_error "Домен не указан"
+        sleep 2
+        return 1
+    fi
+
+    new_domain=$(echo "$new_domain" | sed 's|https\?://||;s|/.*||')
+
+    echo
+    echo -e "${WHITE}Текущий домен:${NC} ${YELLOW}${current_node_domain}${NC}"
+    echo -e "${WHITE}Новый домен:${NC}   ${GREEN}${new_domain}${NC}"
+
+    if ! confirm_action; then
+        print_error "Операция отменена"
+        sleep 2
+        return 0
+    fi
+
+    echo
+
+    # Получаем cert domain
+    local new_cert_domain
+    local parts
+    parts=$(echo "$new_domain" | tr '.' '\n' | wc -l)
+    if [ "$parts" -gt 2 ]; then
+        new_cert_domain=$(extract_domain "$new_domain")
+    else
+        new_cert_domain="$new_domain"
+    fi
+
+    # Проверяем наличие сертификата
+    if [ ! -d "/etc/letsencrypt/live/${new_cert_domain}" ]; then
+        print_action "Получение SSL-сертификата..."
+        certbot certonly --standalone -d "$new_domain" --agree-tos --register-unsafely-without-email --non-interactive >/dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo
+            print_error "Не удалось получить сертификат автоматически"
+            echo -e "${WHITE}Убедитесь что DNS-записи для ${YELLOW}${new_domain}${WHITE} настроены правильно.${NC}"
+            echo
+            read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+            echo
+            return 1
+        fi
+        print_success "SSL-сертификат получен"
+    fi
+
+    # Определяем старый cert_domain ноды
+    local old_node_cert_domain
+    old_node_cert_domain=$(grep -A5 "server_name.*${current_node_domain}" "${panel_dir}/nginx.conf" 2>/dev/null | grep -oP '/etc/letsencrypt/live/\K[^/]+' | head -1)
+
+    # Заменяем в nginx.conf
+    (
+        sed -i "s|server_name ${current_node_domain}|server_name ${new_domain}|g" "${panel_dir}/nginx.conf"
+        if [ -n "$old_node_cert_domain" ] && [ "$old_node_cert_domain" != "$new_cert_domain" ]; then
+            sed -i "s|/etc/letsencrypt/live/${old_node_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
+        fi
+    ) &
+    show_spinner "Обновление nginx.conf"
+
+    # Обновляем сертификат в docker-compose.yml если используется
+    (
+        if [ -f "${panel_dir}/docker-compose.yml" ] && grep -q "${current_node_domain}" "${panel_dir}/docker-compose.yml" 2>/dev/null; then
+            sed -i "s|${current_node_domain}|${new_domain}|g" "${panel_dir}/docker-compose.yml"
+        fi
+    ) &
+    show_spinner "Обновление docker-compose.yml"
+
+    # Перезапуск
+    (
+        cd "$panel_dir"
+        docker compose down >/dev/null 2>&1
+        docker compose up -d >/dev/null 2>&1
+    ) &
+    show_spinner "Перезапуск сервисов"
+
+    echo
+    print_success "Домен ноды изменён на ${new_domain}"
+    echo
+    echo -e "${YELLOW}⚠️  Не забудьте обновить домен ноды в панели Remnawave${NC}"
+    echo
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+    echo
+}
+
+manage_domains() {
+    clear
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "${GREEN}   🌐 РЕДАКТИРОВАНИЕ ДОМЕНОВ${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo
+
+    local panel_dir
+    panel_dir=$(detect_remnawave_path)
+    if [ $? -ne 0 ]; then
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
+    fi
+
+    # Показываем текущие домены
+    local current_panel
+    current_panel=$(grep -oP 'server_name\s+\K[^;]+' "${panel_dir}/nginx.conf" | head -1)
+    local current_sub
+    current_sub=$(grep -oP '^SUB_PUBLIC_DOMAIN=\K.*' "${panel_dir}/.env" 2>/dev/null)
+    if [ -z "$current_sub" ]; then
+        current_sub=$(grep -oP 'server_name\s+\K[^;]+' "${panel_dir}/nginx.conf" | sed -n '2p')
+    fi
+    local current_node
+    current_node=$(grep -oP 'server_name\s+\K[^;]+' "${panel_dir}/nginx.conf" | grep -v '^_$' | sed -n '3p')
+
+    echo -e "${WHITE}Домен панели:${NC}   ${YELLOW}${current_panel:-не задан}${NC}"
+    echo -e "${WHITE}Домен подписки:${NC} ${YELLOW}${current_sub:-не задан}${NC}"
+    if [ -n "$current_node" ]; then
+        echo -e "${WHITE}Домен ноды:${NC}     ${YELLOW}${current_node}${NC}"
+    fi
+    echo
+
+    show_arrow_menu "ВЫБЕРИТЕ ДЕЙСТВИЕ" \
+        "🌐  Сменить домен панели" \
+        "🌐  Сменить домен страницы подписки" \
+        "🌐  Сменить домен ноды" \
+        "──────────────────────────────────────" \
+        "❌  Назад"
+    local choice=$?
+
+    case $choice in
+        0) change_panel_domain ;;
+        1) change_sub_domain ;;
+        2) change_node_domain ;;
+        3) continue ;;
+        4) return ;;
+    esac
+}
+
+# ═══════════════════════════════════════════════
+# БАЗА ДАННЫХ: ГЛАВНОЕ МЕНЮ
+# ═══════════════════════════════════════════════
+manage_database() {
+    clear
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo -e "${GREEN}   🗄️  БАЗА ДАННЫХ${NC}"
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    echo
+
+    show_arrow_menu "ВЫБЕРИТЕ ДЕЙСТВИЕ" \
+        "💾  Сохранить базу данных" \
+        "📥  Загрузить базу данных" \
+        "──────────────────────────────────────" \
+        "🔐  Сбросить суперадмина" \
+        "🍪  Сменить cookie доступа" \
+        "🌐  Редактировать домены" \
+        "──────────────────────────────────────" \
+        "❌  Назад"
+    local choice=$?
+
+    case $choice in
+        0) db_backup ;;
+        1) db_restore ;;
+        2) continue ;;
+        3) change_credentials ;;
+        4) regenerate_cookies ;;
+        5) manage_domains ;;
+        6) continue ;;
+        7) return ;;
+    esac
+}
+
+# ═══════════════════════════════════════════════
 # УПРАВЛЕНИЕ: ШАБЛОН САЙТА-ЗАГЛУШКИ
 # ═══════════════════════════════════════════════
 manage_start() {
@@ -3983,8 +4706,7 @@ main_menu() {
                 "📋  Просмотр логов" \
                 "──────────────────────────────────────" \
                 "🔄  Обновить панель/ноду" \
-                "🔐  Сбросить суперадмина" \
-                "🍪  Сменить cookie доступа" \
+                "�️   База данных" \
                 "🔓  Доступ к панели (cookie/8443)" \
                 "🎨  Сменить шаблон сайта-заглушки" \
                 "──────────────────────────────────────" \
@@ -4039,15 +4761,14 @@ main_menu() {
                 5) manage_logs ;;
                 6) continue ;;
                 7) manage_update ;;
-                8) change_credentials ;;
-                9) regenerate_cookies ;;
-                10) manage_panel_access ;;
-                11) manage_random_template ;;
-                12) continue ;;
-                13) update_script ;;
-                14) remove_script ;;
-                15) continue ;;
-                16) clear; exit 0 ;;
+                8) manage_database ;;
+                9) manage_panel_access ;;
+                10) manage_random_template ;;
+                11) continue ;;
+                12) update_script ;;
+                13) remove_script ;;
+                14) continue ;;
+                15) clear; exit 0 ;;
             esac
         else
             # Для неустановленного состояния
