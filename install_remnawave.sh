@@ -3586,6 +3586,113 @@ db_restore() {
 }
 
 # ═══════════════════════════════════════════════
+# БАЗА ДАННЫХ: ПОЛУЧЕНИЕ СЕРТИФИКАТА ДЛЯ ДОМЕНА
+# ═══════════════════════════════════════════════
+obtain_cert_for_domain() {
+    local new_domain="$1"
+    local panel_dir="$2"
+    local current_domain="$3"
+    local -n __cert_result_ref=$4
+
+    # Определяем cert domain для нового домена
+    local new_cert_domain new_base_domain
+    new_base_domain=$(extract_domain "$new_domain")
+    local parts
+    parts=$(echo "$new_domain" | tr '.' '\n' | wc -l)
+    if [ "$parts" -gt 2 ]; then
+        new_cert_domain="$new_base_domain"
+    else
+        new_cert_domain="$new_domain"
+    fi
+
+    # Определяем метод получения сертификата по текущему домену
+    local cert_method
+    cert_method=$(detect_cert_method "$current_domain")
+
+    # Проверяем наличие сертификата для нового домена
+    if [ -d "/etc/letsencrypt/live/${new_cert_domain}" ] || [ -d "/etc/letsencrypt/live/${new_domain}" ]; then
+        print_success "SSL-сертификат для ${new_domain} уже существует"
+        # Определяем правильный cert_domain
+        if [ -d "/etc/letsencrypt/live/${new_domain}" ]; then
+            __cert_result_ref="$new_domain"
+        else
+            __cert_result_ref="$new_cert_domain"
+        fi
+        return 0
+    fi
+
+    # Нужно получить новый сертификат
+    if [ "$cert_method" = "1" ] && [ -f "/etc/letsencrypt/cloudflare.ini" ]; then
+        # Cloudflare DNS-01 — не нужно останавливать сервисы
+        (
+            certbot certonly --dns-cloudflare \
+                --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
+                --dns-cloudflare-propagation-seconds 30 \
+                -d "$new_cert_domain" -d "*.$new_cert_domain" \
+                --agree-tos --register-unsafely-without-email --non-interactive \
+                --key-type ecdsa >/dev/null 2>&1
+        ) &
+        show_spinner "Получение wildcard сертификата для *.$new_cert_domain"
+    else
+        # ACME HTTP-01 — нужно остановить nginx и открыть порт 80
+        (
+            cd "$panel_dir"
+            docker compose stop remnawave-nginx >/dev/null 2>&1
+        ) &
+        show_spinner "Остановка nginx"
+
+        (
+            ufw allow 80/tcp >/dev/null 2>&1
+        ) &
+        show_spinner "Открытие порта 80"
+
+        (
+            certbot certonly --standalone \
+                -d "$new_domain" \
+                --agree-tos --register-unsafely-without-email --non-interactive \
+                --http-01-port 80 \
+                --key-type ecdsa >/dev/null 2>&1
+        ) &
+        show_spinner "Получение SSL-сертификата для $new_domain"
+
+        (
+            ufw delete allow 80/tcp >/dev/null 2>&1
+            ufw reload >/dev/null 2>&1
+        ) &
+        show_spinner "Закрытие порта 80"
+
+        # Для ACME сертификат хранится под точным именем домена
+        new_cert_domain="$new_domain"
+    fi
+
+    # Проверяем, получен ли сертификат
+    if [ ! -d "/etc/letsencrypt/live/${new_cert_domain}" ]; then
+        print_error "Не удалось получить сертификат для ${new_domain}"
+        echo -e "${WHITE}Убедитесь что DNS-записи для ${YELLOW}${new_domain}${WHITE} настроены правильно.${NC}"
+        echo
+        # Перезапускаем nginx если он был остановлен
+        (
+            cd "$panel_dir"
+            docker compose start remnawave-nginx >/dev/null 2>&1
+        ) &
+        show_spinner "Запуск nginx"
+        echo
+        return 1
+    fi
+
+    print_success "SSL-сертификат получен"
+
+    # Добавляем cron для обновления если ещё нет
+    local cron_rule="0 3 * * * certbot renew --quiet --deploy-hook 'cd ${panel_dir} && docker compose restart remnawave-nginx' 2>/dev/null"
+    if ! crontab -l 2>/dev/null | grep -q "certbot renew"; then
+        (crontab -l 2>/dev/null; echo "$cron_rule") | crontab -
+    fi
+
+    __cert_result_ref="$new_cert_domain"
+    return 0
+}
+
+# ═══════════════════════════════════════════════
 # БАЗА ДАННЫХ: РЕДАКТИРОВАНИЕ ДОМЕНОВ
 # ═══════════════════════════════════════════════
 change_panel_domain() {
@@ -3634,47 +3741,36 @@ change_panel_domain() {
     echo
 
     # Получаем сертификат для нового домена
-    local new_cert_domain
-    local parts
-    parts=$(echo "$new_domain" | tr '.' '\n' | wc -l)
-    if [ "$parts" -gt 2 ]; then
-        new_cert_domain=$(extract_domain "$new_domain")
-    else
-        new_cert_domain="$new_domain"
+    local new_cert_domain=""
+    if ! obtain_cert_for_domain "$new_domain" "$panel_dir" "$current_domain" new_cert_domain; then
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
     fi
 
-    # Проверяем наличие сертификата
-    if [ ! -d "/etc/letsencrypt/live/${new_cert_domain}" ]; then
-        print_action "Получение SSL-сертификата..."
-        certbot certonly --standalone -d "$new_domain" --agree-tos --register-unsafely-without-email --non-interactive >/dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            # Пробуем wildcard с dns
-            echo
-            print_error "Не удалось получить сертификат автоматически"
-            echo -e "${WHITE}Убедитесь что DNS-записи для ${YELLOW}${new_domain}${WHITE} настроены правильно.${NC}"
-            echo
-            read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
-            echo
-            return 1
-        fi
-        print_success "SSL-сертификат получен"
-    fi
-
-    # Определяем старый cert_domain
+    # Определяем старый cert_domain из nginx.conf (первое вхождение — панель)
     local old_cert_domain
     old_cert_domain=$(grep -oP 'ssl_certificate\s+"/etc/letsencrypt/live/\K[^/]+' "${panel_dir}/nginx.conf" | head -1)
 
-    # Заменяем в nginx.conf
+    # Обновляем nginx.conf
     (
+        # Заменяем server_name
         sed -i "s|server_name ${current_domain}|server_name ${new_domain}|g" "${panel_dir}/nginx.conf"
-        if [ "$old_cert_domain" != "$new_cert_domain" ]; then
-            # Заменяем только первый блок сертификатов (панели), не трогая подписку
-            sed -i "0,|/etc/letsencrypt/live/${old_cert_domain}/|s|/etc/letsencrypt/live/${old_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
+        # Заменяем пути к сертификатам панели (только до строки второго server_name)
+        if [ -n "$old_cert_domain" ] && [ "$old_cert_domain" != "$new_cert_domain" ]; then
+            local boundary
+            boundary=$(grep -n 'server_name' "${panel_dir}/nginx.conf" | sed -n '2p' | cut -d: -f1)
+            if [ -n "$boundary" ]; then
+                sed -i "1,${boundary}s|/etc/letsencrypt/live/${old_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
+            else
+                sed -i "s|/etc/letsencrypt/live/${old_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
+            fi
         fi
     ) &
     show_spinner "Обновление nginx.conf"
 
-    # Заменяем в .env
+    # Обновляем .env
     (
         if [ -f "${panel_dir}/.env" ]; then
             sed -i "s|^FRONT_END_DOMAIN=.*|FRONT_END_DOMAIN=${new_domain}|" "${panel_dir}/.env"
@@ -3726,7 +3822,6 @@ change_sub_domain() {
     local current_sub_domain
     current_sub_domain=$(grep -oP '^SUB_PUBLIC_DOMAIN=\K.*' "${panel_dir}/.env" 2>/dev/null)
     if [ -z "$current_sub_domain" ]; then
-        # Пробуем из nginx.conf (второй server_name)
         current_sub_domain=$(grep -oP 'server_name\s+\K[^;]+' "${panel_dir}/nginx.conf" | sed -n '2p')
     fi
     echo -e "${WHITE}Текущий домен подписки:${NC} ${YELLOW}${current_sub_domain}${NC}"
@@ -3754,46 +3849,38 @@ change_sub_domain() {
 
     echo
 
-    # Получаем cert domain
-    local new_cert_domain
-    local parts
-    parts=$(echo "$new_domain" | tr '.' '\n' | wc -l)
-    if [ "$parts" -gt 2 ]; then
-        new_cert_domain=$(extract_domain "$new_domain")
-    else
-        new_cert_domain="$new_domain"
-    fi
-
-    # Проверяем наличие сертификата
-    if [ ! -d "/etc/letsencrypt/live/${new_cert_domain}" ]; then
-        print_action "Получение SSL-сертификата..."
-        certbot certonly --standalone -d "$new_domain" --agree-tos --register-unsafely-without-email --non-interactive >/dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo
-            print_error "Не удалось получить сертификат автоматически"
-            echo -e "${WHITE}Убедитесь что DNS-записи для ${YELLOW}${new_domain}${WHITE} настроены правильно.${NC}"
-            echo
-            read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
-            echo
-            return 1
-        fi
-        print_success "SSL-сертификат получен"
+    # Получаем сертификат для нового домена
+    local new_cert_domain=""
+    if ! obtain_cert_for_domain "$new_domain" "$panel_dir" "$current_sub_domain" new_cert_domain; then
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
     fi
 
     # Определяем старый cert_domain подписки
     local old_sub_cert_domain
     old_sub_cert_domain=$(grep -A5 "server_name.*${current_sub_domain}" "${panel_dir}/nginx.conf" 2>/dev/null | grep -oP '/etc/letsencrypt/live/\K[^/]+' | head -1)
 
-    # Заменяем в nginx.conf
+    # Обновляем nginx.conf
     (
+        # Заменяем server_name
         sed -i "s|server_name ${current_sub_domain}|server_name ${new_domain}|g" "${panel_dir}/nginx.conf"
+        # Заменяем пути к сертификатам подписки (от второго server_name до конца или до третьего)
         if [ -n "$old_sub_cert_domain" ] && [ "$old_sub_cert_domain" != "$new_cert_domain" ]; then
-            sed -i "s|/etc/letsencrypt/live/${old_sub_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
+            local start_line end_line
+            start_line=$(grep -n 'server_name' "${panel_dir}/nginx.conf" | sed -n '2p' | cut -d: -f1)
+            end_line=$(grep -n 'server_name' "${panel_dir}/nginx.conf" | sed -n '3p' | cut -d: -f1)
+            if [ -n "$start_line" ] && [ -n "$end_line" ]; then
+                sed -i "${start_line},${end_line}s|/etc/letsencrypt/live/${old_sub_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
+            elif [ -n "$start_line" ]; then
+                sed -i "${start_line},\$s|/etc/letsencrypt/live/${old_sub_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
+            fi
         fi
     ) &
     show_spinner "Обновление nginx.conf"
 
-    # Заменяем в .env
+    # Обновляем .env
     (
         if [ -f "${panel_dir}/.env" ]; then
             sed -i "s|^SUB_PUBLIC_DOMAIN=.*|SUB_PUBLIC_DOMAIN=${new_domain}|" "${panel_dir}/.env"
@@ -3871,46 +3958,35 @@ change_node_domain() {
 
     echo
 
-    # Получаем cert domain
-    local new_cert_domain
-    local parts
-    parts=$(echo "$new_domain" | tr '.' '\n' | wc -l)
-    if [ "$parts" -gt 2 ]; then
-        new_cert_domain=$(extract_domain "$new_domain")
-    else
-        new_cert_domain="$new_domain"
-    fi
-
-    # Проверяем наличие сертификата
-    if [ ! -d "/etc/letsencrypt/live/${new_cert_domain}" ]; then
-        print_action "Получение SSL-сертификата..."
-        certbot certonly --standalone -d "$new_domain" --agree-tos --register-unsafely-without-email --non-interactive >/dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo
-            print_error "Не удалось получить сертификат автоматически"
-            echo -e "${WHITE}Убедитесь что DNS-записи для ${YELLOW}${new_domain}${WHITE} настроены правильно.${NC}"
-            echo
-            read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
-            echo
-            return 1
-        fi
-        print_success "SSL-сертификат получен"
+    # Получаем сертификат для нового домена
+    local new_cert_domain=""
+    if ! obtain_cert_for_domain "$new_domain" "$panel_dir" "$current_node_domain" new_cert_domain; then
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return 1
     fi
 
     # Определяем старый cert_domain ноды
     local old_node_cert_domain
     old_node_cert_domain=$(grep -A5 "server_name.*${current_node_domain}" "${panel_dir}/nginx.conf" 2>/dev/null | grep -oP '/etc/letsencrypt/live/\K[^/]+' | head -1)
 
-    # Заменяем в nginx.conf
+    # Обновляем nginx.conf
     (
+        # Заменяем server_name
         sed -i "s|server_name ${current_node_domain}|server_name ${new_domain}|g" "${panel_dir}/nginx.conf"
+        # Заменяем пути к сертификатам ноды (от третьего server_name до конца)
         if [ -n "$old_node_cert_domain" ] && [ "$old_node_cert_domain" != "$new_cert_domain" ]; then
-            sed -i "s|/etc/letsencrypt/live/${old_node_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
+            local start_line
+            start_line=$(grep -n "server_name" "${panel_dir}/nginx.conf" | grep -v '_' | sed -n '3p' | cut -d: -f1)
+            if [ -n "$start_line" ]; then
+                sed -i "${start_line},\$s|/etc/letsencrypt/live/${old_node_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
+            fi
         fi
     ) &
     show_spinner "Обновление nginx.conf"
 
-    # Обновляем сертификат в docker-compose.yml если используется
+    # Обновляем docker-compose.yml если используется
     (
         if [ -f "${panel_dir}/docker-compose.yml" ] && grep -q "${current_node_domain}" "${panel_dir}/docker-compose.yml" 2>/dev/null; then
             sed -i "s|${current_node_domain}|${new_domain}|g" "${panel_dir}/docker-compose.yml"
@@ -3918,7 +3994,7 @@ change_node_domain() {
     ) &
     show_spinner "Обновление docker-compose.yml"
 
-    # Перезапуск
+    # Перезапуск сервисов
     (
         cd "$panel_dir"
         docker compose down >/dev/null 2>&1
