@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="3.1.1"
+SCRIPT_VERSION="3.2.0"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -475,6 +475,49 @@ get_cookie_from_nginx() {
         return 1
     fi
     return 0
+}
+
+# ═══════════════════════════════════════════════
+# НАСТРОЙКА РОТАЦИИ ЛОГОВ
+# ═══════════════════════════════════════════════
+setup_log_rotation() {
+    local panel_dir="${1:-/opt/remnawave}"
+    local logs_dir="${panel_dir}/logs"
+    
+    mkdir -p "$logs_dir"
+    
+    # Создаём скрипт ротации логов
+    cat > "${logs_dir}/rotate-logs.sh" << 'ROTATE_EOF'
+#!/bin/bash
+# Ротация логов Remnawave: ежедневный сбор, архивация, хранение 14 дней
+
+LOGS_DIR="/opt/remnawave/logs"
+DATE=$(date +%Y-%m-%d)
+KEEP_DAYS=14
+
+# Сохраняем логи за последние 24 часа
+for container in remnawave remnawave-nginx remnawave-subscription-page remnawave-node; do
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${container}$"; then
+        docker logs --since 24h "$container" > "${LOGS_DIR}/${container}_${DATE}.log" 2>&1
+    fi
+done
+
+# Архивируем логи старше 1 дня (не сегодняшние)
+find "$LOGS_DIR" -name "*.log" -not -name "*_${DATE}.log" -mtime +0 -exec gzip -f {} \; 2>/dev/null
+
+# Удаляем архивы старше 14 дней
+find "$LOGS_DIR" -name "*.log.gz" -mtime +${KEEP_DAYS} -delete 2>/dev/null
+ROTATE_EOF
+    
+    chmod +x "${logs_dir}/rotate-logs.sh"
+    
+    # Создаём cron задачу (ежедневно в 00:00)
+    local cron_job="0 0 * * * ${logs_dir}/rotate-logs.sh >/dev/null 2>&1"
+    
+    # Добавляем в crontab если ещё нет
+    if ! crontab -l 2>/dev/null | grep -qF "rotate-logs.sh"; then
+        (crontab -l 2>/dev/null; echo "$cron_job") | crontab -
+    fi
 }
 
 # ═══════════════════════════════════════════════
@@ -2437,6 +2480,10 @@ installation_full() {
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
     mkdir -p "${DIR_PANEL}/backups"
+    mkdir -p "${DIR_PANEL}/logs"
+
+    # Настройка ротации логов
+    setup_log_rotation "${DIR_PANEL}"
 
     # Устанавливаем trap для удаления при прерывании (только для первичной установки)
     if [ "$is_fresh_install" = true ]; then
@@ -2764,6 +2811,10 @@ installation_panel() {
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
     mkdir -p "${DIR_PANEL}/backups"
+    mkdir -p "${DIR_PANEL}/logs"
+
+    # Настройка ротации логов
+    setup_log_rotation "${DIR_PANEL}"
 
     # Устанавливаем trap для удаления при прерывании (только для первичной установки)
     if [ "$is_fresh_install" = true ]; then
@@ -2986,6 +3037,7 @@ installation_node() {
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
     mkdir -p "${DIR_PANEL}/backups"
+    mkdir -p "${DIR_PANEL}/logs"
 
     # Устанавливаем trap для удаления при прерывании (только для первичной установки)
     if [ "$is_fresh_install" = true ]; then
@@ -3123,6 +3175,8 @@ EOL
     show_spinner "Запуск Docker контейнеров"
 
     show_spinner_timer 5 "Ожидание запуска ноды" "Запуск ноды"
+
+    setup_log_rotation "${DIR_PANEL}"
 
     randomhtml
 
@@ -3526,17 +3580,66 @@ db_restore() {
     ) &
     show_spinner "Сброс данных суперадмина"
 
-    # Запускаем все сервисы
+    # Запускаем панель (без subscription-page, т.к. токен ещё не обновлён)
     (
         cd "$panel_dir"
-        docker compose up -d remnawave remnawave-subscription-page >/dev/null 2>&1
+        docker compose up -d remnawave >/dev/null 2>&1
     ) &
     show_spinner "Запуск панели"
+
+    # Ожидание готовности API
+    show_spinner_timer 10 "Ожидание запуска панели" "Запуск панели"
+
+    local domain_url="127.0.0.1:3000"
+
+    show_spinner_until_ready "http://$domain_url/api/auth/status" "Проверка доступности API" 60
+    if [ $? -ne 0 ]; then
+        print_error "API не отвечает после восстановления"
+        echo -e "${YELLOW}Запустите панель вручную и создайте администратора${NC}"
+        echo
+        read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+        echo
+        return
+    fi
+
+    # Регистрация нового администратора и создание API токена
+    local SUPERADMIN_USERNAME
+    local SUPERADMIN_PASSWORD
+    SUPERADMIN_USERNAME=$(generate_admin_username)
+    SUPERADMIN_PASSWORD=$(generate_admin_password)
+
+    print_action "Регистрация администратора..."
+    local token
+    token=$(register_remnawave "$domain_url" "$SUPERADMIN_USERNAME" "$SUPERADMIN_PASSWORD")
+
+    if [ -n "$token" ]; then
+        print_success "Регистрация администратора"
+
+        # Создание API токена для страницы подписки
+        print_action "Создание API токена для страницы подписки..."
+        create_api_token "http://$domain_url" "$token" "$panel_dir"
+
+        # Перезапуск subscription-page с обновлённым токеном
+        (
+            cd "$panel_dir"
+            docker compose up -d remnawave-subscription-page >/dev/null 2>&1
+        ) &
+        show_spinner "Перезапуск страницы подписки"
+    else
+        print_error "Не удалось зарегистрировать администратора"
+        echo -e "${YELLOW}Создайте администратора вручную через панель${NC}"
+    fi
 
     echo
     print_success "База данных успешно загружена!"
     echo
-    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    if [ -n "$token" ]; then
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
+        echo -e "${YELLOW}👤 ЛОГИН:${NC}    ${WHITE}$SUPERADMIN_USERNAME${NC}"
+        echo -e "${YELLOW}🔑 ПАРОЛЬ:${NC}   ${WHITE}$SUPERADMIN_PASSWORD${NC}"
+        echo -e "${BLUE}══════════════════════════════════════${NC}"
+        echo
+    fi
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
     echo
 }
