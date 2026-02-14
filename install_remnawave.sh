@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.6.7"
+SCRIPT_VERSION="2.6.8"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3603,8 +3603,6 @@ obtain_cert_for_domain() {
     local current_domain="$3"
     local -n __cert_result_ref=$4
 
-    echo -e "${CYAN}[DEBUG obtain_cert_for_domain] ВХОД: new_domain='$new_domain', current_domain='$current_domain', nameref_param='$4'${NC}"
-
     # Определяем cert domain для нового домена
     # Имя _cert_dom вместо new_cert_domain чтобы не конфликтовать с nameref
     local _cert_dom _base_dom
@@ -3626,10 +3624,8 @@ obtain_cert_for_domain() {
         print_success "SSL-сертификат для ${new_domain} уже существует"
         # Определяем правильный cert_domain
         if [ -d "/etc/letsencrypt/live/${new_domain}" ]; then
-            echo -e "${CYAN}[DEBUG obtain_cert_for_domain] Сертификат в /etc/letsencrypt/live/${new_domain}, присваиваем: '${new_domain}'${NC}"
             __cert_result_ref="$new_domain"
         else
-            echo -e "${CYAN}[DEBUG obtain_cert_for_domain] Сертификат в /etc/letsencrypt/live/${_cert_dom}, присваиваем: '${_cert_dom}'${NC}"
             __cert_result_ref="$_cert_dom"
         fi
         return 0
@@ -3702,7 +3698,6 @@ obtain_cert_for_domain() {
         (crontab -l 2>/dev/null; echo "$cron_rule") | crontab -
     fi
 
-    echo -e "${CYAN}[DEBUG obtain_cert_for_domain] Присваиваем nameref: _cert_dom='${_cert_dom}'${NC}"
     __cert_result_ref="$_cert_dom"
     return 0
 }
@@ -3761,22 +3756,13 @@ change_panel_domain() {
         return 1
     fi
 
-    # DEBUG: Выводим полученный cert domain
-    echo -e "${YELLOW}[DEBUG] new_cert_domain = '${new_cert_domain}'${NC}"
-
     # Определяем старый cert_domain из nginx.conf (первое вхождение — панель)
     local old_cert_domain
     old_cert_domain=$(grep -oP 'ssl_certificate\s+"/etc/letsencrypt/live/\K[^/]+' "${panel_dir}/nginx.conf" | head -1)
 
-    # DEBUG: Выводим старый cert domain и boundary
-    echo -e "${YELLOW}[DEBUG] old_cert_domain = '${old_cert_domain}'${NC}"
-
     # Находим границу (второй server_name) ДО изменений
     local boundary
-    boundary=$(grep -n 'server_name' "${panel_dir}/nginx.conf" | sed -n '2p' | cut -d: -f1)
-
-    echo -e "${YELLOW}[DEBUG] boundary = '${boundary}'${NC}"
-    echo -e "${YELLOW}[DEBUG] Условие: -n old_cert_domain=$([ -n "$old_cert_domain" ] && echo 'TRUE' || echo 'FALSE'), != $([ "$old_cert_domain" != "$new_cert_domain" ] && echo 'TRUE' || echo 'FALSE')${NC}"
+    boundary=$(grep -nP '^\s*server_name\s' "${panel_dir}/nginx.conf" | sed -n '2p' | cut -d: -f1)
 
     # Обновляем nginx.conf (синхронно, без фонового выполнения)
     # СНАЧАЛА заменяем пути к сертификатам
@@ -3884,8 +3870,8 @@ change_sub_domain() {
 
     # Находим границы (второй и третий server_name) ДО изменений
     local start_line end_line
-    start_line=$(grep -n 'server_name' "${panel_dir}/nginx.conf" | sed -n '2p' | cut -d: -f1)
-    end_line=$(grep -n 'server_name' "${panel_dir}/nginx.conf" | sed -n '3p' | cut -d: -f1)
+    start_line=$(grep -nP '^\s*server_name\s' "${panel_dir}/nginx.conf" | sed -n '2p' | cut -d: -f1)
+    end_line=$(grep -nP '^\s*server_name\s' "${panel_dir}/nginx.conf" | sed -n '3p' | cut -d: -f1)
 
     # Обновляем nginx.conf (синхронно)
     # СНАЧАЛА заменяем пути к сертификатам
