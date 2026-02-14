@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.6.8"
+SCRIPT_VERSION="2.6.9"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -274,18 +274,6 @@ confirm_action() {
     echo -e "${YELLOW}⚠️  Нажмите Enter для подтверждения, или Esc для отмены.${NC}"
 
     local key
-    while true; do
-        read -s -n 1 key
-        if [[ "$key" == $'\x1b' ]]; then
-            return 1
-        elif [[ "$key" == "" ]]; then
-            break
-        fi
-    done
-
-    echo -e "${RED}⚠️  Вы уверены? Это действие нельзя отменить.${NC}"
-    echo -e "${YELLOW}⚠️  Нажмите Enter для подтверждения, или Esc для отмены.${NC}"
-
     while true; do
         read -s -n 1 key
         if [[ "$key" == $'\x1b' ]]; then
@@ -3429,7 +3417,7 @@ db_restore() {
     local backup_dir="${panel_dir}/backups"
 
     # Ищем дампы в папке backups
-    if [ ! -d "$backup_dir" ] || ! compgen -G "$backup_dir/remnawave_dump_*.sql.gz" > /dev/null 2>&1; then
+    if [ ! -d "$backup_dir" ] || ! compgen -G "$backup_dir/backup_remnawave_*.sql.gz" > /dev/null 2>&1; then
         echo -e "${YELLOW}⚠️  Дампы не найдены в ${WHITE}${backup_dir}${NC}"
         echo
         echo -e "${WHITE}Поместите файл дампа (.sql.gz) в эту папку${NC}"
