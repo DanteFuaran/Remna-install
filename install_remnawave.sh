@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.7.0"
+SCRIPT_VERSION="2.7.1"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3364,7 +3364,7 @@ db_backup() {
     echo
 
     (
-        docker exec remnawave-db pg_dumpall -U postgres 2>/dev/null | gzip > "$dump_file"
+        docker exec remnawave-db pg_dump -U postgres -d postgres 2>/dev/null | gzip > "$dump_file"
     ) &
     show_spinner "Создание дампа базы данных"
 
@@ -3520,35 +3520,33 @@ db_restore() {
     ) &
     show_spinner "Остановка панели"
 
+    # Очищаем базу данных перед восстановлением
+    (
+        docker exec remnawave-db psql -U postgres -d postgres -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" >/dev/null 2>&1
+    ) &
+    show_spinner "Подготовка базы данных"
+
     # Восстанавливаем дамп
     (
         zcat "$selected_dump" | docker exec -i remnawave-db psql -U postgres -d postgres >/dev/null 2>&1
     ) &
     show_spinner "Загрузка данных из бэкапа"
 
-    # Восстанавливаем администратора
+    # Обновляем данные администратора
     if [ -n "$admin_backup" ]; then
         (
-            # Удаляем импортированных админов и вставляем обратно сохранённого
-            docker exec remnawave-db psql -U postgres -d postgres -c "DELETE FROM admin;" >/dev/null 2>&1
-
-            # Восстанавливаем из JSON
-            local uuid username password role token_hash created_at updated_at
-            uuid=$(echo "$admin_backup" | jq -r '.uuid // empty' 2>/dev/null)
+            # Парсим JSON
+            local username password token_hash
             username=$(echo "$admin_backup" | jq -r '.username // empty' 2>/dev/null)
             password=$(echo "$admin_backup" | jq -r '.password // empty' 2>/dev/null)
-            role=$(echo "$admin_backup" | jq -r '.role // "SUPERADMIN"' 2>/dev/null)
             token_hash=$(echo "$admin_backup" | jq -r '.tokenHash // .token_hash // empty' 2>/dev/null)
-            created_at=$(echo "$admin_backup" | jq -r '.createdAt // .created_at // empty' 2>/dev/null)
-            updated_at=$(echo "$admin_backup" | jq -r '.updatedAt // .updated_at // empty' 2>/dev/null)
 
-            if [ -n "$uuid" ] && [ -n "$username" ] && [ -n "$password" ]; then
+            if [ -n "$username" ] && [ -n "$password" ]; then
+                # Обновляем первого админа в базе сохранёнными данными
                 docker exec remnawave-db psql -U postgres -d postgres -c \
-                    "INSERT INTO admin (uuid, username, password, role, \"tokenHash\", \"createdAt\", \"updatedAt\")
-                     VALUES ('${uuid}', '${username}', '${password}', '${role}',
-                     $([ -n "$token_hash" ] && echo "'${token_hash}'" || echo "NULL"),
-                     '${created_at}', '${updated_at}')
-                     ON CONFLICT (uuid) DO NOTHING;" >/dev/null 2>&1
+                    "UPDATE admin SET username = '${username}', password = '${password}', \
+                     \"tokenHash\" = $([ -n "$token_hash" ] && echo "'${token_hash}'" || echo "NULL") \
+                     WHERE uuid = (SELECT uuid FROM admin ORDER BY \"createdAt\" LIMIT 1);" >/dev/null 2>&1
             fi
         ) &
         show_spinner "Подключение новых данных"
