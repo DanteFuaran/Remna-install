@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.6.1"
+SCRIPT_VERSION="2.6.2"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3717,12 +3717,9 @@ change_panel_domain() {
     echo -e "${WHITE}Текущий домен панели:${NC} ${YELLOW}${current_domain}${NC}"
     echo
 
-    reading "Введите новый домен панели:" new_domain
-
-    if [ -z "$new_domain" ]; then
-        print_error "Домен не указан"
-        sleep 2
-        return 1
+    local new_domain
+    if ! prompt_domain_with_retry "Введите новый домен панели:" new_domain; then
+        return 0
     fi
 
     # Убираем протокол если вставили с ним
@@ -3827,12 +3824,9 @@ change_sub_domain() {
     echo -e "${WHITE}Текущий домен подписки:${NC} ${YELLOW}${current_sub_domain}${NC}"
     echo
 
-    reading "Введите новый домен страницы подписки:" new_domain
-
-    if [ -z "$new_domain" ]; then
-        print_error "Домен не указан"
-        sleep 2
-        return 1
+    local new_domain
+    if ! prompt_domain_with_retry "Введите новый домен страницы подписки:" new_domain; then
+        return 0
     fi
 
     new_domain=$(echo "$new_domain" | sed 's|https\?://||;s|/.*||')
@@ -3936,12 +3930,9 @@ change_node_domain() {
     echo -e "${WHITE}Текущий домен ноды:${NC} ${YELLOW}${current_node_domain}${NC}"
     echo
 
-    reading "Введите новый домен ноды:" new_domain
-
-    if [ -z "$new_domain" ]; then
-        print_error "Домен не указан"
-        sleep 2
-        return 1
+    local new_domain
+    if ! prompt_domain_with_retry "Введите новый домен ноды:" new_domain; then
+        return 0
     fi
 
     new_domain=$(echo "$new_domain" | sed 's|https\?://||;s|/.*||')
