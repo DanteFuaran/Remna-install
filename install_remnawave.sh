@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="3.0.2"
+SCRIPT_VERSION="3.1.0"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3682,6 +3682,7 @@ change_panel_domain() {
     # Убираем протокол если вставили с ним
     new_domain=$(echo "$new_domain" | sed 's|https\?://||;s|/.*||')
 
+    echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
     echo
     echo -e "${WHITE}Текущий домен:${NC} ${YELLOW}${current_domain}${NC}"
     echo -e "${WHITE}Новый домен:${NC}   ${GREEN}${new_domain}${NC}"
@@ -3692,7 +3693,7 @@ change_panel_domain() {
         return 0
     fi
 
-    echo
+    echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
 
     # Получаем сертификат для нового домена
     local new_cert_domain=""
@@ -3742,19 +3743,46 @@ change_panel_domain() {
     ) &
     show_spinner "Перезапуск сервисов"
 
-    echo
-    print_success "Домен панели изменён на ${new_domain}"
-
-    # Показываем cookie-ссылку
-    local COOKIE_NAME COOKIE_VALUE
+    # Регенерация cookie после смены домена
+    local OLD_COOKIE_NAME OLD_COOKIE_VALUE NEW_COOKIE_NAME NEW_COOKIE_VALUE
     if get_cookie_from_nginx; then
-        echo
-        echo -e "${GREEN}🔗 Ссылка на панель:${NC}"
-        echo -e "${WHITE}https://${new_domain}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+        OLD_COOKIE_NAME="$COOKIE_NAME"
+        OLD_COOKIE_VALUE="$COOKIE_VALUE"
+        
+        # Генерируем новые cookie
+        NEW_COOKIE_NAME=$(generate_cookie_key)
+        NEW_COOKIE_VALUE=$(generate_cookie_key)
+        
+        # Заменяем cookie в nginx.conf
+        sed -i "s|~\*${OLD_COOKIE_NAME}=${OLD_COOKIE_VALUE}|~*${NEW_COOKIE_NAME}=${NEW_COOKIE_VALUE}|g" "${panel_dir}/nginx.conf"
+        sed -i "s|\$arg_${OLD_COOKIE_NAME}|\$arg_${NEW_COOKIE_NAME}|g" "${panel_dir}/nginx.conf"
+        sed -i "s|    \"[^\"]*\" \"${OLD_COOKIE_NAME}=${OLD_COOKIE_VALUE}; Path=|    \"${NEW_COOKIE_VALUE}\" \"${NEW_COOKIE_NAME}=${NEW_COOKIE_VALUE}; Path=|g" "${panel_dir}/nginx.conf"
+        sed -i "s|\"${OLD_COOKIE_VALUE}\" 1|\"${NEW_COOKIE_VALUE}\" 1|g" "${panel_dir}/nginx.conf"
+        
+        # Перезапускаем nginx для применения новых cookie
+        (
+            cd "$panel_dir"
+            docker compose restart remnawave-nginx >/dev/null 2>&1
+        ) &
+        show_spinner "Обновление cookie доступа"
     fi
 
     echo
-    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
+    print_success "Домен панели изменён на ${new_domain}"
+
+    # Показываем новую cookie-ссылку
+    echo
+    echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
+    echo -e "${GREEN}🔗 Ссылка на панель:${NC}"
+    if [ -n "$NEW_COOKIE_NAME" ] && [ -n "$NEW_COOKIE_VALUE" ]; then
+        echo -e "${WHITE}https://${new_domain}/auth/login?${NEW_COOKIE_NAME}=${NEW_COOKIE_VALUE}${NC}"
+    else
+        # Fallback на старые cookie если что-то пошло не так
+        get_cookie_from_nginx
+        echo -e "${WHITE}https://${new_domain}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+    fi
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
+    read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для продолжения${NC}")"
     echo
 }
 
