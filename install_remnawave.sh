@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.6.2"
+SCRIPT_VERSION="2.6.3"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3750,20 +3750,22 @@ change_panel_domain() {
     local old_cert_domain
     old_cert_domain=$(grep -oP 'ssl_certificate\s+"/etc/letsencrypt/live/\K[^/]+' "${panel_dir}/nginx.conf" | head -1)
 
+    # Находим границу (второй server_name) ДО изменений
+    local boundary
+    boundary=$(grep -n 'server_name' "${panel_dir}/nginx.conf" | sed -n '2p' | cut -d: -f1)
+
     # Обновляем nginx.conf
     (
-        # Заменяем server_name
-        sed -i "s|server_name ${current_domain}|server_name ${new_domain}|g" "${panel_dir}/nginx.conf"
-        # Заменяем пути к сертификатам панели (только до строки второго server_name)
+        # СНАЧАЛА заменяем пути к сертификатам
         if [ -n "$old_cert_domain" ] && [ "$old_cert_domain" != "$new_cert_domain" ]; then
-            local boundary
-            boundary=$(grep -n 'server_name' "${panel_dir}/nginx.conf" | sed -n '2p' | cut -d: -f1)
             if [ -n "$boundary" ]; then
                 sed -i "1,${boundary}s|/etc/letsencrypt/live/${old_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
             else
                 sed -i "s|/etc/letsencrypt/live/${old_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
             fi
         fi
+        # ПОТОМ заменяем server_name
+        sed -i "s|server_name ${current_domain}|server_name ${new_domain}|g" "${panel_dir}/nginx.conf"
     ) &
     show_spinner "Обновление nginx.conf"
 
@@ -3856,21 +3858,23 @@ change_sub_domain() {
     local old_sub_cert_domain
     old_sub_cert_domain=$(grep -A5 "server_name.*${current_sub_domain}" "${panel_dir}/nginx.conf" 2>/dev/null | grep -oP '/etc/letsencrypt/live/\K[^/]+' | head -1)
 
+    # Находим границы (второй и третий server_name) ДО изменений
+    local start_line end_line
+    start_line=$(grep -n 'server_name' "${panel_dir}/nginx.conf" | sed -n '2p' | cut -d: -f1)
+    end_line=$(grep -n 'server_name' "${panel_dir}/nginx.conf" | sed -n '3p' | cut -d: -f1)
+
     # Обновляем nginx.conf
     (
-        # Заменяем server_name
-        sed -i "s|server_name ${current_sub_domain}|server_name ${new_domain}|g" "${panel_dir}/nginx.conf"
-        # Заменяем пути к сертификатам подписки (от второго server_name до конца или до третьего)
+        # СНАЧАЛА заменяем пути к сертификатам
         if [ -n "$old_sub_cert_domain" ] && [ "$old_sub_cert_domain" != "$new_cert_domain" ]; then
-            local start_line end_line
-            start_line=$(grep -n 'server_name' "${panel_dir}/nginx.conf" | sed -n '2p' | cut -d: -f1)
-            end_line=$(grep -n 'server_name' "${panel_dir}/nginx.conf" | sed -n '3p' | cut -d: -f1)
             if [ -n "$start_line" ] && [ -n "$end_line" ]; then
                 sed -i "${start_line},${end_line}s|/etc/letsencrypt/live/${old_sub_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
             elif [ -n "$start_line" ]; then
                 sed -i "${start_line},\$s|/etc/letsencrypt/live/${old_sub_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
             fi
         fi
+        # ПОТОМ заменяем server_name
+        sed -i "s|server_name ${current_sub_domain}|server_name ${new_domain}|g" "${panel_dir}/nginx.conf"
     ) &
     show_spinner "Обновление nginx.conf"
 
@@ -3962,18 +3966,20 @@ change_node_domain() {
     local old_node_cert_domain
     old_node_cert_domain=$(grep -A5 "server_name.*${current_node_domain}" "${panel_dir}/nginx.conf" 2>/dev/null | grep -oP '/etc/letsencrypt/live/\K[^/]+' | head -1)
 
+    # Находим границу (третий server_name без '_') ДО изменений
+    local start_line
+    start_line=$(grep -n "server_name" "${panel_dir}/nginx.conf" | grep -v '_' | sed -n '3p' | cut -d: -f1)
+
     # Обновляем nginx.conf
     (
-        # Заменяем server_name
-        sed -i "s|server_name ${current_node_domain}|server_name ${new_domain}|g" "${panel_dir}/nginx.conf"
-        # Заменяем пути к сертификатам ноды (от третьего server_name до конца)
+        # СНАЧАЛА заменяем пути к сертификатам
         if [ -n "$old_node_cert_domain" ] && [ "$old_node_cert_domain" != "$new_cert_domain" ]; then
-            local start_line
-            start_line=$(grep -n "server_name" "${panel_dir}/nginx.conf" | grep -v '_' | sed -n '3p' | cut -d: -f1)
             if [ -n "$start_line" ]; then
                 sed -i "${start_line},\$s|/etc/letsencrypt/live/${old_node_cert_domain}/|/etc/letsencrypt/live/${new_cert_domain}/|g" "${panel_dir}/nginx.conf"
             fi
         fi
+        # ПОТОМ заменяем server_name
+        sed -i "s|server_name ${current_node_domain}|server_name ${new_domain}|g" "${panel_dir}/nginx.conf"
     ) &
     show_spinner "Обновление nginx.conf"
 
