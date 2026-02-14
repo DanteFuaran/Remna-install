@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.6.5"
+SCRIPT_VERSION="2.6.6"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3604,14 +3604,15 @@ obtain_cert_for_domain() {
     local -n __cert_result_ref=$4
 
     # Определяем cert domain для нового домена
-    local new_cert_domain new_base_domain
-    new_base_domain=$(extract_domain "$new_domain")
+    # Имя _cert_dom вместо new_cert_domain чтобы не конфликтовать с nameref
+    local _cert_dom _base_dom
+    _base_dom=$(extract_domain "$new_domain")
     local parts
     parts=$(echo "$new_domain" | tr '.' '\n' | wc -l)
     if [ "$parts" -gt 2 ]; then
-        new_cert_domain="$new_base_domain"
+        _cert_dom="$_base_dom"
     else
-        new_cert_domain="$new_domain"
+        _cert_dom="$new_domain"
     fi
 
     # Определяем метод получения сертификата по текущему домену
@@ -3619,13 +3620,13 @@ obtain_cert_for_domain() {
     cert_method=$(detect_cert_method "$current_domain")
 
     # Проверяем наличие сертификата для нового домена
-    if [ -d "/etc/letsencrypt/live/${new_cert_domain}" ] || [ -d "/etc/letsencrypt/live/${new_domain}" ]; then
+    if [ -d "/etc/letsencrypt/live/${_cert_dom}" ] || [ -d "/etc/letsencrypt/live/${new_domain}" ]; then
         print_success "SSL-сертификат для ${new_domain} уже существует"
         # Определяем правильный cert_domain
         if [ -d "/etc/letsencrypt/live/${new_domain}" ]; then
             __cert_result_ref="$new_domain"
         else
-            __cert_result_ref="$new_cert_domain"
+            __cert_result_ref="$_cert_dom"
         fi
         return 0
     fi
@@ -3637,11 +3638,11 @@ obtain_cert_for_domain() {
             certbot certonly --dns-cloudflare \
                 --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
                 --dns-cloudflare-propagation-seconds 30 \
-                -d "$new_cert_domain" -d "*.$new_cert_domain" \
+                -d "$_cert_dom" -d "*.$_cert_dom" \
                 --agree-tos --register-unsafely-without-email --non-interactive \
                 --key-type ecdsa >/dev/null 2>&1
         ) &
-        show_spinner "Получение wildcard сертификата для *.$new_cert_domain"
+        show_spinner "Получение wildcard сертификата для *.$_cert_dom"
     else
         # ACME HTTP-01 — нужно остановить nginx и открыть порт 80
         (
@@ -3671,11 +3672,11 @@ obtain_cert_for_domain() {
         show_spinner "Закрытие порта 80"
 
         # Для ACME сертификат хранится под точным именем домена
-        new_cert_domain="$new_domain"
+        _cert_dom="$new_domain"
     fi
 
     # Проверяем, получен ли сертификат
-    if [ ! -d "/etc/letsencrypt/live/${new_cert_domain}" ]; then
+    if [ ! -d "/etc/letsencrypt/live/${_cert_dom}" ]; then
         print_error "Не удалось получить сертификат для ${new_domain}"
         echo -e "${WHITE}Убедитесь что DNS-записи для ${YELLOW}${new_domain}${WHITE} настроены правильно.${NC}"
         echo
@@ -3697,7 +3698,7 @@ obtain_cert_for_domain() {
         (crontab -l 2>/dev/null; echo "$cron_rule") | crontab -
     fi
 
-    __cert_result_ref="$new_cert_domain"
+    __cert_result_ref="$_cert_dom"
     return 0
 }
 
@@ -4074,7 +4075,7 @@ manage_domains() {
 manage_database() {
     clear
     echo -e "${BLUE}══════════════════════════════════════${NC}"
-    echo -e "${GREEN}   🗄️  БАЗА ДАННЫХ${NC}"
+    echo -e "${GREEN}   💾  БАЗА ДАННЫХ${NC}"
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     echo
 
@@ -4788,7 +4789,7 @@ main_menu() {
                 "📋  Просмотр логов" \
                 "──────────────────────────────────────" \
                 "🔄  Обновить панель/ноду" \
-                "�️   База данных" \
+                "💾  База данных" \
                 "🔓  Доступ к панели (cookie/8443)" \
                 "🎨  Сменить шаблон сайта-заглушки" \
                 "──────────────────────────────────────" \
