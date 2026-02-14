@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.6.3"
+SCRIPT_VERSION="2.6.4"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -2445,6 +2445,7 @@ installation_full() {
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
+    mkdir -p "${DIR_PANEL}/backups"
 
     # Устанавливаем trap для удаления при прерывании (только для первичной установки)
     if [ "$is_fresh_install" = true ]; then
@@ -2771,6 +2772,7 @@ installation_panel() {
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
+    mkdir -p "${DIR_PANEL}/backups"
 
     # Устанавливаем trap для удаления при прерывании (только для первичной установки)
     if [ "$is_fresh_install" = true ]; then
@@ -2992,6 +2994,7 @@ installation_node() {
 
     mkdir -p "${DIR_PANEL}" && cd "${DIR_PANEL}"
     mkdir -p /var/www/html
+    mkdir -p "${DIR_PANEL}/backups"
 
     # Устанавливаем trap для удаления при прерывании (только для первичной установки)
     if [ "$is_fresh_install" = true ]; then
@@ -3360,8 +3363,14 @@ db_backup() {
     mkdir -p "$backup_dir"
 
     local timestamp
-    timestamp=$(date +%Y-%m-%d_%H-%M-%S)
-    local dump_file="${backup_dir}/remnawave_dump_${timestamp}.sql.gz"
+    timestamp=$(date +%d.%m.%y)
+    local dump_file="${backup_dir}/backup_remnawave_${timestamp}.sql.gz"
+
+    # Если файл с таким именем уже существует, добавляем время
+    if [ -f "$dump_file" ]; then
+        timestamp=$(date +%d.%m.%y_%H-%M-%S)
+        dump_file="${backup_dir}/backup_remnawave_${timestamp}.sql.gz"
+    fi
 
     echo -e "${WHITE}Директория бэкапа:${NC} ${DARKGRAY}${backup_dir}${NC}"
     echo
@@ -3427,7 +3436,7 @@ db_restore() {
         echo -e "${WHITE}или укажите путь к файлу вручную.${NC}"
         echo
 
-        reading "Путь к файлу дампа (или Enter для отмены):" custom_dump_path
+        reading "Путь к файлу бэкапа (или Enter для отмены):" custom_dump_path
 
         if [ -z "$custom_dump_path" ]; then
             return 0
@@ -3446,7 +3455,7 @@ db_restore() {
         cp "$custom_dump_path" "$backup_dir/"
     fi
 
-    # Собираем список дампов
+    # Собираем список бэкапов
     local dump_files=()
     local menu_items=()
     while IFS= read -r file; do
@@ -3456,10 +3465,10 @@ db_restore() {
         local fsize
         fsize=$(du -h "$file" | cut -f1)
         menu_items+=("📄  ${fname} (${fsize})")
-    done < <(find "$backup_dir" -maxdepth 1 -name "remnawave_dump_*.sql.gz" -o -name "dump_*.sql.gz" | sort -r)
+    done < <(find "$backup_dir" -maxdepth 1 -name "*.sql.gz" | sort -r)
 
     if [ ${#dump_files[@]} -eq 0 ]; then
-        print_error "Файлы дампов не найдены"
+        print_error "Файлы бэкапов не найдены"
         echo
         read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
         echo
@@ -3469,7 +3478,7 @@ db_restore() {
     menu_items+=("──────────────────────────────────────")
     menu_items+=("❌  Назад")
 
-    show_arrow_menu "ВЫБЕРИТЕ ДАМП ДЛЯ ЗАГРУЗКИ" "${menu_items[@]}"
+    show_arrow_menu "ВЫБЕРИТЕ БЭКАП ДЛЯ ЗАГРУЗКИ" "${menu_items[@]}"
     local choice=$?
 
     # Проверка — выбран ли разделитель или "Назад"
