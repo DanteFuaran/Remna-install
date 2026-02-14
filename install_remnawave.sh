@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="3.0.1"
+SCRIPT_VERSION="3.0.2"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -272,13 +272,16 @@ reading_inline() {
 confirm_action() {
     echo
     echo -e "${YELLOW}⚠️  Нажмите Enter для подтверждения, или Esc для отмены.${NC}"
+    tput civis  # Скрыть курсор
 
     local key
     while true; do
         read -s -n 1 key
         if [[ "$key" == $'\x1b' ]]; then
+            tput cnorm  # Показать курсор
             return 1
         elif [[ "$key" == "" ]]; then
+            tput cnorm  # Показать курсор
             return 0
         fi
     done
