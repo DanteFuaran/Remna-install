@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.6.9"
+SCRIPT_VERSION="2.7.0"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3485,13 +3485,12 @@ db_restore() {
     echo
     echo -e "${WHITE}Файл:${NC} ${DARKGRAY}${selected_name}${NC}"
     echo
+    echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
     echo -e "${YELLOW}⚠️  ВНИМАНИЕ!${NC}"
-    echo -e "${WHITE}Все текущие данные панели (пользователи, ноды,${NC}"
-    echo -e "${WHITE}хосты, настройки) будут заменены данными из дампа.${NC}"
+    echo -e "${WHITE}Все текущие данные панели будут заменены${NC}"
+    echo -e "${WHITE}данными из бэкапа.${NC}"
     echo
-    echo -e "${GREEN}Что НЕ будет изменено:${NC}"
-    echo -e "${WHITE}  • Логин и пароль администратора${NC}"
-    echo -e "${WHITE}  • Домен панели и страницы подписки${NC}"
+    echo -e "${WHITE}Данные суперадмина и домены изменены не будут.${NC}"
 
     if ! confirm_action; then
         print_error "Операция отменена"
@@ -3499,10 +3498,9 @@ db_restore() {
         return 0
     fi
 
-    echo
+    echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
 
     # Сохраняем текущие данные администратора
-    print_action "Сохранение данных администратора..."
     local admin_backup
     admin_backup=$(docker exec remnawave-db psql -U postgres -d postgres -t -A -c \
         "SELECT row_to_json(t) FROM (SELECT * FROM admin LIMIT 1) t;" 2>/dev/null)
@@ -3515,10 +3513,10 @@ db_restore() {
         current_panel_domain=$(grep -oP '^FRONT_END_DOMAIN=\K.*' "${panel_dir}/.env" 2>/dev/null)
     fi
 
-    # Останавливаем приложение
+    # Останавливаем панель и страницу подписки
     (
         cd "$panel_dir"
-        docker compose stop remnawave >/dev/null 2>&1
+        docker compose stop remnawave remnawave-subscription-page >/dev/null 2>&1
     ) &
     show_spinner "Остановка панели"
 
@@ -3526,7 +3524,7 @@ db_restore() {
     (
         zcat "$selected_dump" | docker exec -i remnawave-db psql -U postgres -d postgres >/dev/null 2>&1
     ) &
-    show_spinner "Загрузка данных из дампа"
+    show_spinner "Загрузка данных из бэкапа"
 
     # Восстанавливаем администратора
     if [ -n "$admin_backup" ]; then
@@ -3553,31 +3551,20 @@ db_restore() {
                      ON CONFLICT (uuid) DO NOTHING;" >/dev/null 2>&1
             fi
         ) &
-        show_spinner "Восстановление администратора"
+        show_spinner "Подключение новых данных"
     fi
 
-    # Запускаем приложение обратно
+    # Запускаем все сервисы
     (
         cd "$panel_dir"
-        docker compose start remnawave >/dev/null 2>&1
+        docker compose up -d remnawave remnawave-subscription-page >/dev/null 2>&1
     ) &
     show_spinner "Запуск панели"
-
-    # Ждём готовности
-    show_spinner_timer 10 "Ожидание запуска панели" "Запуск панели"
 
     echo
     print_success "База данных успешно загружена!"
     echo
-    echo -e "${WHITE}Данные из дампа восстановлены.${NC}"
-    echo -e "${WHITE}Логин/пароль администратора сохранены.${NC}"
-    if [ -n "$current_panel_domain" ]; then
-        echo -e "${WHITE}Домен панели: ${DARKGRAY}${current_panel_domain}${NC}"
-    fi
-    if [ -n "$current_sub_domain" ]; then
-        echo -e "${WHITE}Домен подписки: ${DARKGRAY}${current_sub_domain}${NC}"
-    fi
-    echo
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
     echo
 }
