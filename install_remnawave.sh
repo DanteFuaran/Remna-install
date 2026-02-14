@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="3.1.0"
+SCRIPT_VERSION="3.1.1"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3420,7 +3420,7 @@ db_restore() {
     local backup_dir="${panel_dir}/backups"
 
     # Ищем дампы в папке backups
-    if [ ! -d "$backup_dir" ] || ! compgen -G "$backup_dir/backup_remnawave_*.sql.gz" > /dev/null 2>&1; then
+    if [ ! -d "$backup_dir" ] || ! compgen -G "$backup_dir/*.sql.gz" > /dev/null 2>&1; then
         echo -e "${YELLOW}⚠️  Дампы не найдены в ${WHITE}${backup_dir}${NC}"
         echo
         echo -e "${WHITE}Поместите файл дампа (.sql.gz) в эту папку${NC}"
