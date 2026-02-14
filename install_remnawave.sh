@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="2.7.1"
+SCRIPT_VERSION="2.7.2"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3490,7 +3490,8 @@ db_restore() {
     echo -e "${WHITE}Все текущие данные панели будут заменены${NC}"
     echo -e "${WHITE}данными из бэкапа.${NC}"
     echo
-    echo -e "${WHITE}Данные суперадмина и домены изменены не будут.${NC}"
+    echo -e "${RED}Данные суперадмина будут сброшены.${NC}"
+    echo -e "${WHITE}При первом входе в панель создайте нового суперадмина.${NC}"
 
     if ! confirm_action; then
         print_error "Операция отменена"
@@ -3499,19 +3500,6 @@ db_restore() {
     fi
 
     echo -e "${DARKGRAY}──────────────────────────────────────${NC}"
-
-    # Сохраняем текущие данные администратора
-    local admin_backup
-    admin_backup=$(docker exec remnawave-db psql -U postgres -d postgres -t -A -c \
-        "SELECT row_to_json(t) FROM (SELECT * FROM admin LIMIT 1) t;" 2>/dev/null)
-
-    # Сохраняем текущий SUB_PUBLIC_DOMAIN и FRONT_END_DOMAIN из .env
-    local current_sub_domain=""
-    local current_panel_domain=""
-    if [ -f "${panel_dir}/.env" ]; then
-        current_sub_domain=$(grep -oP '^SUB_PUBLIC_DOMAIN=\K.*' "${panel_dir}/.env" 2>/dev/null)
-        current_panel_domain=$(grep -oP '^FRONT_END_DOMAIN=\K.*' "${panel_dir}/.env" 2>/dev/null)
-    fi
 
     # Останавливаем панель и страницу подписки
     (
@@ -3532,25 +3520,11 @@ db_restore() {
     ) &
     show_spinner "Загрузка данных из бэкапа"
 
-    # Обновляем данные администратора
-    if [ -n "$admin_backup" ]; then
-        (
-            # Парсим JSON
-            local username password token_hash
-            username=$(echo "$admin_backup" | jq -r '.username // empty' 2>/dev/null)
-            password=$(echo "$admin_backup" | jq -r '.password // empty' 2>/dev/null)
-            token_hash=$(echo "$admin_backup" | jq -r '.tokenHash // .token_hash // empty' 2>/dev/null)
-
-            if [ -n "$username" ] && [ -n "$password" ]; then
-                # Обновляем первого админа в базе сохранёнными данными
-                docker exec remnawave-db psql -U postgres -d postgres -c \
-                    "UPDATE admin SET username = '${username}', password = '${password}', \
-                     \"tokenHash\" = $([ -n "$token_hash" ] && echo "'${token_hash}'" || echo "NULL") \
-                     WHERE uuid = (SELECT uuid FROM admin ORDER BY \"createdAt\" LIMIT 1);" >/dev/null 2>&1
-            fi
-        ) &
-        show_spinner "Подключение новых данных"
-    fi
+    # Очищаем таблицу admin, чтобы пользователь мог создать нового суперадмина
+    (
+        docker exec remnawave-db psql -U postgres -d postgres -c "TRUNCATE TABLE admin CASCADE;" >/dev/null 2>&1
+    ) &
+    show_spinner "Сброс данных суперадмина"
 
     # Запускаем все сервисы
     (
@@ -3561,6 +3535,9 @@ db_restore() {
 
     echo
     print_success "База данных успешно загружена!"
+    echo
+    echo -e "${YELLOW}⚠️  Данные суперадмина были сброшены.${NC}"
+    echo -e "${WHITE}При первом входе в панель создайте нового суперадмина.${NC}"
     echo
     echo -e "${BLUE}══════════════════════════════════════${NC}"
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
