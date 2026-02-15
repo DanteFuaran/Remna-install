@@ -483,41 +483,37 @@ get_cookie_from_nginx() {
 setup_log_rotation() {
     local panel_dir="${1:-/opt/remnawave}"
     local logs_dir="${panel_dir}/logs"
+    local cron_script="/etc/cron.daily/remnawave-logs"
     
     mkdir -p "$logs_dir"
     
-    # Создаём скрипт ротации логов
-    cat > "${logs_dir}/rotate-logs.sh" << 'ROTATE_EOF'
+    # Создаём скрипт ротации логов в /etc/cron.daily/
+    cat > "$cron_script" << ROTATE_EOF
 #!/bin/bash
 # Ротация логов Remnawave: ежедневный сбор, архивация, хранение 14 дней
 
-LOGS_DIR="/opt/remnawave/logs"
-DATE=$(date +%Y-%m-%d)
+LOGS_DIR="${logs_dir}"
+DATE=\$(date +%Y-%m-%d)
 KEEP_DAYS=14
+LOG_FILE="\${LOGS_DIR}/remnawave_\${DATE}.log"
 
-# Сохраняем логи за последние 24 часа
+# Собираем логи всех контейнеров в один файл
 for container in remnawave remnawave-nginx remnawave-subscription-page remnawave-node; do
-    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${container}$"; then
-        docker logs --since 24h "$container" > "${LOGS_DIR}/${container}_${DATE}.log" 2>&1
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^\${container}\$"; then
+        echo "===== \${container} =====" >> "\$LOG_FILE"
+        docker logs --since 24h "\$container" >> "\$LOG_FILE" 2>&1
+        echo >> "\$LOG_FILE"
     fi
 done
 
 # Архивируем логи старше 1 дня (не сегодняшние)
-find "$LOGS_DIR" -name "*.log" -not -name "*_${DATE}.log" -mtime +0 -exec gzip -f {} \; 2>/dev/null
+find "\$LOGS_DIR" -name "*.log" -not -name "*_\${DATE}.log" -mtime +0 -exec gzip -f {} \\; 2>/dev/null
 
 # Удаляем архивы старше 14 дней
-find "$LOGS_DIR" -name "*.log.gz" -mtime +${KEEP_DAYS} -delete 2>/dev/null
+find "\$LOGS_DIR" -name "*.log.gz" -mtime +\${KEEP_DAYS} -delete 2>/dev/null
 ROTATE_EOF
     
-    chmod +x "${logs_dir}/rotate-logs.sh"
-    
-    # Создаём cron задачу (ежедневно в 00:00)
-    local cron_job="0 0 * * * ${logs_dir}/rotate-logs.sh >/dev/null 2>&1"
-    
-    # Добавляем в crontab если ещё нет
-    if ! crontab -l 2>/dev/null | grep -qF "rotate-logs.sh"; then
-        (crontab -l 2>/dev/null; echo "$cron_job") | crontab -
-    fi
+    chmod +x "$cron_script"
 }
 
 # ═══════════════════════════════════════════════
@@ -3574,11 +3570,11 @@ db_restore() {
     ) &
     show_spinner "Загрузка данных из бэкапа"
 
-    # Очищаем таблицу admin, чтобы пользователь мог создать нового суперадмина
+    # Очищаем таблицу admin для перевода панели в режим регистрации
     (
         docker exec remnawave-db psql -U postgres -d postgres -c "TRUNCATE TABLE admin CASCADE;" >/dev/null 2>&1
     ) &
-    show_spinner "Сброс данных суперадмина"
+    show_spinner "Подготовка к регистрации"
 
     # Запускаем панель (без subscription-page, т.к. токен ещё не обновлён)
     (
@@ -3619,6 +3615,12 @@ db_restore() {
         print_action "Создание API токена для страницы подписки..."
         create_api_token "http://$domain_url" "$token" "$panel_dir"
 
+        # Сброс администратора после создания API токена
+        (
+            docker exec remnawave-db psql -U postgres -d postgres -c "TRUNCATE TABLE admin CASCADE;" >/dev/null 2>&1
+        ) &
+        show_spinner "Сброс данных суперадмина"
+
         # Перезапуск subscription-page с обновлённым токеном
         (
             cd "$panel_dir"
@@ -3633,13 +3635,7 @@ db_restore() {
     echo
     print_success "База данных успешно загружена!"
     echo
-    if [ -n "$token" ]; then
-        echo -e "${BLUE}══════════════════════════════════════${NC}"
-        echo -e "${YELLOW}👤 ЛОГИН:${NC}    ${WHITE}$SUPERADMIN_USERNAME${NC}"
-        echo -e "${YELLOW}🔑 ПАРОЛЬ:${NC}   ${WHITE}$SUPERADMIN_PASSWORD${NC}"
-        echo -e "${BLUE}══════════════════════════════════════${NC}"
-        echo
-    fi
+    echo -e "${BLUE}══════════════════════════════════════${NC}"
     read -s -n 1 -p "$(echo -e "${DARKGRAY}Нажмите Enter для возврата${NC}")"
     echo
 }
