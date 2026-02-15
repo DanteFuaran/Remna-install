@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="0.1.1"
+SCRIPT_VERSION="0.1.2"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -11,7 +11,7 @@ SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/hea
 cleanup_terminal() {
     # Полное восстановление терминала
     stty sane 2>/dev/null || true
-    stty echo icannon 2>/dev/null || true
+    stty echo icanon 2>/dev/null || true
     tput cnorm 2>/dev/null || true
     tput rmso 2>/dev/null || true
     tput rmab 2>/dev/null || true
@@ -243,7 +243,7 @@ show_arrow_menu() {
                 # Восстанавливаем состояние терминала перед выходом
                 stty "$original_stty" 2>/dev/null || true
                 tput cnorm 2>/dev/null || true
-                stty echo icannon 2>/dev/null || true
+                stty echo icanon 2>/dev/null || true
                 printf "\033[0m\033[?25h" 2>/dev/null || true
                 return $selected
             fi
@@ -4847,22 +4847,28 @@ install_script() {
     # Чистим старые артефакты (remna_install, alias ri)
     cleanup_old_aliases
 
-    # Если скрипт уже установлен и файл существует - обновляем симлинки и выходим
-    if [ -f "${DIR_REMNAWAVE}dfc-remna-install" ]; then
-        chmod +x "${DIR_REMNAWAVE}dfc-remna-install"
-        ln -sf "${DIR_REMNAWAVE}dfc-remna-install" /usr/local/bin/dfc-remna-install
-        ln -sf /usr/local/bin/dfc-remna-install /usr/local/bin/dri
-        return
-    fi
-
-    # Первая установка - получаем SHA последнего коммита для обхода CDN-кеша
+    # Получаем SHA последнего коммита для обхода CDN-кеша
     local download_url="$SCRIPT_URL"
     local latest_sha
-    latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/dev" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
+    latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/main" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
     if [ -n "$latest_sha" ]; then
         download_url="https://raw.githubusercontent.com/DanteFuaran/Remna-install/$latest_sha/install_remnawave.sh"
     fi
 
+    # Проверяем, нужно ли обновление
+    if [ -f "${DIR_REMNAWAVE}dfc-remna-install" ]; then
+        local installed_version
+        installed_version=$(grep -m 1 'SCRIPT_VERSION=' "${DIR_REMNAWAVE}dfc-remna-install" 2>/dev/null | cut -d'"' -f2)
+        if [ "$installed_version" = "$SCRIPT_VERSION" ]; then
+            # Версии совпадают - просто обновляем симлинки
+            chmod +x "${DIR_REMNAWAVE}dfc-remna-install"
+            ln -sf "${DIR_REMNAWAVE}dfc-remna-install" /usr/local/bin/dfc-remna-install
+            ln -sf /usr/local/bin/dfc-remna-install /usr/local/bin/dri
+            return
+        fi
+    fi
+
+    # Скачиваем свежую версию
     if ! wget -O "${DIR_REMNAWAVE}dfc-remna-install" "$download_url" >/dev/null 2>&1; then
         echo -e "${RED}✖ Не удалось скачать скрипт${NC}"
         exit 1
