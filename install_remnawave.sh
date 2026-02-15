@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="0.1.2"
+SCRIPT_VERSION="0.1.3"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -4653,7 +4653,7 @@ get_installed_version() {
 get_remote_version() {
     # Получаем SHA последнего коммита для обхода кеша CDN
     local latest_sha
-    latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/dev" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
+    latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/main" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
     
     if [ -n "$latest_sha" ]; then
         # Используем конкретный SHA для получения актуальной версии
@@ -4679,9 +4679,22 @@ check_for_updates() {
         local_version="$SCRIPT_VERSION"
     fi
 
+    # Сравниваем версии: обновление доступно только если удалённая версия новее
     if [ "$remote_version" != "$local_version" ]; then
-        echo "$remote_version"
-        return 0
+        # Проверяем что удалённая версия действительно новее
+        local IFS=.
+        local i remote_parts=($remote_version) local_parts=($local_version)
+        for ((i=0; i<${#remote_parts[@]}; i++)); do
+            local r=${remote_parts[i]:-0}
+            local l=${local_parts[i]:-0}
+            if (( r > l )); then
+                echo "$remote_version"
+                return 0
+            elif (( r < l )); then
+                return 1
+            fi
+        done
+        return 1
     fi
     
     return 1
@@ -4973,7 +4986,7 @@ main_menu() {
                 12) update_script ;;
                 13) remove_script ;;
                 14) continue ;;
-                15) clear; exit 0 ;;
+                15) cleanup_terminal; clear; exit 0 ;;
             esac
         else
             # Для неустановленного состояния
@@ -5016,7 +5029,7 @@ main_menu() {
                     esac
                     ;;
                 1) continue ;;
-                2) cleanup_uninstalled; clear; exit 0 ;;
+                2) cleanup_uninstalled; cleanup_terminal; clear; exit 0 ;;
             esac
         fi
     done
@@ -5025,8 +5038,10 @@ main_menu() {
 # ═══════════════════════════════════════════════
 # ТОЧКА ВХОДА
 # ═══════════════════════════════════════════════
-echo -e "${BLUE}⏳ Происходит подготовка установки... Пожалуйста, подождите${NC}"
-echo ""
+if [ "${REMNA_INSTALLED_RUN:-}" != "1" ]; then
+    echo -e "${BLUE}⏳ Происходит подготовка установки... Пожалуйста, подождите${NC}"
+    echo ""
+fi
 
 check_root
 check_os
