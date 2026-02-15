@@ -17,7 +17,7 @@
 Установка и настройка панели Remnawave в одну команду:
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh)
 ```
 
 После установки управление доступно через команду **`dfc-remna-install`** или **`dri`**
