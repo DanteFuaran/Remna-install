@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="0.1.6"
+SCRIPT_VERSION="0.1.7"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -4859,15 +4859,22 @@ install_script() {
     # Чистим старые артефакты (remna_install, alias ri)
     cleanup_old_aliases
 
-    # Если скрипт уже установлен - обновляем симлинки и запускаем его
+    # Проверяем версию установленной копии
     if [ -f "${DIR_REMNAWAVE}dfc-remna-install" ]; then
-        chmod +x "${DIR_REMNAWAVE}dfc-remna-install"
-        ln -sf "${DIR_REMNAWAVE}dfc-remna-install" /usr/local/bin/dfc-remna-install
-        ln -sf /usr/local/bin/dfc-remna-install /usr/local/bin/dri
-        return
+        local installed_version
+        installed_version=$(grep -m 1 'SCRIPT_VERSION=' "${DIR_REMNAWAVE}dfc-remna-install" 2>/dev/null | cut -d'"' -f2)
+        
+        # Если версии совпадают - просто обновляем симлинки
+        if [ "$installed_version" = "$SCRIPT_VERSION" ]; then
+            chmod +x "${DIR_REMNAWAVE}dfc-remna-install"
+            ln -sf "${DIR_REMNAWAVE}dfc-remna-install" /usr/local/bin/dfc-remna-install
+            ln -sf /usr/local/bin/dfc-remna-install /usr/local/bin/dri
+            return
+        fi
+        # Версии отличаются - продолжаем скачивать свежую версию
     fi
 
-    # Первая установка - получаем SHA последнего коммита для обхода CDN-кеша
+    # Установка/обновление - получаем SHA последнего коммита для обхода CDN-кеша
     local download_url="$SCRIPT_URL"
     local latest_sha
     latest_sha=$(curl -sL --max-time 5 "https://api.github.com/repos/DanteFuaran/Remna-install/commits/main" 2>/dev/null | grep -m 1 '"sha"' | cut -d'"' -f4)
