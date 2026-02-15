@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="0.1.3"
+SCRIPT_VERSION="0.1.4"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -4986,7 +4986,7 @@ main_menu() {
                 12) update_script ;;
                 13) remove_script ;;
                 14) continue ;;
-                15) cleanup_terminal; clear; exit 0 ;;
+                15) cleanup_terminal; exit 0 ;;
             esac
         else
             # Для неустановленного состояния
@@ -5029,7 +5029,7 @@ main_menu() {
                     esac
                     ;;
                 1) continue ;;
-                2) cleanup_uninstalled; cleanup_terminal; clear; exit 0 ;;
+                2) cleanup_uninstalled; cleanup_terminal; exit 0 ;;
             esac
         fi
     done
