@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="3.2.7"
+SCRIPT_VERSION="0.1.0"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
