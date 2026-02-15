@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="0.1.0"
+SCRIPT_VERSION="0.1.1"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -1271,7 +1271,7 @@ create_api_token() {
 }
 
 # ═══════════════════════════════════════════════
-# ДОБАВИТЬ НОДУ В ПАНЕЛЬ
+# ПОДКЛЮЧИТЬ НОДУ В ПАНЕЛЬ (НА СЕРВЕРЕ С ПАНЕЛЬЮ)
 # ═══════════════════════════════════════════════
 add_node_to_panel() {
     # Определяем: панель установлена на этом сервере?
