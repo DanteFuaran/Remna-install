@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="3.2.5"
+SCRIPT_VERSION="3.2.6"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -2775,6 +2775,8 @@ installation_full() {
     echo -e "${YELLOW}🔗 Ссылка для первого входа в панель:${NC}"
     echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
     echo
+    echo -e "${CYAN}📋 Управление панелью:${NC} ${GREEN}dri${NC} или ${GREEN}dfc-remna-install${NC}"
+    echo
     echo -e "${DARKGRAY}───────────────────────────────────────────────────────────${NC}"
     echo
     echo -e "${YELLOW}⚠️  При первом входе в панель произойдет создание администратора.${NC}"
@@ -2999,6 +3001,8 @@ installation_panel() {
     echo
     echo -e "${YELLOW}🔗 Ссылка для первого входа в панель:${NC}"
     echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
+    echo
+    echo -e "${CYAN}📋 Управление панелью:${NC} ${GREEN}dri${NC} или ${GREEN}dfc-remna-install${NC}"
     echo
     echo -e "${DARKGRAY}───────────────────────────────────────────────────────────${NC}"
     echo
