@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="3.2.6"
+SCRIPT_VERSION="3.2.7"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -2767,6 +2767,7 @@ installation_full() {
 
     # Итог
     clear
+    tput civis 2>/dev/null
     echo
     echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
     echo -e "                   ${GREEN}🎉 УСТАНОВКА ЗАВЕРШЕНА!${NC}"
@@ -2775,7 +2776,8 @@ installation_full() {
     echo -e "${YELLOW}🔗 Ссылка для первого входа в панель:${NC}"
     echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
     echo
-    echo -e "${CYAN}📋 Управление панелью:${NC} ${GREEN}dri${NC} или ${GREEN}dfc-remna-install${NC}"
+    echo -e "${YELLOW}📋 Команды запуска меню управления:${NC}"
+    echo -e "${GREEN}dfc-remna-install${NC} или ${GREEN}dri${NC}"
     echo
     echo -e "${DARKGRAY}───────────────────────────────────────────────────────────${NC}"
     echo
@@ -2994,6 +2996,7 @@ installation_panel() {
     fi
 
     clear
+    tput civis 2>/dev/null
     echo
     echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
     echo -e "                   ${GREEN}🎉 ПАНЕЛЬ УСТАНОВЛЕНА!${NC}"
@@ -3002,7 +3005,8 @@ installation_panel() {
     echo -e "${YELLOW}🔗 Ссылка для первого входа в панель:${NC}"
     echo -e "${WHITE}https://${PANEL_DOMAIN}/auth/login?${COOKIE_NAME}=${COOKIE_VALUE}${NC}"
     echo
-    echo -e "${CYAN}📋 Управление панелью:${NC} ${GREEN}dri${NC} или ${GREEN}dfc-remna-install${NC}"
+    echo -e "${YELLOW}📋 Команды запуска меню управления:${NC}"
+    echo -e "${GREEN}dfc-remna-install${NC} или ${GREEN}dri${NC}"
     echo
     echo -e "${DARKGRAY}───────────────────────────────────────────────────────────${NC}"
     echo
