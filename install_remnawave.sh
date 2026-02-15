@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="0.1.7"
+SCRIPT_VERSION="0.1.8"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -166,8 +166,14 @@ show_arrow_menu() {
     # Отключаем canonical mode и echo, включаем чтение отдельных символов
     stty -icanon -echo min 1 time 0 2>/dev/null || true
 
+    # Функция восстановления терминала
+    _restore_term() {
+        stty "$original_stty" 2>/dev/null || stty sane 2>/dev/null || true
+        tput cnorm 2>/dev/null || true
+    }
+
     # Обработчик ошибок для этой функции
-    trap "stty '$original_stty' 2>/dev/null || true; tput cnorm 2>/dev/null || true; stty sane 2>/dev/null || true" RETURN
+    trap "_restore_term" RETURN
 
     while true; do
         clear
@@ -240,10 +246,7 @@ show_arrow_menu() {
 
             if [ "$key_code" -eq 10 ] || [ "$key_code" -eq 13 ]; then
                 # Восстанавливаем состояние терминала перед выходом
-                stty "$original_stty" 2>/dev/null || true
-                tput cnorm 2>/dev/null || true
-                stty echo icanon 2>/dev/null || true
-                printf "\033[0m\033[?25h" 2>/dev/null || true
+                _restore_term
                 return $selected
             fi
         fi
