@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="3.2.3"
+SCRIPT_VERSION="3.2.4"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -483,37 +483,48 @@ get_cookie_from_nginx() {
 setup_log_rotation() {
     local panel_dir="${1:-/opt/remnawave}"
     local logs_dir="${panel_dir}/logs"
-    local cron_script="/etc/cron.daily/remnawave-logs"
+    local log_file="${logs_dir}/remnawave.log"
+    local service_name="remnawave-logger"
     
     mkdir -p "$logs_dir"
     
-    # Создаём скрипт ротации логов в /etc/cron.daily/
-    cat > "$cron_script" << ROTATE_EOF
-#!/bin/bash
-# Ротация логов Remnawave: ежедневный сбор, архивация, хранение 14 дней
+    # Создаём systemd сервис для непрерывной записи логов
+    cat > "/etc/systemd/system/${service_name}.service" << EOF
+[Unit]
+Description=Remnawave Docker Logs Collector
+After=docker.service
+Requires=docker.service
 
-LOGS_DIR="${logs_dir}"
-DATE=\$(date +%Y-%m-%d)
-KEEP_DAYS=14
-LOG_FILE="\${LOGS_DIR}/remnawave_\${DATE}.log"
+[Service]
+Type=simple
+ExecStart=/bin/bash -c 'cd ${panel_dir} && docker compose logs -f --no-log-prefix -t >> ${log_file} 2>&1'
+Restart=always
+RestartSec=10
 
-# Собираем логи всех контейнеров в один файл
-for container in remnawave remnawave-nginx remnawave-subscription-page remnawave-node; do
-    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^\${container}\$"; then
-        echo "===== \${container} =====" >> "\$LOG_FILE"
-        docker logs --since 24h "\$container" >> "\$LOG_FILE" 2>&1
-        echo >> "\$LOG_FILE"
-    fi
-done
+[Install]
+WantedBy=multi-user.target
+EOF
 
-# Архивируем логи старше 1 дня (не сегодняшние)
-find "\$LOGS_DIR" -name "*.log" -not -name "*_\${DATE}.log" -mtime +0 -exec gzip -f {} \\; 2>/dev/null
+    # Создаём logrotate конфигурацию (ежедневная ротация, хранение 14 дней)
+    cat > "/etc/logrotate.d/remnawave" << EOF
+${log_file} {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+}
+EOF
 
-# Удаляем архивы старше 14 дней
-find "\$LOGS_DIR" -name "*.log.gz" -mtime +\${KEEP_DAYS} -delete 2>/dev/null
-ROTATE_EOF
-    
-    chmod +x "$cron_script"
+    # Запускаем сервис
+    systemctl daemon-reload
+    systemctl enable "$service_name" >/dev/null 2>&1
+    systemctl restart "$service_name" >/dev/null 2>&1
+
+    # Удаляем старый cron-скрипт если есть
+    rm -f /etc/cron.daily/remnawave-logs
 }
 
 # ═══════════════════════════════════════════════
