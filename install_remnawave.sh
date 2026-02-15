@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="3.2.4"
+SCRIPT_VERSION="3.2.5"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -338,7 +338,7 @@ install_packages() {
         apt-get upgrade -y -qq $DPKG_OPTS >/dev/null 2>&1
         apt-get install -y -qq $DPKG_OPTS ca-certificates curl jq ufw wget gnupg unzip nano dialog git \
             certbot python3-certbot-dns-cloudflare unattended-upgrades locales dnsutils \
-            coreutils grep gawk >/dev/null 2>&1
+            coreutils grep gawk logrotate >/dev/null 2>&1
 
         # Cron
         if ! dpkg -l | grep -q '^ii.*cron '; then
@@ -346,6 +346,11 @@ install_packages() {
         fi
         systemctl start cron 2>/dev/null || true
         systemctl enable cron 2>/dev/null || true
+
+        # Logrotate
+        if ! dpkg -l | grep -q '^ii.*logrotate '; then
+            apt-get install -y -qq $DPKG_OPTS logrotate >/dev/null 2>&1
+        fi
 
         # Docker
         if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
