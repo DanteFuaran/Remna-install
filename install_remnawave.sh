@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="3.2.2"
+SCRIPT_VERSION="3.2.3"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3613,7 +3613,7 @@ db_restore() {
 
         # Создание API токена для страницы подписки
         print_action "Создание API токена для страницы подписки..."
-        if create_api_token "http://$domain_url" "$token" "$panel_dir"; then
+        if create_api_token "$domain_url" "$token" "$panel_dir"; then
             # Извлекаем созданный токен из docker-compose.yml
             local api_token
             api_token=$(grep "REMNAWAVE_API_TOKEN=" "$panel_dir/docker-compose.yml" | cut -d'=' -f2)
