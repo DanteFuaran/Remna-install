@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="0.1.9"
+SCRIPT_VERSION="0.1.10"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/main/install_remnawave.sh"
@@ -703,7 +703,8 @@ prompt_domain_with_retry() {
                 # Очищаем всё после ввода домена и показываем промпт заново
                 # Поднимаемся на нужное кол-во строк и очищаем
                 # Строки: строка ввода + пустая + ошибка(2) + пустая + пустая + подсказка = 7 строк
-                local lines_up=7
+                # Но удаляем только 6, чтобы оставить пустую строку после заголовка
+                local lines_up=6
                 for ((l=0; l<lines_up; l++)); do
                     tput cuu1 2>/dev/null
                     tput el 2>/dev/null
