@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SCRIPT_VERSION="3.2.1"
+SCRIPT_VERSION="3.2.2"
 DIR_REMNAWAVE="/usr/local/remna-install/"
 DIR_PANEL="/opt/remnawave/"
 SCRIPT_URL="https://raw.githubusercontent.com/DanteFuaran/Remna-install/refs/heads/dev/install_remnawave.sh"
@@ -3613,20 +3613,38 @@ db_restore() {
 
         # Создание API токена для страницы подписки
         print_action "Создание API токена для страницы подписки..."
-        create_api_token "http://$domain_url" "$token" "$panel_dir"
+        if create_api_token "http://$domain_url" "$token" "$panel_dir"; then
+            # Извлекаем созданный токен из docker-compose.yml
+            local api_token
+            api_token=$(grep "REMNAWAVE_API_TOKEN=" "$panel_dir/docker-compose.yml" | cut -d'=' -f2)
 
-        # Сброс администратора после создания API токена
-        (
-            docker exec remnawave-db psql -U postgres -d postgres -c "TRUNCATE TABLE admin CASCADE;" >/dev/null 2>&1
-        ) &
-        show_spinner "Сброс данных суперадмина"
+            # Сброс администратора (CASCADE удалит и API токены)
+            (
+                docker exec remnawave-db psql -U postgres -d postgres -c "TRUNCATE TABLE admin CASCADE;" >/dev/null 2>&1
+            ) &
+            show_spinner "Сброс данных суперадмина"
 
-        # Перезапуск subscription-page с обновлённым токеном
-        (
-            cd "$panel_dir"
-            docker compose up -d remnawave-subscription-page >/dev/null 2>&1
-        ) &
-        show_spinner "Перезапуск страницы подписки"
+            # Восстанавливаем API токен напрямую в базу
+            if [ -n "$api_token" ]; then
+                local token_uuid
+                token_uuid=$(cat /proc/sys/kernel/random/uuid 2>/dev/null || uuidgen 2>/dev/null || echo "$(openssl rand -hex 16 | sed 's/\(........\)\(....\)\(....\)\(....\)\(............\)/\1-\2-\3-\4-\5/')")
+                (
+                    docker exec remnawave-db psql -U postgres -d postgres -c \
+                        "INSERT INTO api_tokens (uuid, token, token_name, created_at, updated_at) 
+                         VALUES ('$token_uuid', '$api_token', 'subscription-page', NOW(), NOW());" >/dev/null 2>&1
+                ) &
+                show_spinner "Восстановление API токена"
+            fi
+
+            # Перезапуск subscription-page с обновлённым токеном
+            (
+                cd "$panel_dir"
+                docker compose up -d remnawave-subscription-page >/dev/null 2>&1
+            ) &
+            show_spinner "Перезапуск страницы подписки"
+        else
+            print_error "Не удалось создать API токен"
+        fi
     else
         print_error "Не удалось зарегистрировать администратора"
         echo -e "${YELLOW}Создайте администратора вручную через панель${NC}"
